@@ -14,8 +14,79 @@ export default function App() {
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // no-op
+    // cleanup on unmount
+    return () => {
+      // nothing to cleanup here; EventSource handled via ref when created
+    };
   }, []);
+
+  // keep a ref to EventSource so we can close it on unmount or player change
+  const esRef = useRef<EventSource | null>(null);
+  function initSSE(forPlayerId: string) {
+    if (!forPlayerId) return;
+    // close previous
+    if (esRef.current) {
+      try {
+        esRef.current.close();
+      } catch (e) { }
+      esRef.current = null;
+    }
+
+    const url = `/api/events/${encodeURIComponent(forPlayerId)}`;
+    const es = new EventSource(url);
+    esRef.current = es;
+
+    es.onopen = () => {
+      setLog((l) => [`SSE connected for ${forPlayerId}`, ...l]);
+    };
+
+    es.addEventListener('match_ready', (ev: any) => {
+      try {
+        const payload = JSON.parse((ev as MessageEvent).data);
+        setMatchId(payload.matchId);
+        const opponent = payload.opponent;
+        const oppWords: string[] = (opponent && Array.isArray(opponent.words) && opponent.words) || [];
+        setOpponentWords(oppWords.slice(0, 5));
+        setLog((l) => [`Match ready: opponent=${opponent?.id ?? 'unknown'}`, ...l]);
+      } catch (e) {
+        setLog((l) => [`match_ready parse error: ${(e as Error).message}`, ...l]);
+      }
+    });
+
+    es.addEventListener('turn_result', (ev: any) => {
+      try {
+        const payload = JSON.parse((ev as MessageEvent).data);
+        const q = payload.q;
+        const applied = payload.applied;
+        setLog((l) => [`Turn result: ${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`, ...l]);
+        // update local match/opponent state if present
+        if (payload.match) {
+          const opponent = payload.match.a?.id === forPlayerId ? payload.match.b : payload.match.a;
+          const oppWords: string[] = (opponent && Array.isArray(opponent.words) && opponent.words) || [];
+          setOpponentWords(oppWords.slice(0, 5));
+        }
+      } catch (e) {
+        setLog((l) => [`turn_result parse error: ${(e as Error).message}`, ...l]);
+      }
+    });
+
+    es.onerror = (err) => {
+      setLog((l) => [`SSE error: ${String(err)}`, ...l]);
+    };
+
+    return es;
+  }
+
+  useEffect(() => {
+    if (!playerId) return;
+    const es = initSSE(playerId);
+    return () => {
+      try {
+        es && es.close();
+      } catch (e) { }
+      esRef.current = null;
+    };
+  }, [playerId]);
 
   async function createPlayer() {
     try {
@@ -38,6 +109,26 @@ export default function App() {
   async function matchmake() {
     try {
       const id = playerId || name;
+      // ensure SSE is open for this player so we receive match_ready notifications
+      if (!playerId) {
+        setPlayerId(id);
+        try {
+          initSSE(id);
+          setLog((l) => [`SSE initiated for ${id}`, ...l]);
+        } catch (e) {
+          setLog((l) => [`SSE init error: ${(e as Error).message}`, ...l]);
+        }
+      }
+      // ensure the player is registered on the server so matchmake can find them
+      try {
+        await fetch('/api/player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name }),
+        });
+      } catch (e) {
+        // ignore - server may already have the player or will error; we'll handle below
+      }
       const res = await fetch('/api/matchmake', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

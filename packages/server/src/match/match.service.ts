@@ -8,6 +8,8 @@ import {
   synchronizePlayers,
   statsForLevel,
 } from '@atoyr/shared';
+import { Subject, Observable } from 'rxjs';
+import { filter as rxFilter, map as rxMap } from 'rxjs/operators';
 
 type Match = {
   id: string;
@@ -21,6 +23,12 @@ type Match = {
 export class MatchService {
   private players = new Map<string, Player>();
   private matches = new Map<string, Match>();
+  // event stream for SSE (emits raw events { playerId?, event, data })
+  private events$ = new Subject<{ playerId?: string; event: string; data: any }>();
+
+  // public observable for controllers to subscribe and filter
+  public eventStream: Observable<{ playerId?: string; event: string; data: any }> =
+    this.events$.asObservable();
 
   root() {
     return 'A Toy R server (NestJS prototype)';
@@ -53,28 +61,22 @@ export class MatchService {
       const b = me.level <= o.level ? syncedStrong : me;
 
       const match: Match = { id: `m-${Date.now()}`, a, b, turn: 0, logs: [] };
+      // ensure distinct objects for a and b
+      if (match.a === match.b) {
+        match.b = { ...match.b } as Player;
+      }
       this.matches.set(match.id, match);
+      // notify both players that match is ready
+      this.notifyMatchReady(match);
       return match;
     }
 
     // No opponentId: try to join an existing pending match (one where `b` is null)
     const pending = Array.from(this.matches.values()).find((m) => m.b === null && m.a.id !== id);
+    console.info(pending);
     if (pending) {
-      // join the pending match as player b
-      const other = pending.a;
-
-      // synchronize levels if needed
-      const weak = other.level < me.level ? other : me;
-      const strong = other.level < me.level ? me : other;
-      const syncedStrong = synchronizePlayers(weak, strong);
-
-      const a = other.level <= me.level ? other : syncedStrong;
-      const b = other.level <= me.level ? syncedStrong : other;
-
-      pending.a = a;
-      pending.b = b;
-      this.matches.set(pending.id, pending);
-      return pending;
+      // delegate to joinMatch for atomic/safe join logic
+      return this.joinMatch(pending.id, id);
     }
 
     // Otherwise create a pending match (waiting for a second player)
@@ -83,8 +85,62 @@ export class MatchService {
     return match;
   }
 
+  private emitEvent(playerId: string | undefined, event: string, data: any) {
+    console.info(playerId, event, data);
+    this.events$.next({ playerId, event, data });
+  }
+
+  notifyMatchReady(match: Match) {
+    const a = match.a;
+    const b = match.b;
+    if (a) {
+      this.emitEvent(a.id, 'match_ready', { matchId: match.id, you: a, opponent: b });
+    }
+    if (b) {
+      this.emitEvent(b.id, 'match_ready', { matchId: match.id, you: b, opponent: a });
+    }
+  }
+
+  notifyTurn(match: Match, q: any, applied: number) {
+    // send turn result to both players (including attacker and defender)
+    if (!match) return;
+    const a = match.a;
+    const b = match.b;
+    if (a) this.emitEvent(a.id, 'turn_result', { matchId: match.id, q, applied, match });
+    if (b) this.emitEvent(b.id, 'turn_result', { matchId: match.id, q, applied, match });
+  }
+
   getMatch(id: string) {
     return this.matches.get(id) || null;
+  }
+
+  joinMatch(matchId: string, playerId: string) {
+    const m = this.matches.get(matchId);
+    if (!m) throw new Error('match not found');
+    if (m.b !== null) throw new Error('match already has two players');
+
+    const me = this.players.get(playerId);
+    if (!me) throw new Error('player not found');
+
+    const other = m.a;
+
+    // synchronize levels if needed
+    const weak = other.level < me.level ? other : me;
+    const strong = other.level < me.level ? me : other;
+    const syncedStrong = synchronizePlayers(weak, strong);
+
+    const a = other.level <= me.level ? other : syncedStrong;
+    const b = other.level <= me.level ? syncedStrong : other;
+
+    m.a = a;
+    m.b = b;
+    // ensure distinct objects
+    if (m.a === m.b) {
+      m.b = { ...m.b } as Player;
+    }
+    this.matches.set(m.id, m);
+    this.notifyMatchReady(m);
+    return m;
   }
 
   resolveTurn(matchId: string, attackerId: string, attackerTime?: number, defenderTime?: number) {
@@ -118,6 +174,12 @@ export class MatchService {
     }
 
     m.turn += 1;
+    // notify subscribers about the turn result
+    try {
+      this.notifyTurn(m, q, applied);
+    } catch (e) {
+      // ignore notify errors
+    }
     return { match: m, q, applied };
   }
 }
