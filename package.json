@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "bootstrap": "yarn install",
-    "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/server dev\"",
+    "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/shared build && yarn --cwd packages/server dev\"",
     "build": "yarn --cwd packages/client build && yarn --cwd packages/server build",
     "start": "node packages/server/dist/index.js",
     "test": "vitest"
