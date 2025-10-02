@@ -71,6 +71,12 @@ export class MatchController {
     return this.matchService.submitQTE(id, playerId, typeof time === 'number' ? time : null);
   }
 
+  @Post('events/:playerId/ack')
+  ack(@Param('playerId') playerId: string, @Body() body: { matchId: string; turn: number }) {
+    const { matchId, turn } = body;
+    return this.matchService.ackTurn(matchId, playerId, turn);
+  }
+
   @Post('resolve')
   resolve(
     @Body()

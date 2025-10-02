@@ -28,10 +28,34 @@ export class MatchService {
   >();
   // Classic SSE: per-player set of open Response objects
   private sseClients = new Map<string, Set<Response>>();
+  // pending SSE events for players who are not currently connected
+  private pendingEvents = new Map<string, Array<{ event: string; data: any }>>();
+  // pending acknowledgements for completed turns: matchId -> { turn, awaiting:Set<playerId>, timer }
+  private pendingAcks = new Map<
+    string,
+    { turn: number; awaiting: Set<string>; timer?: NodeJS.Timeout }
+  >();
 
   addSseClient(playerId: string, res: Response) {
     if (!this.sseClients.has(playerId)) this.sseClients.set(playerId, new Set());
     this.sseClients.get(playerId)!.add(res);
+    // flush any pending events for this player to the newly connected client
+    const pending = this.pendingEvents.get(playerId);
+    if (pending && pending.length) {
+      const write = (r: Response, ev: { event: string; data: any }) => {
+        try {
+          const payload = `event: ${ev.event}\ndata: ${JSON.stringify(ev.data)}\n\n`;
+          r.write(payload);
+        } catch (e) {}
+      };
+      for (const ev of pending) {
+        try {
+          write(res, ev);
+        } catch (e) {}
+      }
+      // once flushed to this connection, drop pending events for the player
+      this.pendingEvents.delete(playerId);
+    }
   }
 
   removeSseClient(playerId: string, res: Response) {
@@ -106,8 +130,30 @@ export class MatchService {
   private emitEvent(playerId: string | undefined, event: string, data: any) {
     if (!playerId) return;
     const clients = this.sseClients.get(playerId);
-    if (!clients) return;
     const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    if (!clients || clients.size === 0) {
+      // queue the event for delivery when the player reconnects
+      if (!this.pendingEvents.has(playerId)) this.pendingEvents.set(playerId, []);
+      this.pendingEvents.get(playerId)!.push({ event, data });
+      return;
+    }
+
+    // If there are queued events for this player, flush them first to preserve order
+    const queued = this.pendingEvents.get(playerId);
+    if (queued && queued.length) {
+      for (const ev of queued) {
+        const queuedPayload = `event: ${ev.event}\ndata: ${JSON.stringify(ev.data)}\n\n`;
+        for (const res of clients) {
+          try {
+            res.write(queuedPayload);
+          } catch (e) {
+            // ignore individual write errors
+          }
+        }
+      }
+      this.pendingEvents.delete(playerId);
+    }
+
     for (const res of clients) {
       try {
         res.write(payload);
@@ -128,13 +174,34 @@ export class MatchService {
     }
   }
 
-  notifyTurn(match: Match, q: any, applied: number) {
+  notifyTurn(match: Match, q: any, applied: number, turnNumber?: number) {
     // send turn result to both players (including attacker and defender)
     if (!match) return;
     const a = match.a;
     const b = match.b;
-    if (a) this.emitEvent(a.id, 'turn_result', { matchId: match.id, q, applied, match });
-    if (b) this.emitEvent(b.id, 'turn_result', { matchId: match.id, q, applied, match });
+    const t = typeof turnNumber === 'number' ? turnNumber : match.turn;
+    const payload = { matchId: match.id, q, applied, match, turn: t };
+    if (a) this.emitEvent(a.id, 'turn_result', payload);
+    if (b) this.emitEvent(b.id, 'turn_result', payload);
+
+    // set up pending ACKs for this turn: wait for both players to ACK before starting next QTE
+    if (a && b) {
+      const awaiting = new Set<string>([a.id, b.id]);
+      // clear existing pendingAcks for this match if any
+      const prev = this.pendingAcks.get(match.id);
+      if (prev && prev.timer) {
+        clearTimeout(prev.timer);
+      }
+      // set up a fallback timer to auto-start next QTE after 5s if ACKs don't arrive
+      const timer = setTimeout(() => {
+        try {
+          this.pendingAcks.delete(match.id);
+          // start next QTE even if not all ACKed
+          this.startQTE(match.id);
+        } catch (e) {}
+      }, 5000);
+      this.pendingAcks.set(match.id, { turn: t, awaiting, timer });
+    }
   }
 
   startQTE(matchId: string, initiatorId?: string) {
@@ -223,19 +290,52 @@ export class MatchService {
       m.logs.unshift(`${defender.id} parried and countered ${attacker.id} for ${applied}`);
     }
 
-    m.turn += 1;
+    // notify subscribers about the completed turn first (do not increment m.turn yet)
     try {
       this.notifyTurn(m, q, applied);
-    } catch (e) {}
+    } catch (e) {
+      // ignore notify errors
+    }
+
+    // increment turn after notifying about the completed turn
+    const completedTurn = m.turn;
+    m.turn += 1;
 
     // cleanup pending entry
     this.pendingSubmissions.delete(key);
 
-    return { match: m, q, applied };
+    // Next QTE start is controlled by ACKs (notifyTurn sets up pendingAcks)
+    // or its fallback timer. Do NOT auto-start another QTE here to avoid
+    // emitting duplicate `qte_start` events (one from this code path and
+    // another from the ACK handler or fallback).
+
+    // Important: do NOT return the resolved payload here. Clients must rely on SSE
+    // for the authoritative turn_result and qte_start ordering. Returning the
+    // result in the HTTP response risks clients observing the result before the
+    // server has emitted turn_result (race with SSE).
+    return { status: 'resolved', turn: completedTurn };
   }
 
   getMatch(id: string) {
     return this.matches.get(id) || null;
+  }
+
+  // Called when a client ACKs a turn_result for a given match/turn
+  ackTurn(matchId: string, playerId: string, turn: number) {
+    const entry = this.pendingAcks.get(matchId);
+    if (!entry) return { status: 'no-pending' };
+    if (entry.turn !== turn) return { status: 'mismatch', expected: entry.turn };
+    entry.awaiting.delete(playerId);
+    if (entry.awaiting.size === 0) {
+      // all ACKs received; clear timer and start next QTE
+      if (entry.timer) clearTimeout(entry.timer);
+      this.pendingAcks.delete(matchId);
+      try {
+        this.startQTE(matchId);
+      } catch (e) {}
+      return { status: 'started' };
+    }
+    return { status: 'waiting', remaining: entry.awaiting.size };
   }
 
   joinMatch(matchId: string, playerId: string) {
