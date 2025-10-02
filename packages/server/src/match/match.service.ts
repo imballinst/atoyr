@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { resolveQTE, Player, createPlayer, applyDamage, synchronizePlayers } from '@atoyr/shared';
+import {
+  resolveQTE,
+  pickRandomWord,
+  Player,
+  createPlayer,
+  applyDamage,
+  synchronizePlayers,
+} from '@atoyr/shared';
 import type { Response } from 'express';
 
 type Match = {
@@ -14,6 +21,11 @@ type Match = {
 export class MatchService {
   private players = new Map<string, Player>();
   private matches = new Map<string, Match>();
+  // pending submissions keyed by `${matchId}:${turn}`
+  private pendingSubmissions = new Map<
+    string,
+    { turn: number; initiatorId?: string; times: Map<string, number> }
+  >();
   // Classic SSE: per-player set of open Response objects
   private sseClients = new Map<string, Set<Response>>();
 
@@ -52,13 +64,14 @@ export class MatchService {
       const o = this.players.get(opponentId);
       if (!o) throw new Error('opponent not found');
 
-      // synchronize if huge level difference
-      const weak = me.level < o.level ? me : o;
-      const strong = me.level < o.level ? o : me;
+      // determine weak/strong by level (tie-breaker by id), synchronize strong if needed
+      const players = [me, o].sort((p1, p2) => p1.level - p2.level || p1.id.localeCompare(p2.id));
+      const weak = players[0];
+      const strong = players[1];
       const syncedStrong = synchronizePlayers(weak, strong);
 
-      const a = me.level <= o.level ? me : syncedStrong;
-      const b = me.level <= o.level ? syncedStrong : me;
+      const a = weak;
+      const b = syncedStrong === strong ? strong : syncedStrong;
 
       const match: Match = { id: `m-${Date.now()}`, a, b, turn: 0, logs: [] };
       // ensure distinct objects for a and b
@@ -68,12 +81,17 @@ export class MatchService {
       this.matches.set(match.id, match);
       // notify both players that match is ready
       this.notifyMatchReady(match);
+      try {
+        // auto-start a QTE when match is created with two players
+        this.startQTE(match.id, me.id);
+      } catch (e) {
+        // ignore start errors (e.g., no words); match is still valid
+      }
       return match;
     }
 
     // No opponentId: try to join an existing pending match (one where `b` is null)
     const pending = Array.from(this.matches.values()).find((m) => m.b === null && m.a.id !== id);
-    console.info('pending', pending);
     if (pending) {
       // delegate to joinMatch for atomic/safe join logic
       return this.joinMatch(pending.id, id);
@@ -119,6 +137,103 @@ export class MatchService {
     if (b) this.emitEvent(b.id, 'turn_result', { matchId: match.id, q, applied, match });
   }
 
+  startQTE(matchId: string, initiatorId?: string) {
+    const m = this.matches.get(matchId);
+    if (!m) throw new Error('match not found');
+    if (!m.a || !m.b) throw new Error('match does not have two players');
+
+    // pick a word from the intersection/union of both players' word lists (fall back to either)
+    const words = Array.from(new Set([...(m.a.words || []), ...(m.b.words || [])]));
+    if (words.length === 0) throw new Error('no words available for QTE');
+    const word = pickRandomWord(words);
+
+    const payload = { matchId: m.id, turn: m.turn, word, initiatorId };
+
+    // notify both players to start the QTE
+    if (m.a) this.emitEvent(m.a.id, 'qte_start', payload);
+    if (m.b) this.emitEvent(m.b.id, 'qte_start', payload);
+
+    // create a pending submissions entry for this turn
+    const key = `${m.id}:${m.turn}`;
+    this.pendingSubmissions.set(key, { turn: m.turn, initiatorId, times: new Map() });
+
+    return payload;
+  }
+
+  // Player submits their QTE time for the current turn. If both players have submitted, resolve the turn and notify both.
+  submitQTE(matchId: string, playerId: string, time: number | null) {
+    const m = this.matches.get(matchId);
+    if (!m) throw new Error('match not found');
+    if (!m.a || !m.b) throw new Error('match does not have two players');
+
+    const key = `${m.id}:${m.turn}`;
+    let entry = this.pendingSubmissions.get(key);
+    if (!entry) {
+      // No QTE started for this turn yet
+      entry = { turn: m.turn, initiatorId: undefined, times: new Map() };
+      this.pendingSubmissions.set(key, entry);
+    }
+
+    // store the player's submission (time may be null meaning miss)
+    if (typeof time === 'number') entry.times.set(playerId, time);
+    else entry.times.set(playerId, NaN);
+
+    // If both players haven't submitted yet, return pending
+    const players = [m.a.id, m.b.id];
+    const hasA = entry.times.has(m.a.id);
+    const hasB = entry.times.has(m.b.id);
+    if (!hasA || !hasB) {
+      return { status: 'pending', turn: entry.turn };
+    }
+
+    // Both submitted: determine attacker/defender
+    const initiatorId = entry.initiatorId || undefined;
+    let attackerId = initiatorId;
+    if (!attackerId) {
+      // fallback: first submitter in the Map
+      const first = entry.times.keys().next();
+      attackerId = first.done ? m.a.id : first.value;
+    }
+
+    const defenderId = attackerId === m.a.id ? m.b.id : m.a.id;
+    const attacker = attackerId === m.a.id ? m.a : m.b;
+    const defender = defenderId === m.a.id ? m.a : m.b;
+
+    const attackerTime = Number(entry.times.get(attackerId));
+    const defenderTime = Number(entry.times.get(defenderId));
+
+    const q = resolveQTE(
+      Number.isFinite(attackerTime) ? attackerTime : null,
+      Number.isFinite(defenderTime) ? defenderTime : null,
+      attacker.attack,
+    );
+
+    let applied = 0;
+    if (q.kind === 'miss') {
+      m.logs.unshift(`${attacker.id} missed`);
+    } else if (q.kind === 'critical' || q.kind === 'hit') {
+      applied = applyDamage(defender, q.damage);
+      m.logs.unshift(`${attacker.id} hit ${defender.id} for ${applied} (${q.kind})`);
+    } else if (q.kind === 'block') {
+      const partial = Math.round(q.damage * 0.25);
+      applied = applyDamage(defender, partial);
+      m.logs.unshift(`${attacker.id} partially hit ${defender.id} for ${applied}`);
+    } else if (q.kind === 'parry') {
+      applied = applyDamage(attacker, q.damage);
+      m.logs.unshift(`${defender.id} parried and countered ${attacker.id} for ${applied}`);
+    }
+
+    m.turn += 1;
+    try {
+      this.notifyTurn(m, q, applied);
+    } catch (e) {}
+
+    // cleanup pending entry
+    this.pendingSubmissions.delete(key);
+
+    return { match: m, q, applied };
+  }
+
   getMatch(id: string) {
     return this.matches.get(id) || null;
   }
@@ -133,31 +248,48 @@ export class MatchService {
 
     const other = m.a;
 
-    // synchronize levels if needed
-    const weak = other.level < me.level ? other : me;
-    const strong = other.level < me.level ? me : other;
+    // determine weak/strong by level (tie-breaker by id), synchronize strong if needed
+    const players = [other, me].sort((p1, p2) => p1.level - p2.level || p1.id.localeCompare(p2.id));
+    const weak = players[0];
+    const strong = players[1];
     const syncedStrong = synchronizePlayers(weak, strong);
 
-    const a = other.level <= me.level ? other : syncedStrong;
-    const b = other.level <= me.level ? syncedStrong : other;
-
-    m.a = a;
-    m.b = b;
+    m.a = weak;
+    m.b = syncedStrong === strong ? strong : syncedStrong;
     // ensure distinct objects
     if (m.a === m.b) {
       m.b = { ...m.b } as Player;
     }
     this.matches.set(m.id, m);
     this.notifyMatchReady(m);
+    try {
+      // the player who joined (playerId) triggered the match to start
+      this.startQTE(m.id, playerId);
+    } catch (e) {
+      // ignore
+    }
     return m;
   }
 
   resolveTurn(matchId: string, attackerId: string, attackerTime?: number, defenderTime?: number) {
     const m = this.matches.get(matchId);
     if (!m) throw new Error('match not found');
-    const attacker = m.a.id === attackerId ? m.a : m.b && m.b.id === attackerId ? m.b : null;
+    // Find attacker by id first, then try by name as a fallback (clients may send name)
+    let attacker: Player | null = null;
+    if (attackerId && m.a && m.a.id === attackerId) attacker = m.a;
+    else if (attackerId && m.b && m.b.id === attackerId) attacker = m.b;
+    // fallback: maybe client sent the player's name instead of id
+    else if (attackerId && m.a && m.a.name === attackerId) attacker = m.a;
+    else if (attackerId && m.b && m.b.name === attackerId) attacker = m.b;
+
     const defender = attacker === m.a ? m.b : m.a;
-    if (!attacker) throw new Error('attacker not in match');
+    if (!attacker) {
+      const aId = m.a ? `${m.a.id}${m.a.name ? ` (${m.a.name})` : ''}` : 'none';
+      const bId = m.b ? `${m.b.id}${m.b.name ? ` (${m.b.name})` : ''}` : 'none';
+      throw new Error(
+        `attacker not in match (attackerId=${String(attackerId)}, matchPlayers=${aId},${bId})`,
+      );
+    }
     if (!defender) throw new Error('defender not in match or match incomplete');
 
     const q = resolveQTE(

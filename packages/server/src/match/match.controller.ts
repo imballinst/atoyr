@@ -44,27 +44,31 @@ export class MatchController {
 
     this.matchService.addSseClient(playerId, res);
 
-    reqCleanup();
+    res.on('close', () => {
+      try {
+        res.end();
+      } catch (e) {}
+      try {
+        this.matchService.removeSseClient(playerId, res);
+      } catch (e) {}
+    });
+  }
 
-    function reqCleanup() {
-      res.on('close', () => {
-        try {
-          res.end();
-        } catch (e) {}
-        try {
-          // Remove from service
-          (res as any).locals &&
-            (res as any).locals.matchService &&
-            (res as any).locals.matchService.removeSseClient(playerId, res);
-        } catch (e) {}
-      });
-    }
+  @Post('match/:id/start')
+  startMatchQTE(@Param('id') id: string, @Body() body: { initiatorId?: string }) {
+    return this.matchService.startQTE(id, body?.initiatorId);
   }
 
   @Post('match/:id/join')
   joinMatch(@Param('id') id: string, @Body() body: { playerId: string }) {
     const { playerId } = body;
     return this.matchService.joinMatch(id, playerId);
+  }
+
+  @Post('match/:id/submit')
+  submitQTE(@Param('id') id: string, @Body() body: { playerId: string; time?: number | null }) {
+    const { playerId, time } = body;
+    return this.matchService.submitQTE(id, playerId, typeof time === 'number' ? time : null);
   }
 
   @Post('resolve')
