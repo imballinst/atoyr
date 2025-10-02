@@ -55,7 +55,12 @@ export function statsForLevel(level: number) {
   return { maxHp, attack, defense };
 }
 
-export function createPlayer(id: string, name: string | undefined, level = 1, words: string[] = []): Player {
+export function createPlayer(
+  id: string,
+  name: string | undefined,
+  level = 1,
+  words: string[] = [],
+): Player {
   const s = statsForLevel(level);
   return {
     id,
@@ -74,7 +79,11 @@ export function synchronizePlayers(weak: Player, strong: Player) {
   const levelDiff = strong.level - weak.level;
   if (levelDiff <= 3) return strong; // no sync needed
   const factor = 1 - Math.min(0.5, (levelDiff - 3) * 0.1); // reduce up to 50%
-  return { ...strong, attack: Math.max(1, Math.round(strong.attack * factor)), defense: Math.max(0, Math.round(strong.defense * factor)) };
+  return {
+    ...strong,
+    attack: Math.max(1, Math.round(strong.attack * factor)),
+    defense: Math.max(0, Math.round(strong.defense * factor)),
+  };
 }
 
 export function applyDamage(target: Player, rawDamage: number) {

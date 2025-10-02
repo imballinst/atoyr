@@ -1,11 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
-
-type ResolveResponse = {
-  result?: { kind: string; damage?: number };
-  q?: { kind: string; damage?: number };
-  match?: any;
-  applied?: number;
-};
+import { useEffect, useRef, useState } from 'react';
 
 type Player = {
   id: string;
@@ -51,7 +44,7 @@ export default function App() {
     if (esRef.current) {
       try {
         esRef.current.close();
-      } catch (e) { }
+      } catch (e) {}
       esRef.current = null;
     }
 
@@ -100,10 +93,12 @@ export default function App() {
         // update local match/opponent state if present
         if (payload.match) {
           const me = payload.match.a?.id === forPlayerId ? payload.match.a : payload.match.b;
-          const opponentObj = payload.match.a?.id === forPlayerId ? payload.match.b : payload.match.a;
+          const opponentObj =
+            payload.match.a?.id === forPlayerId ? payload.match.b : payload.match.a;
           if (me) setPlayer(me);
           if (opponentObj) setOpponent(opponentObj);
-          const oppWords: string[] = (opponentObj && Array.isArray(opponentObj.words) && opponentObj.words) || [];
+          const oppWords: string[] =
+            (opponentObj && Array.isArray(opponentObj.words) && opponentObj.words) || [];
           setOpponentWords(oppWords.slice(0, 5));
         }
         // clear waiting state and mark round completed; keep the target visible until next qte_start
@@ -114,7 +109,7 @@ export default function App() {
             window.clearTimeout(waitingTimerRef.current);
             waitingTimerRef.current = null;
           }
-        } catch (e) { }
+        } catch (e) {}
         setRoundCompleted(true);
         setLastResult(`${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`);
 
@@ -149,7 +144,7 @@ export default function App() {
             window.clearTimeout(waitingTimerRef.current);
             waitingTimerRef.current = null;
           }
-        } catch (e) { }
+        } catch (e) {}
         setLastResult(null);
         setRoundWord(payload.word);
         setRoundIndex((i) => i + 1);
@@ -159,9 +154,12 @@ export default function App() {
         setTimeout(() => {
           try {
             inputRef.current && inputRef.current.focus();
-          } catch (e) { }
+          } catch (e) {}
         }, 50);
-        setLog((l) => [`QTE started: word='${payload.word}' turn=${payload.turn} initiator=${payload.initiatorId}`, ...l]);
+        setLog((l) => [
+          `QTE started: word='${payload.word}' turn=${payload.turn} initiator=${payload.initiatorId}`,
+          ...l,
+        ]);
       } catch (e) {
         setLog((l) => [`qte_start parse error: ${(e as Error).message}`, ...l]);
       }
@@ -181,7 +179,7 @@ export default function App() {
     return () => {
       try {
         es && es.close();
-      } catch (e) { }
+      } catch (e) {}
       esRef.current = null;
       // clear any waiting timer when component unmounts or player changes
       try {
@@ -189,7 +187,7 @@ export default function App() {
           window.clearTimeout(waitingTimerRef.current);
           waitingTimerRef.current = null;
         }
-      } catch (e) { }
+      } catch (e) {}
     };
   }, [playerId]);
 
@@ -267,24 +265,6 @@ export default function App() {
     setWaitingForResult(false);
   }
 
-  async function initiateQteServer() {
-    if (!matchId) {
-      setLog((l) => [`No match to start QTE on`, ...l]);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/match/${encodeURIComponent(matchId)}/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initiatorId: playerId || name }),
-      });
-      const data = await res.json();
-      setLog((l) => [`Requested server QTE start: ${JSON.stringify(data)}`, ...l]);
-    } catch (e) {
-      setLog((l) => [`initiateQteServer error: ${(e as Error).message}`, ...l]);
-    }
-  }
-
   async function submitAnswer(answer: string) {
     const end = performance.now();
     const elapsed = startRef.current ? (end - startRef.current) / 1000 : null;
@@ -306,12 +286,15 @@ export default function App() {
         setWaitingForResult(true);
         try {
           if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-        } catch (e) { }
+        } catch (e) {}
         // fallback: clear waiting state after 8s if no turn_result arrives
         waitingTimerRef.current = window.setTimeout(() => {
           setWaitingForResult(false);
           waitingTimerRef.current = null;
-          setLog((l) => [`Cleared waiting state (timeout), if you still see issues reconnect or check server logs`, ...l]);
+          setLog((l) => [
+            `Cleared waiting state (timeout), if you still see issues reconnect or check server logs`,
+            ...l,
+          ]);
         }, 8000) as unknown as number;
         setLog((l) => [`Turn ${currentTurn ?? roundIndex}: submitted, waiting for opponent`, ...l]);
       } else if (data && data.status === 'resolved') {
@@ -319,31 +302,40 @@ export default function App() {
         setWaitingForResult(true);
         try {
           if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-        } catch (e) { }
+        } catch (e) {}
         waitingTimerRef.current = window.setTimeout(() => {
           setWaitingForResult(false);
           waitingTimerRef.current = null;
           setLog((l) => [`Cleared waiting state after resolved response (timeout)`, ...l]);
         }, 8000) as unknown as number;
-        setLog((l) => [`Turn ${data.turn ?? currentTurn ?? roundIndex}: server resolved, waiting for authoritative result via SSE`, ...l]);
+        setLog((l) => [
+          `Turn ${data.turn ?? currentTurn ?? roundIndex}: server resolved, waiting for authoritative result via SSE`,
+          ...l,
+        ]);
       } else if (data && (data.q || data.match)) {
         // server resolved immediately (both submissions present).
         // Still wait for the authoritative SSE 'turn_result' so client-side state
         // (roundWord/next qte_start) is driven by server events and ordering stays correct.
         const q = data.q || data.result;
-        setLog((l) => [`Turn ${data.turn ?? currentTurn ?? roundIndex}: result immediate (server resolved): ${q?.kind ?? 'unknown'}`, ...l]);
+        setLog((l) => [
+          `Turn ${data.turn ?? currentTurn ?? roundIndex}: result immediate (server resolved): ${q?.kind ?? 'unknown'}`,
+          ...l,
+        ]);
         // do NOT clear roundWord here; wait for SSE to deliver turn_result and qte_start
         setWaitingForResult(true);
         try {
           if (waitingTimerRef.current) window.clearTimeout(waitingTimerRef.current);
-        } catch (e) { }
+        } catch (e) {}
         waitingTimerRef.current = window.setTimeout(() => {
           setWaitingForResult(false);
           waitingTimerRef.current = null;
           setLog((l) => [`Cleared waiting state after immediate result (timeout)`, ...l]);
         }, 8000) as unknown as number;
       } else {
-        setLog((l) => [`Round ${roundIndex}: unexpected submit response: ${JSON.stringify(data)}`, ...l]);
+        setLog((l) => [
+          `Round ${roundIndex}: unexpected submit response: ${JSON.stringify(data)}`,
+          ...l,
+        ]);
       }
     } catch (err) {
       setLog((l) => [`submit error: ${(err as Error).message}`, ...l]);
@@ -356,7 +348,16 @@ export default function App() {
 
       {/* Turn indicator */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-        <div style={{ fontWeight: '700', fontSize: 20, padding: '6px 12px', background: '#222', color: '#fff', borderRadius: 8 }}>
+        <div
+          style={{
+            fontWeight: '700',
+            fontSize: 20,
+            padding: '6px 12px',
+            background: '#222',
+            color: '#fff',
+            borderRadius: 8,
+          }}
+        >
           Turn: {currentTurn !== null ? currentTurn : '-'}
         </div>
       </div>
@@ -364,7 +365,9 @@ export default function App() {
       {/* HP display */}
       <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{player?.name ?? player?.id ?? 'You'}</div>
+          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>
+            {player?.name ?? player?.id ?? 'You'}
+          </div>
           <div style={{ background: '#333', borderRadius: 8, padding: 4 }}>
             <div
               style={{
@@ -382,7 +385,9 @@ export default function App() {
         </div>
 
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>{opponent?.name ?? opponent?.id ?? 'Opponent'}</div>
+          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>
+            {opponent?.name ?? opponent?.id ?? 'Opponent'}
+          </div>
           <div style={{ background: '#333', borderRadius: 8, padding: 4 }}>
             <div
               style={{
@@ -402,10 +407,13 @@ export default function App() {
 
       <div>
         <label>Player name:</label>
-        <input value={name} onChange={(e) => {
-          setName(e.target.value)
-          sessionStorage.setItem('name', e.target.value);
-        }} />
+        <input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            sessionStorage.setItem('name', e.target.value);
+          }}
+        />
         <button onClick={createPlayer}>Create Player (local)</button>
       </div>
 
@@ -430,7 +438,13 @@ export default function App() {
         <div style={{ marginTop: 12 }}>
           <div style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 14, color: '#666' }}>Target word:</div>
-            <h2 style={{ margin: '6px 0' }}>{roundWord ?? <span style={{ color: '#999' }}>{roundCompleted ? 'Round complete, waiting for next round...' : 'Waiting...'}</span>}</h2>
+            <h2 style={{ margin: '6px 0' }}>
+              {roundWord ?? (
+                <span style={{ color: '#999' }}>
+                  {roundCompleted ? 'Round complete, waiting for next round...' : 'Waiting...'}
+                </span>
+              )}
+            </h2>
             {roundCompleted && lastResult && (
               <div style={{ color: '#222', marginTop: 6 }}>Last result: {lastResult}</div>
             )}
@@ -439,7 +453,11 @@ export default function App() {
             <input
               ref={inputRef}
               value={answerInput}
-              placeholder={roundWord ? 'Type the word and press Enter' : 'Waiting... you can start typing and keep your input'}
+              placeholder={
+                roundWord
+                  ? 'Type the word and press Enter'
+                  : 'Waiting... you can start typing and keep your input'
+              }
               onChange={(e) => setAnswerInput((e.target as HTMLInputElement).value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -457,7 +475,9 @@ export default function App() {
         {log.map((l, i) => (
           <div key={i}>{l}</div>
         ))}
-        {waitingForResult && <div style={{ marginTop: 8, fontStyle: 'italic' }}>Waiting for opponent...</div>}
+        {waitingForResult && (
+          <div style={{ marginTop: 8, fontStyle: 'italic' }}>Waiting for opponent...</div>
+        )}
       </div>
     </div>
   );
