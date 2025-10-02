@@ -1,8 +1,5 @@
-import { Body, Controller, Get, Post, Param, Sse } from '@nestjs/common';
+import { Body, Controller, Get, Post, Param, Res } from '@nestjs/common';
 import { MatchService } from './match.service';
-import { Observable } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
-import type { MessageEvent } from '@nestjs/common';
 
 @Controller()
 export class MatchController {
@@ -35,12 +32,33 @@ export class MatchController {
     return this.matchService.getMatch(id);
   }
 
-  @Sse('events/:playerId')
-  events(@Param('playerId') playerId: string): Observable<MessageEvent> {
-    return this.matchService.eventStream.pipe(
-      filter((e) => !e.playerId || e.playerId === playerId),
-      map((e) => ({ event: e.event, data: e.data }) as MessageEvent),
-    );
+  @Get('events/:playerId')
+  events(@Param('playerId') playerId: string, @Res() res: any) {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders && res.flushHeaders();
+    res.write(': connected\n\n');
+
+    this.matchService.addSseClient(playerId, res);
+
+    reqCleanup();
+
+    function reqCleanup() {
+      res.on('close', () => {
+        try {
+          res.end();
+        } catch (e) {}
+        try {
+          // Remove from service
+          (res as any).locals &&
+            (res as any).locals.matchService &&
+            (res as any).locals.matchService.removeSseClient(playerId, res);
+        } catch (e) {}
+      });
+    }
   }
 
   @Post('match/:id/join')

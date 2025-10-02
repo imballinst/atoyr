@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-type ResolveResponse = { result?: { kind: string; damage?: number }; q?: { kind: string; damage?: number }; match?: any; applied?: number };
+type ResolveResponse = {
+  result?: { kind: string; damage?: number };
+  q?: { kind: string; damage?: number };
+  match?: any;
+  applied?: number;
+};
 
 export default function App() {
   const [name, setName] = useState('player1');
@@ -14,10 +19,8 @@ export default function App() {
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // cleanup on unmount
-    return () => {
-      // nothing to cleanup here; EventSource handled via ref when created
-    };
+    const name = sessionStorage.getItem('name');
+    if (name) setName(name);
   }, []);
 
   // keep a ref to EventSource so we can close it on unmount or player change
@@ -45,7 +48,8 @@ export default function App() {
         const payload = JSON.parse((ev as MessageEvent).data);
         setMatchId(payload.matchId);
         const opponent = payload.opponent;
-        const oppWords: string[] = (opponent && Array.isArray(opponent.words) && opponent.words) || [];
+        const oppWords: string[] =
+          (opponent && Array.isArray(opponent.words) && opponent.words) || [];
         setOpponentWords(oppWords.slice(0, 5));
         setLog((l) => [`Match ready: opponent=${opponent?.id ?? 'unknown'}`, ...l]);
       } catch (e) {
@@ -58,11 +62,15 @@ export default function App() {
         const payload = JSON.parse((ev as MessageEvent).data);
         const q = payload.q;
         const applied = payload.applied;
-        setLog((l) => [`Turn result: ${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`, ...l]);
+        setLog((l) => [
+          `Turn result: ${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`,
+          ...l,
+        ]);
         // update local match/opponent state if present
         if (payload.match) {
           const opponent = payload.match.a?.id === forPlayerId ? payload.match.b : payload.match.a;
-          const oppWords: string[] = (opponent && Array.isArray(opponent.words) && opponent.words) || [];
+          const oppWords: string[] =
+            (opponent && Array.isArray(opponent.words) && opponent.words) || [];
           setOpponentWords(oppWords.slice(0, 5));
         }
       } catch (e) {
@@ -71,6 +79,7 @@ export default function App() {
     });
 
     es.onerror = (err) => {
+      console.error(err);
       setLog((l) => [`SSE error: ${String(err)}`, ...l]);
     };
 
@@ -142,7 +151,8 @@ export default function App() {
       setMatchId(match.id);
       // find opponent (the other player)
       const opponent = match.a?.id === id ? match.b : match.a;
-      const oppWords: string[] = (opponent && Array.isArray(opponent.words) && opponent.words) || [];
+      const oppWords: string[] =
+        (opponent && Array.isArray(opponent.words) && opponent.words) || [];
       setOpponentWords(oppWords.slice(0, 5));
       setLog((l) => [`Matched vs opponent with words: ${oppWords.join(', ')}`, ...l]);
     } catch (err) {
@@ -188,9 +198,15 @@ export default function App() {
       // server previously returns { q, match, applied }
       const q = data.q || data.result;
       if (!q) {
-        setLog((l) => [`Round ${roundIndex}: resolve returned unexpected response: ${JSON.stringify(data)}`, ...l]);
+        setLog((l) => [
+          `Round ${roundIndex}: resolve returned unexpected response: ${JSON.stringify(data)}`,
+          ...l,
+        ]);
       } else {
-        setLog((l) => [`Round ${roundIndex}: answer='${answer}' elapsed=${elapsed?.toFixed(3)}s vs opp=${opponentTime.toFixed(3)}s -> ${q.kind} dmg=${q.damage ?? 0}`, ...l]);
+        setLog((l) => [
+          `Round ${roundIndex}: answer='${answer}' elapsed=${elapsed?.toFixed(3)}s vs opp=${opponentTime.toFixed(3)}s -> ${q.kind} dmg=${q.damage ?? 0}`,
+          ...l,
+        ]);
       }
     } catch (err) {
       setLog((l) => [`resolve error: ${(err as Error).message}`, ...l]);
@@ -204,7 +220,10 @@ export default function App() {
 
       <div>
         <label>Player name:</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} />
+        <input value={name} onChange={(e) => {
+          setName(e.target.value)
+          sessionStorage.setItem('name', e.target.value);
+        }} />
         <button onClick={createPlayer}>Create Player (local)</button>
       </div>
 

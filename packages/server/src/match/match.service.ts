@@ -1,15 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import {
-  resolveQTE,
-  pickRandomWord,
-  Player,
-  createPlayer,
-  applyDamage,
-  synchronizePlayers,
-  statsForLevel,
-} from '@atoyr/shared';
-import { Subject, Observable } from 'rxjs';
-import { filter as rxFilter, map as rxMap } from 'rxjs/operators';
+import { resolveQTE, Player, createPlayer, applyDamage, synchronizePlayers } from '@atoyr/shared';
+import type { Response } from 'express';
 
 type Match = {
   id: string;
@@ -23,12 +14,21 @@ type Match = {
 export class MatchService {
   private players = new Map<string, Player>();
   private matches = new Map<string, Match>();
-  // event stream for SSE (emits raw events { playerId?, event, data })
-  private events$ = new Subject<{ playerId?: string; event: string; data: any }>();
+  // Classic SSE: per-player set of open Response objects
+  private sseClients = new Map<string, Set<Response>>();
 
-  // public observable for controllers to subscribe and filter
-  public eventStream: Observable<{ playerId?: string; event: string; data: any }> =
-    this.events$.asObservable();
+  addSseClient(playerId: string, res: Response) {
+    if (!this.sseClients.has(playerId)) this.sseClients.set(playerId, new Set());
+    this.sseClients.get(playerId)!.add(res);
+  }
+
+  removeSseClient(playerId: string, res: Response) {
+    const set = this.sseClients.get(playerId);
+    if (set) {
+      set.delete(res);
+      if (set.size === 0) this.sseClients.delete(playerId);
+    }
+  }
 
   root() {
     return 'A Toy R server (NestJS prototype)';
@@ -73,7 +73,7 @@ export class MatchService {
 
     // No opponentId: try to join an existing pending match (one where `b` is null)
     const pending = Array.from(this.matches.values()).find((m) => m.b === null && m.a.id !== id);
-    console.info(pending);
+    console.info('pending', pending);
     if (pending) {
       // delegate to joinMatch for atomic/safe join logic
       return this.joinMatch(pending.id, id);
@@ -86,8 +86,17 @@ export class MatchService {
   }
 
   private emitEvent(playerId: string | undefined, event: string, data: any) {
-    console.info(playerId, event, data);
-    this.events$.next({ playerId, event, data });
+    if (!playerId) return;
+    const clients = this.sseClients.get(playerId);
+    if (!clients) return;
+    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const res of clients) {
+      try {
+        res.write(payload);
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   notifyMatchReady(match: Match) {
