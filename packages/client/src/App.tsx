@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import HpBar from './components/HpBar';
 
 type Player = {
   id: string;
@@ -412,62 +413,41 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1>A Toy R — Integrated Prototype</h1>
+      <h1 className="text-2xl font-semibold mb-4">A Toy R — Integrated Prototype</h1>
 
       {/* Turn indicator */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-        <div
-          style={{
-            fontWeight: '700',
-            fontSize: 20,
-            padding: '6px 12px',
-            background: '#222',
-            color: '#fff',
-            borderRadius: 8,
-          }}
-        >
+      <div className="flex justify-center mb-2">
+        <div className="font-bold text-lg px-3 py-1 bg-gray-900 text-white rounded-lg">
           Turn: {currentTurn !== null ? currentTurn : '-'}
         </div>
       </div>
 
       {/* HP display */}
-      <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>
-            {player?.name ?? player?.id ?? 'You'}
-          </div>
-          <div style={{ background: '#333', borderRadius: 8, padding: 4 }}>
-            <div
-              style={{
-                height: 24,
-                borderRadius: 6,
-                background: 'linear-gradient(90deg,#4caf50,#8bc34a)',
-                width: player ? `${Math.max(0, (player.hp / player.maxHp) * 100)}%` : '0%',
-                transition: 'width 300ms ease',
-              }}
-            />
-          </div>
-          <div style={{ marginTop: 6, fontSize: 14 }}>
+      <div className="flex gap-6 items-center mb-4">
+        <div className="flex-1">
+          <div className="font-semibold mb-1">{player?.name ?? player?.id ?? 'You'}</div>
+          <HpBar
+            value={player?.hp ?? 0}
+            max={player?.maxHp ?? 0}
+            fromClass="from-green-500"
+            toClass="to-lime-400"
+            aria-label="Your HP bar"
+          />
+          <div className="mt-2 text-sm">
             {player ? `${player.hp} / ${player.maxHp} HP` : 'No player'}
           </div>
         </div>
 
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 6 }}>
-            {opponent?.name ?? opponent?.id ?? 'Opponent'}
-          </div>
-          <div style={{ background: '#333', borderRadius: 8, padding: 4 }}>
-            <div
-              style={{
-                height: 24,
-                borderRadius: 6,
-                background: 'linear-gradient(90deg,#f44336,#ff7961)',
-                width: opponent ? `${Math.max(0, (opponent.hp / opponent.maxHp) * 100)}%` : '0%',
-                transition: 'width 300ms ease',
-              }}
-            />
-          </div>
-          <div style={{ marginTop: 6, fontSize: 14 }}>
+        <div className="flex-1">
+          <div className="font-semibold mb-1">{opponent?.name ?? opponent?.id ?? 'Opponent'}</div>
+          <HpBar
+            value={opponent?.hp ?? 0}
+            max={opponent?.maxHp ?? 0}
+            fromClass="from-red-500"
+            toClass="to-rose-400"
+            aria-label="Opponent HP bar"
+          />
+          <div className="mt-2 text-sm">
             {opponent ? `${opponent.hp} / ${opponent.maxHp} HP` : 'No opponent'}
           </div>
         </div>
@@ -479,8 +459,9 @@ export default function App() {
             e.preventDefault();
             createPlayer();
           }}
+          className="mb-4 space-y-2"
         >
-          <label>Player name:</label>
+          <label className="block text-sm font-medium text-gray-700">Player name:</label>
           <input
             ref={nameInputRef}
             value={name}
@@ -488,40 +469,52 @@ export default function App() {
               setName(e.target.value);
               sessionStorage.setItem('name', e.target.value);
             }}
+            className="mt-1 block w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <button type="submit">Create Player (local)</button>
+          <button
+            type="submit"
+            className="inline-flex items-center px-3 py-2 bg-primary text-white rounded"
+          >
+            Create Player (local)
+          </button>
         </form>
       )}
 
-      <div>
-        <label>My words (5):</label>
-        <ul>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">My words (5):</label>
+        <ol className="list-decimal list-inside mt-1">
           {words.map((w) => (
-            <li key={w}>{w}</li>
+            <li key={w} className="py-0.5">
+              {w}
+            </li>
           ))}
-        </ul>
+        </ol>
       </div>
 
-      <div>
-        <button ref={matchmakeButtonRef} onClick={matchmake}>
+      <div className="mb-4">
+        <button
+          ref={matchmakeButtonRef}
+          onClick={matchmake}
+          className="px-3 py-2 bg-accent border border-solid rounded"
+        >
           Matchmake (call server)
         </button>
-        <div>Opponent words: {opponentWords.join(', ')}</div>
+        <div className="mt-2 text-sm text-gray-700">Opponent words: {opponentWords.join(', ')}</div>
       </div>
 
       <div>
-        <div style={{ marginTop: 12 }}>
-          <div style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 14, color: '#666' }}>Target word:</div>
-            <h2 style={{ margin: '6px 0' }}>
+        <div className="mt-3">
+          <div className="mb-3">
+            <div className="text-sm text-gray-500">Target word:</div>
+            <h2 className="mt-1 mb-1 text-xl">
               {roundWord ?? (
-                <span style={{ color: '#999' }}>
+                <span className="text-gray-400">
                   {roundCompleted ? 'Round complete, waiting for next round...' : 'Waiting...'}
                 </span>
               )}
             </h2>
             {roundCompleted && lastResult && (
-              <div style={{ color: '#222', marginTop: 6 }}>Last result: {lastResult}</div>
+              <div className="text-gray-800 mt-2">Last result: {lastResult}</div>
             )}
           </div>
           <form
@@ -540,7 +533,7 @@ export default function App() {
               }
               onChange={(e) => setAnswerInput((e.target as HTMLInputElement).value)}
               disabled={waitingForResult}
-              style={{ padding: '8px', fontSize: 16, width: '100%', boxSizing: 'border-box' }}
+              className="w-full px-4 py-3 text-base border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </form>
         </div>
@@ -550,9 +543,7 @@ export default function App() {
         {log.map((l, i) => (
           <div key={i}>{l}</div>
         ))}
-        {waitingForResult && (
-          <div style={{ marginTop: 8, fontStyle: 'italic' }}>Waiting for opponent...</div>
-        )}
+        {waitingForResult && <div className="mt-2 italic">Waiting for opponent...</div>}
       </div>
     </div>
   );
