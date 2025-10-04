@@ -28,7 +28,8 @@ export default function App() {
   const [currentTurn, setCurrentTurn] = useState<number | null>(null);
   const [currentRole, setCurrentRole] = useState<string | null>(null);
   const [roundCompleted, setRoundCompleted] = useState(false);
-  const [lastResult, setLastResult] = useState<string | null>(null);
+  // Accumulate every turn result for the match (latest first)
+  const [lastResults, setLastResults] = useState<string[]>([]);
   const startRef = useRef<number | null>(null);
   const [answerInput, setAnswerInput] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,6 +44,17 @@ export default function App() {
 
   // keep a ref to EventSource so we can close it on unmount or player change
   const esRef = useRef<EventSource | null>(null);
+  // helper: pick up to 5 random words from an array in random order
+  function pickRandomFive(arr: string[] = []) {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = copy[i];
+      copy[i] = copy[j];
+      copy[j] = t;
+    }
+    return copy.slice(0, 5);
+  }
   function initSSE(forPlayerId: string) {
     if (!forPlayerId) return;
     // close previous
@@ -81,7 +93,7 @@ export default function App() {
             hp: Number(p.hp) || 0,
             attack: Number(p.attack) || 0,
             defense: Number(p.defense) || 0,
-            words: Array.isArray(p.words) ? p.words.slice(0, 5) : [],
+            words: Array.isArray(p.words) ? pickRandomFive(p.words) : [],
           };
         };
         const you: Player | null = sanitize(payload.you);
@@ -91,7 +103,7 @@ export default function App() {
         // set current turn if present
         if (payload.turn !== undefined && payload.turn !== null) setCurrentTurn(payload.turn);
         const oppWords: string[] = (opp && Array.isArray(opp.words) && opp.words) || [];
-        setOpponentWords(oppWords.slice(0, 5));
+        setOpponentWords(pickRandomFive(oppWords));
         // ensure input is enabled when the match becomes ready
         setWaitingForResult(false);
         setLog((l) => [`Match ready: opponent=${opp?.id ?? 'unknown'}`, ...l]);
@@ -103,12 +115,6 @@ export default function App() {
     es.addEventListener('turn_result', (ev: any) => {
       try {
         const payload = JSON.parse((ev as MessageEvent).data);
-        // Log raw JSON payload in the UI so it's easy to inspect turn_result contents
-        try {
-          setLog((l) => [`Raw turn_result: ${JSON.stringify(payload)}`, ...l]);
-        } catch (e) {
-          // ignore logging errors
-        }
         const q = payload.q;
         const applied = payload.applied;
         // show potential vs applied damage when present
@@ -131,7 +137,7 @@ export default function App() {
               hp: Number(p.hp) || 0,
               attack: Number(p.attack) || 0,
               defense: Number(p.defense) || 0,
-              words: Array.isArray(p.words) ? p.words.slice(0, 5) : [],
+              words: Array.isArray(p.words) ? pickRandomFive(p.words) : [],
             };
           };
           const a = sanitize(payload.match.a);
@@ -142,10 +148,12 @@ export default function App() {
           if (opponentObj) setOpponent(opponentObj as Player);
           const oppWords: string[] =
             (opponentObj && Array.isArray(opponentObj.words) && opponentObj.words) || [];
-          setOpponentWords(oppWords.slice(0, 5));
+          setOpponentWords(pickRandomFive(oppWords));
         }
         // clear waiting state and mark round completed; keep the target visible until next qte_start
         setWaitingForResult(false);
+        // clear the input after the turn result so next round starts with an empty field
+        setAnswerInput('');
         // clear any fallback waiting timer
         try {
           if (waitingTimerRef.current) {
@@ -155,9 +163,10 @@ export default function App() {
         } catch (e) {}
         setRoundCompleted(true);
         // if server sent a personalized message, prefer it; otherwise show generic
-        setLastResult(
-          payload.message ?? `${q?.kind ?? 'unknown'}${potentialStr} applied=${applied ?? 0}`,
-        );
+        // append the human-friendly result string to lastResults (latest first)
+        const resultStr =
+          payload.message ?? `${q?.kind ?? 'unknown'}${potentialStr} applied=${applied ?? 0}`;
+        setLastResults((s) => [resultStr, ...s]);
 
         // send ACK back to server indicating we've processed this turn_result
         (async () => {
@@ -179,11 +188,9 @@ export default function App() {
     es.addEventListener('qte_start', (ev: any) => {
       try {
         const payload = JSON.parse((ev as MessageEvent).data);
-        // payload: { matchId, turn, word, initiatorId }
+        // payload: { matchId, turn, word, initiatorId, role }
         setMatchId(payload.matchId);
-        // new round starting: clear completed flag and set new target
         setRoundCompleted(false);
-        // ensure any previous waiting state is cleared so input is enabled for the new round
         setWaitingForResult(false);
         try {
           if (waitingTimerRef.current) {
@@ -191,14 +198,13 @@ export default function App() {
             waitingTimerRef.current = null;
           }
         } catch (e) {}
-        setLastResult(null);
+        // Do not clear the accumulated lastResults here; keep full match history
         setRoundWord(payload.word);
         setRoundIndex((i) => i + 1);
         setCurrentTurn(payload.turn);
-        // set role for this player if provided by server ("attack" or "defend")
+        setAnswerInput('');
         if (payload.role) setCurrentRole(String(payload.role));
         startRef.current = performance.now();
-        // focus the input so the player can continue typing immediately
         setTimeout(() => {
           try {
             inputRef.current && inputRef.current.focus();
@@ -276,7 +282,8 @@ export default function App() {
       if (data && data.id) setPlayer(data as Player);
       setLog((l) => [`Created player ${name}`, ...l]);
       // if server returned player object with words, update local words
-      if (data && Array.isArray(data.words) && data.words.length) setWords(data.words.slice(0, 5));
+      if (data && Array.isArray(data.words) && data.words.length)
+        setWords(pickRandomFive(data.words));
       // hide the name input now that the player has been created locally
       setNameSubmitted(true);
       // focus the matchmake button so the user can start matchmaking immediately
@@ -328,7 +335,7 @@ export default function App() {
       const opponent = match.a?.id === id ? match.b : match.a;
       const oppWords: string[] =
         (opponent && Array.isArray(opponent.words) && opponent.words) || [];
-      setOpponentWords(oppWords.slice(0, 5));
+      setOpponentWords(pickRandomFive(oppWords));
       setLog((l) => [`Matched vs opponent with words: ${oppWords.join(', ')}`, ...l]);
     } catch (err) {
       setLog((l) => [`matchmake error: ${(err as Error).message}`, ...l]);
@@ -426,9 +433,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* HP display */}
-      <div className="flex gap-6 items-center mb-4">
-        <div className="flex-1">
+      {/* HP display + words aligned in same block */}
+      <div className="flex gap-6 items-start mb-6">
+        <div className="flex-1 bg-gray-50 p-3 rounded">
           <div className="font-semibold mb-1">{player?.name ?? player?.id ?? 'You'}</div>
           <HpBar
             value={player?.hp ?? 0}
@@ -437,12 +444,22 @@ export default function App() {
             toClass="to-lime-400"
             aria-label="Your HP bar"
           />
-          <div className="mt-2 text-sm">
+          <div className="mt-2 text-sm mb-3">
             {player ? `${player.hp} / ${player.maxHp} HP` : 'No player'}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">My words (5):</label>
+            <ol className="list-decimal list-inside mt-1">
+              {words.map((w) => (
+                <li key={`me-${w}`} className="py-0.5 text-sm">
+                  {w}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 bg-gray-50 p-3 rounded">
           <div className="font-semibold mb-1">{opponent?.name ?? opponent?.id ?? 'Opponent'}</div>
           <HpBar
             value={opponent?.hp ?? 0}
@@ -451,8 +468,29 @@ export default function App() {
             toClass="to-rose-400"
             aria-label="Opponent HP bar"
           />
-          <div className="mt-2 text-sm">
+          <div className="mt-2 text-sm mb-3">
             {opponent ? `${opponent.hp} / ${opponent.maxHp} HP` : 'No opponent'}
+          </div>
+          <div>
+            {!matchId && (
+              <div className="mb-2">
+                <button
+                  ref={matchmakeButtonRef}
+                  onClick={matchmake}
+                  className="px-3 py-2 bg-accent border border-solid rounded"
+                >
+                  Matchmake (call server)
+                </button>
+              </div>
+            )}
+            <label className="block text-sm font-medium text-gray-700">Opponent words:</label>
+            <ol className="list-disc list-inside mt-1">
+              {opponentWords.map((w) => (
+                <li key={`op-${w}`} className="py-0.5 text-sm text-gray-700">
+                  {w}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </div>
@@ -484,28 +522,6 @@ export default function App() {
         </form>
       )}
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">My words (5):</label>
-        <ol className="list-decimal list-inside mt-1">
-          {words.map((w) => (
-            <li key={w} className="py-0.5">
-              {w}
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="mb-4">
-        <button
-          ref={matchmakeButtonRef}
-          onClick={matchmake}
-          className="px-3 py-2 bg-accent border border-solid rounded"
-        >
-          Matchmake (call server)
-        </button>
-        <div className="mt-2 text-sm text-gray-700">Opponent words: {opponentWords.join(', ')}</div>
-      </div>
-
       <div>
         <div className="mt-3">
           <div className="mb-3">
@@ -517,9 +533,6 @@ export default function App() {
                 </span>
               )}
             </h2>
-            {roundCompleted && lastResult && (
-              <div className="text-gray-800 mt-2">Last result: {lastResult}</div>
-            )}
           </div>
           <form
             onSubmit={(e) => {
@@ -543,7 +556,20 @@ export default function App() {
         </div>
       </div>
 
-      <div className="log">
+      {lastResults.length > 0 && (
+        <div className="text-gray-800 mt-2">
+          <div className="font-medium">Last result: {lastResults[0]}</div>
+          {lastResults.length > 1 && (
+            <ol className="list-decimal list-inside mt-2 text-sm text-gray-700">
+              {lastResults.slice(1, 6).map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+
+      <div className="log" hidden>
         {log.map((l, i) => (
           <div key={i}>{l}</div>
         ))}
