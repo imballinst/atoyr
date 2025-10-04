@@ -303,11 +303,28 @@ export class MatchService {
     if (words.length === 0) throw new Error('no words available for QTE');
     const word = pickRandomWord(words);
 
-    const payload = { matchId: m.id, turn: m.turn, word, initiatorId };
+    // Determine attacker (initiator). If not provided, default to player A.
+    const attackerId = initiatorId ?? m.a.id;
 
-    // notify both players to start the QTE
-    if (m.a) this.emitEvent(m.a.id, 'qte_start', payload);
-    if (m.b) this.emitEvent(m.b.id, 'qte_start', payload);
+    // For each recipient, include their role for the upcoming turn
+    const payloadForA = {
+      matchId: m.id,
+      turn: m.turn,
+      word,
+      initiatorId: attackerId,
+      role: attackerId === m.a.id ? 'attack' : 'defend',
+    };
+    const payloadForB = {
+      matchId: m.id,
+      turn: m.turn,
+      word,
+      initiatorId: attackerId,
+      role: attackerId === m.b.id ? 'attack' : 'defend',
+    };
+
+    // notify both players to start the QTE with per-player role info
+    if (m.a) this.emitEvent(m.a.id, 'qte_start', payloadForA);
+    if (m.b) this.emitEvent(m.b.id, 'qte_start', payloadForB);
 
     // create a pending submissions entry for this turn
     const key = `${m.id}:${m.turn}`;
@@ -319,7 +336,7 @@ export class MatchService {
       word,
     });
 
-    return payload;
+    return { matchId: m.id, turn: m.turn, word, initiatorId: attackerId };
   }
 
   // Player submits their QTE time for the current turn. If both players have submitted, resolve the turn and notify both.

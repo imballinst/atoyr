@@ -26,6 +26,7 @@ export default function App() {
   const [waitingForResult, setWaitingForResult] = useState(false);
   const waitingTimerRef = useRef<number | null>(null);
   const [currentTurn, setCurrentTurn] = useState<number | null>(null);
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
   const [roundCompleted, setRoundCompleted] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const startRef = useRef<number | null>(null);
@@ -194,6 +195,8 @@ export default function App() {
         setRoundWord(payload.word);
         setRoundIndex((i) => i + 1);
         setCurrentTurn(payload.turn);
+        // set role for this player if provided by server ("attack" or "defend")
+        if (payload.role) setCurrentRole(String(payload.role));
         startRef.current = performance.now();
         // focus the input so the player can continue typing immediately
         setTimeout(() => {
@@ -419,6 +422,7 @@ export default function App() {
       <div className="flex justify-center mb-2">
         <div className="font-bold text-lg px-3 py-1 bg-gray-900 text-white rounded-lg">
           Turn: {currentTurn !== null ? currentTurn : '-'}
+          {currentRole ? `: ${currentRole[0].toUpperCase()}${currentRole.slice(1)}` : ''}
         </div>
       </div>
 

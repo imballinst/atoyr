@@ -60,7 +60,8 @@ export function resolveQTE(
     // tie handling
     if (diff === 0) {
       if (tieBreaker === 'attacker') return makeDamage('hit', baseDamage * 1.0);
-      if (tieBreaker === 'defender') return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
+      if (tieBreaker === 'defender')
+        return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
       if (tieBreaker === 'none') return { kind: 'none' };
       // random
       if (Math.random() < 0.5) return makeDamage('hit', baseDamage * 1.0);
@@ -103,12 +104,10 @@ export function resolveQTE(
   const attackerAcc = calcAccuracy(attackerText ?? null);
   const defenderAcc = calcAccuracy(defenderText ?? null);
 
-  // attacker missing text -> miss
-  if (!attackerText) return { kind: 'miss' };
-  // defender missing -> attacker critical
-  if (!defenderText)
-    // defender missing -> critical at 1.5x base damage (do not scale further with accuracy)
-    return makeDamage('critical', baseDamage * 1.5);
+  // If both players failed to provide text, treat as a miss (no damage).
+  if (!attackerText && !defenderText) return { kind: 'miss' };
+  // If defender missing but attacker provided text, attacker gets a critical hit.
+  if (!defenderText) return makeDamage('critical', baseDamage * 1.5);
 
   const diff = attackerTime !== null && defenderTime !== null ? attackerTime - defenderTime : 0;
 
@@ -147,12 +146,14 @@ export function resolveQTE(
   // Accuracies effectively equal -> decide by timing
   if (diff < -0.3) return makeDamage('critical', baseDamage * 1.5 * timeFactor);
   if (diff === 0) {
-    if (tieBreaker === 'attacker') return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
+    if (tieBreaker === 'attacker')
+      return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
     if (tieBreaker === 'defender')
       return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
     if (tieBreaker === 'none') return { kind: 'none' };
     // random
-    if (Math.random() < 0.5) return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
+    if (Math.random() < 0.5)
+      return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
     return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
   }
   if (diff < 0) return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);

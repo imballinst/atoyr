@@ -46,3 +46,11 @@ test('text-based critical when defender misses (null text)', () => {
   expect(r.kind).toBe('critical');
   expect((r as any).damage).toBe(15);
 });
+
+test("attacker empty string vs defender correct 'banana' -> defender parry", () => {
+  const expected = 'banana';
+  const r = resolveQTE({ time: 0.5, text: '' }, { time: 0.4, text: 'banana' }, expected);
+  expect(r.kind).toBe('parry');
+  expect(typeof (r as any).damage).toBe('number');
+  expect((r as any).damage).toBe(7);
+});
