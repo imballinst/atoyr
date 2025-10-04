@@ -86,8 +86,10 @@ export default function App() {
         const payload = JSON.parse((ev as MessageEvent).data);
         const q = payload.q;
         const applied = payload.applied;
+        // log both the generic result and any personalized message
         setLog((l) => [
           `Turn result: ${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`,
+          ...(payload.message ? [`Message: ${payload.message}`] : []),
           ...l,
         ]);
         // update local match/opponent state if present
@@ -111,7 +113,10 @@ export default function App() {
           }
         } catch (e) {}
         setRoundCompleted(true);
-        setLastResult(`${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`);
+        // if server sent a personalized message, prefer it; otherwise show generic
+        setLastResult(
+          payload.message ?? `${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`,
+        );
 
         // send ACK back to server indicating we've processed this turn_result
         (async () => {
@@ -255,15 +260,7 @@ export default function App() {
     }
   }
 
-  function startRound() {
-    if (opponentWords.length === 0) return;
-    const w = opponentWords[Math.floor(Math.random() * opponentWords.length)];
-    setRoundWord(w);
-    setRoundIndex((i) => i + 1);
-    startRef.current = performance.now();
-    // ensure waiting state cleared when user starts a local round
-    setWaitingForResult(false);
-  }
+  // local manual round start removed: QTEs are server-driven via SSE
 
   async function submitAnswer(answer: string) {
     const end = performance.now();
@@ -279,7 +276,7 @@ export default function App() {
       const res = await fetch(`/api/match/${encodeURIComponent(matchId)}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: playerId || name, time: elapsed }),
+        body: JSON.stringify({ playerId: playerId || name, time: elapsed, text: answer }),
       });
       const data = await res.json();
       if (data && data.status === 'pending') {
@@ -432,9 +429,6 @@ export default function App() {
       </div>
 
       <div>
-        <button onClick={startRound} disabled={!opponentWords.length || !!roundWord}>
-          Start QTE Round
-        </button>
         <div style={{ marginTop: 12 }}>
           <div style={{ marginBottom: 6 }}>
             <div style={{ fontSize: 14, color: '#666' }}>Target word:</div>

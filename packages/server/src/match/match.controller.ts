@@ -66,9 +66,17 @@ export class MatchController {
   }
 
   @Post('match/:id/submit')
-  submitQTE(@Param('id') id: string, @Body() body: { playerId: string; time?: number | null }) {
-    const { playerId, time } = body;
-    return this.matchService.submitQTE(id, playerId, typeof time === 'number' ? time : null);
+  submitQTE(
+    @Param('id') id: string,
+    @Body() body: { playerId: string; time?: number | null; text?: string | null },
+  ) {
+    const { playerId, time, text } = body;
+    return this.matchService.submitQTE(
+      id,
+      playerId,
+      typeof time === 'number' ? time : null,
+      text ?? null,
+    );
   }
 
   @Post('events/:playerId/ack')

@@ -15,23 +15,86 @@ export function pickRandomWord(words: string[]): string {
 export function resolveQTE(
   attackerTime: number | null,
   defenderTime: number | null,
+  attackerText?: string | null,
+  defenderText?: string | null,
+  expectedWord?: string | null,
   baseDamage = 10,
 ): QTEResult {
-  // attackerTime or defenderTime null means not completed
-  if (attackerTime === null) return { kind: 'miss' };
-  if (defenderTime === null) return { kind: 'critical', damage: baseDamage * 2 };
+  // If no text args are provided, preserve the original timing-only behavior
+  const textArgsProvided =
+    typeof attackerText !== 'undefined' ||
+    typeof defenderText !== 'undefined' ||
+    typeof expectedWord !== 'undefined';
+  if (!textArgsProvided) {
+    // attackerTime or defenderTime null means not completed
+    if (attackerTime === null) return { kind: 'miss' };
+    if (defenderTime === null) return { kind: 'critical', damage: baseDamage * 2 };
 
-  const diff = attackerTime - defenderTime;
-  const abs = Math.abs(diff);
+    const diff = attackerTime - defenderTime;
+    const abs = Math.abs(diff);
 
-  // way faster: difference less than -0.3s
-  if (diff < -0.3) return { kind: 'critical', damage: Math.round(baseDamage * 1.75) };
-  // faster: attacker faster than defender
-  if (diff < 0) return { kind: 'hit', damage: Math.round(baseDamage * 1.0) };
-  // slower but defender faster
-  if (diff > 0 && diff < 0.3) return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
+    // way faster: difference less than -0.3s
+    if (diff < -0.3) return { kind: 'critical', damage: Math.round(baseDamage * 1.75) };
+    // faster: attacker faster than defender
+    if (diff < 0) return { kind: 'hit', damage: Math.round(baseDamage * 1.0) };
+    // slower but defender faster
+    if (diff > 0 && diff < 0.3) return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
+    // way slower: defender parry
+    if (diff >= 0.3) return { kind: 'parry', damage: Math.round(baseDamage * 1.0) };
+
+    return { kind: 'none' };
+  }
+  // helper: levenshtein distance
+  function levenshtein(a: string, b: string) {
+    if (a === b) return 0;
+    const m = a.length;
+    const n = b.length;
+    const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      }
+    }
+    return dp[m][n];
+  }
+
+  const word = typeof expectedWord === 'string' ? expectedWord : '';
+
+  const calcAccuracy = (text?: string | null) => {
+    if (!text || word.length === 0) return 0;
+    const dist = levenshtein(text.toLowerCase(), word.toLowerCase());
+    return Math.max(0, 1 - dist / Math.max(1, word.length));
+  };
+
+  const attackerAcc = calcAccuracy(attackerText ?? null);
+  const defenderAcc = calcAccuracy(defenderText ?? null);
+
+  // attacker missing text -> miss
+  if (!attackerText) return { kind: 'miss' };
+  // defender missing -> attacker critical
+  if (!defenderText)
+    return { kind: 'critical', damage: Math.round(baseDamage * (1 + attackerAcc) * 1.5) };
+
+  const diff = attackerTime !== null && defenderTime !== null ? attackerTime - defenderTime : 0;
+
+  // defender dominated (more accurate and sufficiently faster): parry
+  if (defenderAcc > attackerAcc + 0.2 && diff >= 0.25) {
+    return { kind: 'parry', damage: Math.round(baseDamage * (0.5 + defenderAcc)) };
+  }
+
+  // way faster: difference less than -0.3s -> critical
+  if (diff < -0.3)
+    return { kind: 'critical', damage: Math.round(baseDamage * (1 + attackerAcc) * 1.75) };
+  // faster than defender -> hit (damage scales with accuracy)
+  if (diff < 0) return { kind: 'hit', damage: Math.round(baseDamage * (0.8 + attackerAcc)) };
+  // slightly slower -> block (reduced damage scaled by accuracy)
+  if (diff > 0 && diff < 0.3)
+    return { kind: 'block', damage: Math.round(baseDamage * 0.25 * (0.5 + attackerAcc)) };
   // way slower: defender parry
-  if (diff >= 0.3) return { kind: 'parry', damage: Math.round(baseDamage * 1.0) };
+  if (diff >= 0.3) return { kind: 'parry', damage: Math.round(baseDamage * (0.5 + defenderAcc)) };
 
   return { kind: 'none' };
 }

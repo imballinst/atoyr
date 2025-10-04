@@ -24,7 +24,13 @@ export class MatchService {
   // pending submissions keyed by `${matchId}:${turn}`
   private pendingSubmissions = new Map<
     string,
-    { turn: number; initiatorId?: string; times: Map<string, number> }
+    {
+      turn: number;
+      initiatorId?: string;
+      times: Map<string, number>;
+      texts: Map<string, string | null>;
+      word?: string;
+    }
   >();
   // Classic SSE: per-player set of open Response objects
   private sseClients = new Map<string, Set<Response>>();
@@ -174,15 +180,23 @@ export class MatchService {
     }
   }
 
-  notifyTurn(match: Match, q: any, applied: number, turnNumber?: number) {
+  notifyTurn(
+    match: Match,
+    q: any,
+    applied: number,
+    turnNumber?: number,
+    messages?: Record<string, string>,
+  ) {
     // send turn result to both players (including attacker and defender)
     if (!match) return;
     const a = match.a;
     const b = match.b;
     const t = typeof turnNumber === 'number' ? turnNumber : match.turn;
-    const payload = { matchId: match.id, q, applied, match, turn: t };
-    if (a) this.emitEvent(a.id, 'turn_result', payload);
-    if (b) this.emitEvent(b.id, 'turn_result', payload);
+    const basePayload = { matchId: match.id, q, applied, match, turn: t };
+    if (a)
+      this.emitEvent(a.id, 'turn_result', { ...basePayload, message: messages?.[a.id] ?? null });
+    if (b)
+      this.emitEvent(b.id, 'turn_result', { ...basePayload, message: messages?.[b.id] ?? null });
 
     // set up pending ACKs for this turn: wait for both players to ACK before starting next QTE
     if (a && b) {
@@ -222,13 +236,19 @@ export class MatchService {
 
     // create a pending submissions entry for this turn
     const key = `${m.id}:${m.turn}`;
-    this.pendingSubmissions.set(key, { turn: m.turn, initiatorId, times: new Map() });
+    this.pendingSubmissions.set(key, {
+      turn: m.turn,
+      initiatorId,
+      times: new Map(),
+      texts: new Map(),
+      word,
+    });
 
     return payload;
   }
 
   // Player submits their QTE time for the current turn. If both players have submitted, resolve the turn and notify both.
-  submitQTE(matchId: string, playerId: string, time: number | null) {
+  submitQTE(matchId: string, playerId: string, time: number | null, text?: string | null) {
     const m = this.matches.get(matchId);
     if (!m) throw new Error('match not found');
     if (!m.a || !m.b) throw new Error('match does not have two players');
@@ -237,13 +257,14 @@ export class MatchService {
     let entry = this.pendingSubmissions.get(key);
     if (!entry) {
       // No QTE started for this turn yet
-      entry = { turn: m.turn, initiatorId: undefined, times: new Map() };
+      entry = { turn: m.turn, initiatorId: undefined, times: new Map(), texts: new Map() };
       this.pendingSubmissions.set(key, entry);
     }
 
     // store the player's submission (time may be null meaning miss)
     if (typeof time === 'number') entry.times.set(playerId, time);
     else entry.times.set(playerId, NaN);
+    entry.texts.set(playerId, text ?? null);
 
     // If both players haven't submitted yet, return pending
     const players = [m.a.id, m.b.id];
@@ -268,31 +289,60 @@ export class MatchService {
 
     const attackerTime = Number(entry.times.get(attackerId));
     const defenderTime = Number(entry.times.get(defenderId));
+    const attackerText = entry.texts.get(attackerId) ?? null;
+    const defenderText = entry.texts.get(defenderId) ?? null;
 
     const q = resolveQTE(
       Number.isFinite(attackerTime) ? attackerTime : null,
       Number.isFinite(defenderTime) ? defenderTime : null,
+      attackerText,
+      defenderText,
+      entry.word ?? null,
       attacker.attack,
     );
 
     let applied = 0;
+    // craft personalized messages for both players and server logs
+    let msgA = '';
+    let msgB = '';
     if (q.kind === 'miss') {
+      msgA = attacker.id === m.a.id ? 'You missed' : 'Your attack missed';
+      msgB = attacker.id === m.a.id ? 'Your attack missed' : 'You missed';
       m.logs.unshift(`${attacker.id} missed`);
     } else if (q.kind === 'critical' || q.kind === 'hit') {
       applied = applyDamage(defender, q.damage);
+      msgA = attacker.id === m.a.id ? `You deal damage: ${applied}` : `You take damage: ${applied}`;
+      msgB = attacker.id === m.a.id ? `You take damage: ${applied}` : `You deal damage: ${applied}`;
       m.logs.unshift(`${attacker.id} hit ${defender.id} for ${applied} (${q.kind})`);
     } else if (q.kind === 'block') {
       const partial = Math.round(q.damage * 0.25);
       applied = applyDamage(defender, partial);
+      msgA =
+        attacker.id === m.a.id
+          ? `You deal partial damage: ${applied}`
+          : `You take partial damage: ${applied}`;
+      msgB =
+        attacker.id === m.a.id
+          ? `You take partial damage: ${applied}`
+          : `You deal partial damage: ${applied}`;
       m.logs.unshift(`${attacker.id} partially hit ${defender.id} for ${applied}`);
     } else if (q.kind === 'parry') {
       applied = applyDamage(attacker, q.damage);
+      msgA =
+        attacker.id === m.a.id
+          ? `Your attack was parried. You take ${applied}`
+          : `You parried and countered for ${applied}`;
+      msgB =
+        attacker.id === m.a.id
+          ? `You parried and countered for ${applied}`
+          : `Your attack was parried. You take ${applied}`;
       m.logs.unshift(`${defender.id} parried and countered ${attacker.id} for ${applied}`);
     }
 
     // notify subscribers about the completed turn first (do not increment m.turn yet)
     try {
-      this.notifyTurn(m, q, applied);
+      // notifyTurn will send the q and applied; include per-player messages as part of the payload
+      this.notifyTurn(m, q, applied, undefined, { [m.a.id]: msgA, [m.b.id!]: msgB });
     } catch (e) {
       // ignore notify errors
     }
@@ -395,6 +445,9 @@ export class MatchService {
     const q = resolveQTE(
       typeof attackerTime === 'number' ? attackerTime : null,
       typeof defenderTime === 'number' ? defenderTime : null,
+      undefined,
+      undefined,
+      undefined,
       attacker.attack,
     );
 
