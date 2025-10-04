@@ -6,7 +6,7 @@ test('attacker misses when null', () => {
 });
 
 test('defender misses -> attacker critical', () => {
-  expect(resolveQTE(0.5, null)).toEqual({ kind: 'critical', damage: 20 });
+  expect(resolveQTE(0.5, null)).toEqual({ kind: 'critical', damage: 15 });
 });
 
 test('attacker way faster -> critical', () => {

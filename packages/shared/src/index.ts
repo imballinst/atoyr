@@ -20,6 +20,10 @@ export function resolveQTE(
   expectedWord?: string | null,
   baseDamage = 10,
 ): QTEResult {
+  const makeDamage = (kind: Exclude<QTEResult['kind'], 'miss' | 'none'>, raw: number) => {
+    const dmg = Math.round(raw);
+    return { kind, damage: Math.max(1, dmg) } as any;
+  };
   // If no text args are provided, preserve the original timing-only behavior
   const textArgsProvided =
     typeof attackerText !== 'undefined' ||
@@ -28,15 +32,16 @@ export function resolveQTE(
   if (!textArgsProvided) {
     // attackerTime or defenderTime null means not completed
     if (attackerTime === null) return { kind: 'miss' };
-    if (defenderTime === null) return { kind: 'critical', damage: baseDamage * 2 };
+    // defender did not complete -> treat as critical at 1.5x base damage
+    if (defenderTime === null) return makeDamage('critical', baseDamage * 1.5);
 
     const diff = attackerTime - defenderTime;
     const abs = Math.abs(diff);
 
-    // way faster: difference less than -0.3s
-    if (diff < -0.3) return { kind: 'critical', damage: Math.round(baseDamage * 1.75) };
+    // way faster: difference less than -0.3s -> critical (1.5x)
+    if (diff < -0.3) return makeDamage('critical', baseDamage * 1.5);
     // faster: attacker faster than defender
-    if (diff < 0) return { kind: 'hit', damage: Math.round(baseDamage * 1.0) };
+    if (diff < 0) return makeDamage('hit', baseDamage * 1.0);
     // slower but defender faster
     if (diff > 0 && diff < 0.3) return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
     // way slower: defender parry
@@ -76,25 +81,50 @@ export function resolveQTE(
   if (!attackerText) return { kind: 'miss' };
   // defender missing -> attacker critical
   if (!defenderText)
-    return { kind: 'critical', damage: Math.round(baseDamage * (1 + attackerAcc) * 1.5) };
+    // defender missing -> critical at 1.5x base damage (do not scale further with accuracy)
+    return makeDamage('critical', baseDamage * 1.5);
 
   const diff = attackerTime !== null && defenderTime !== null ? attackerTime - defenderTime : 0;
 
-  // defender dominated (more accurate and sufficiently faster): parry
+  // Accuracy-first rules:
+  // 1) If defender is significantly more accurate and faster, parry.
   if (defenderAcc > attackerAcc + 0.2 && diff >= 0.25) {
-    return { kind: 'parry', damage: Math.round(baseDamage * (0.5 + defenderAcc)) };
+    return makeDamage('parry', baseDamage * (0.5 + defenderAcc));
   }
 
-  // way faster: difference less than -0.3s -> critical
-  if (diff < -0.3)
-    return { kind: 'critical', damage: Math.round(baseDamage * (1 + attackerAcc) * 1.75) };
-  // faster than defender -> hit (damage scales with accuracy)
-  if (diff < 0) return { kind: 'hit', damage: Math.round(baseDamage * (0.8 + attackerAcc)) };
-  // slightly slower -> block (reduced damage scaled by accuracy)
+  // compute a time factor from relative submission times: attackerTime proportion of total
+  // smaller attackerTime means more time remaining -> larger factor. Clamp to [0.1, 1].
+  let timeFactor = 1;
+  if (attackerTime !== null && defenderTime !== null && attackerTime + defenderTime > 0) {
+    timeFactor = 1 - attackerTime / (attackerTime + defenderTime);
+    timeFactor = Math.max(0.1, Math.min(1, timeFactor));
+  }
+
+  const ACC_CRIT_DELTA = 0.25; // if attacker accuracy exceeds defender by this much -> critical
+
+  // If attacker is substantially more accurate -> attacker wins by accuracy
+  if (attackerAcc > defenderAcc + 0.02) {
+    // critical if accuracy advantage is large
+    if (attackerAcc - defenderAcc >= ACC_CRIT_DELTA || diff < -0.3) {
+      // critical scaled by accuracy and time remaining
+      const raw = baseDamage * 1.5 * (0.8 + attackerAcc) * timeFactor;
+      return makeDamage('critical', raw);
+    }
+    // normal hit: scale by accuracy and time remaining
+    const raw = baseDamage * (0.8 + attackerAcc) * timeFactor;
+    return makeDamage('hit', raw);
+  }
+
+  // If accuracies are very close, fall back to timing-driven outcomes but still apply timeFactor
+  // way faster -> critical
+  if (diff < -0.3) return makeDamage('critical', baseDamage * 1.5 * timeFactor);
+  // faster -> hit
+  if (diff < 0) return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
+  // slightly slower -> block
   if (diff > 0 && diff < 0.3)
-    return { kind: 'block', damage: Math.round(baseDamage * 0.25 * (0.5 + attackerAcc)) };
-  // way slower: defender parry
-  if (diff >= 0.3) return { kind: 'parry', damage: Math.round(baseDamage * (0.5 + defenderAcc)) };
+    return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
+  // way slower -> parry
+  if (diff >= 0.3) return makeDamage('parry', baseDamage * (0.5 + defenderAcc) * timeFactor);
 
   return { kind: 'none' };
 }
@@ -150,8 +180,12 @@ export function synchronizePlayers(weak: Player, strong: Player) {
 }
 
 export function applyDamage(target: Player, rawDamage: number) {
-  const mitigated = Math.max(0, Math.round(rawDamage - target.defense));
-  target.hp = Math.max(0, target.hp - mitigated);
+  // Defensive coercion: ensure numeric values to avoid NaN if fields were corrupted
+  const dmg = Number(rawDamage) || 0;
+  const defense = Number(target.defense) || 0;
+  const currentHp = Number(target.hp) || 0;
+  const mitigated = Math.max(0, Math.round(dmg - defense));
+  target.hp = Math.max(0, currentHp - mitigated);
   return mitigated;
 }
 

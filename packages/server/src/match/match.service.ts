@@ -35,12 +35,15 @@ export class MatchService {
   // Classic SSE: per-player set of open Response objects
   private sseClients = new Map<string, Set<Response>>();
   // pending SSE events for players who are not currently connected
-  private pendingEvents = new Map<string, Array<{ event: string; data: any }>>();
+  // store either raw data or a pre-serialized JSON string under `dataStr`
+  private pendingEvents = new Map<string, Array<{ event: string; data?: any; dataStr?: string }>>();
   // pending acknowledgements for completed turns: matchId -> { turn, awaiting:Set<playerId>, timer }
   private pendingAcks = new Map<
     string,
     { turn: number; awaiting: Set<string>; timer?: NodeJS.Timeout }
   >();
+  // store the last emitted SSE payload per player for debugging
+  private lastEmitted = new Map<string, { event: string; json: string }>();
 
   addSseClient(playerId: string, res: Response) {
     if (!this.sseClients.has(playerId)) this.sseClients.set(playerId, new Set());
@@ -48,9 +51,10 @@ export class MatchService {
     // flush any pending events for this player to the newly connected client
     const pending = this.pendingEvents.get(playerId);
     if (pending && pending.length) {
-      const write = (r: Response, ev: { event: string; data: any }) => {
+      const write = (r: Response, ev: { event: string; data?: any; dataStr?: string }) => {
         try {
-          const payload = `event: ${ev.event}\ndata: ${JSON.stringify(ev.data)}\n\n`;
+          const json = typeof ev.dataStr === 'string' ? ev.dataStr : JSON.stringify(ev.data);
+          const payload = `event: ${ev.event}\ndata: ${json}\n\n`;
           r.write(payload);
         } catch (e) {}
       };
@@ -62,6 +66,31 @@ export class MatchService {
       // once flushed to this connection, drop pending events for the player
       this.pendingEvents.delete(playerId);
     }
+  }
+
+  // Ensure player/match objects sent over SSE are plain POJOs with numeric fields
+  private sanitizePlayer(p: Player | null | undefined) {
+    if (!p) return null;
+    return {
+      id: p.id,
+      name: p.name,
+      level: Number(p.level) || 0,
+      maxHp: Number(p.maxHp) || 0,
+      hp: Number(p.hp) || 0,
+      attack: Number(p.attack) || 0,
+      defense: Number(p.defense) || 0,
+      words: Array.isArray(p.words) ? p.words.slice() : [],
+    } as Player;
+  }
+
+  private sanitizeMatch(m: Match) {
+    return {
+      id: m.id,
+      turn: m.turn,
+      logs: Array.isArray(m.logs) ? m.logs.slice() : [],
+      a: this.sanitizePlayer(m.a) as Player,
+      b: this.sanitizePlayer(m.b) as Player | null,
+    } as Match;
   }
 
   removeSseClient(playerId: string, res: Response) {
@@ -136,11 +165,20 @@ export class MatchService {
   private emitEvent(playerId: string | undefined, event: string, data: any) {
     if (!playerId) return;
     const clients = this.sseClients.get(playerId);
-    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    const json = JSON.stringify(data);
+    const payload = `event: ${event}\ndata: ${json}\n\n`;
+    // debug: record last emitted payload and log summary
+    try {
+      this.lastEmitted.set(String(playerId), { event, json });
+      // lightweight logging; can be toggled by inspecting server logs
+      // eslint-disable-next-line no-console
+      console.debug(`SSE emit -> player=${playerId} event=${event} jsonLen=${json.length}`);
+    } catch (e) {}
     if (!clients || clients.size === 0) {
       // queue the event for delivery when the player reconnects
       if (!this.pendingEvents.has(playerId)) this.pendingEvents.set(playerId, []);
-      this.pendingEvents.get(playerId)!.push({ event, data });
+      // store the pre-serialized JSON so future mutations to `data` don't change what's sent
+      this.pendingEvents.get(playerId)!.push({ event, dataStr: json });
       return;
     }
 
@@ -148,7 +186,8 @@ export class MatchService {
     const queued = this.pendingEvents.get(playerId);
     if (queued && queued.length) {
       for (const ev of queued) {
-        const queuedPayload = `event: ${ev.event}\ndata: ${JSON.stringify(ev.data)}\n\n`;
+        const qjson = typeof ev.dataStr === 'string' ? ev.dataStr : JSON.stringify(ev.data);
+        const queuedPayload = `event: ${ev.event}\ndata: ${qjson}\n\n`;
         for (const res of clients) {
           try {
             res.write(queuedPayload);
@@ -169,14 +208,27 @@ export class MatchService {
     }
   }
 
+  // debug helper: return last emitted payload for a player if present
+  getLastEmitted(playerId: string) {
+    return this.lastEmitted.get(playerId) || null;
+  }
+
   notifyMatchReady(match: Match) {
     const a = match.a;
     const b = match.b;
     if (a) {
-      this.emitEvent(a.id, 'match_ready', { matchId: match.id, you: a, opponent: b });
+      this.emitEvent(a.id, 'match_ready', {
+        matchId: match.id,
+        you: this.sanitizePlayer(a),
+        opponent: this.sanitizePlayer(b),
+      });
     }
     if (b) {
-      this.emitEvent(b.id, 'match_ready', { matchId: match.id, you: b, opponent: a });
+      this.emitEvent(b.id, 'match_ready', {
+        matchId: match.id,
+        you: this.sanitizePlayer(b),
+        opponent: this.sanitizePlayer(a),
+      });
     }
   }
 
@@ -192,7 +244,30 @@ export class MatchService {
     const a = match.a;
     const b = match.b;
     const t = typeof turnNumber === 'number' ? turnNumber : match.turn;
-    const basePayload = { matchId: match.id, q, applied, match, turn: t };
+    // sanitize q to ensure numeric damage is present for non-miss kinds
+    const sanitizeQ = (qobj: any) => {
+      if (!qobj || typeof qobj !== 'object') return qobj;
+      const kind = qobj.kind;
+      if (kind === 'hit' || kind === 'critical' || kind === 'parry' || kind === 'block') {
+        const raw = Number(qobj.damage);
+        const dmg = Number.isFinite(raw) ? Math.round(raw) : 0;
+        // ensure at least 1 for non-miss outcomes to avoid zero/NaN damage in logs
+        const potential = Math.max(0, dmg);
+        const damage = Math.max(1, dmg);
+        return { kind, damage, potential };
+      }
+      return { kind: kind ?? qobj.kind };
+    };
+
+    const safeQ = sanitizeQ(q);
+
+    const basePayload = {
+      matchId: match.id,
+      q: safeQ,
+      applied,
+      match: this.sanitizeMatch(match),
+      turn: t,
+    };
     if (a)
       this.emitEvent(a.id, 'turn_result', { ...basePayload, message: messages?.[a.id] ?? null });
     if (b)
@@ -310,12 +385,13 @@ export class MatchService {
       msgB = attacker.id === m.a.id ? 'Your attack missed' : 'You missed';
       m.logs.unshift(`${attacker.id} missed`);
     } else if (q.kind === 'critical' || q.kind === 'hit') {
-      applied = applyDamage(defender, q.damage);
+      const dmg = Number((q as any).damage) || 0;
+      applied = applyDamage(defender, dmg);
       msgA = attacker.id === m.a.id ? `You deal damage: ${applied}` : `You take damage: ${applied}`;
       msgB = attacker.id === m.a.id ? `You take damage: ${applied}` : `You deal damage: ${applied}`;
       m.logs.unshift(`${attacker.id} hit ${defender.id} for ${applied} (${q.kind})`);
     } else if (q.kind === 'block') {
-      const partial = Math.round(q.damage * 0.25);
+      const partial = Math.round((Number((q as any).damage) || 0) * 0.25);
       applied = applyDamage(defender, partial);
       msgA =
         attacker.id === m.a.id
@@ -327,7 +403,8 @@ export class MatchService {
           : `You deal partial damage: ${applied}`;
       m.logs.unshift(`${attacker.id} partially hit ${defender.id} for ${applied}`);
     } else if (q.kind === 'parry') {
-      applied = applyDamage(attacker, q.damage);
+      const dmgParry = Number((q as any).damage) || 0;
+      applied = applyDamage(attacker, dmgParry);
       msgA =
         attacker.id === m.a.id
           ? `Your attack was parried. You take ${applied}`

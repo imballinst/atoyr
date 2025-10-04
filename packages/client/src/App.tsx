@@ -30,6 +30,9 @@ export default function App() {
   const startRef = useRef<number | null>(null);
   const [answerInput, setAnswerInput] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const matchmakeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [nameSubmitted, setNameSubmitted] = useState(false);
 
   useEffect(() => {
     const name = sessionStorage.getItem('name');
@@ -65,8 +68,22 @@ export default function App() {
       try {
         const payload = JSON.parse((ev as MessageEvent).data);
         setMatchId(payload.matchId);
-        const you: Player | null = payload.you || null;
-        const opp: Player | null = payload.opponent || null;
+        // sanitize incoming players to ensure numeric fields are numbers
+        const sanitize = (p: any): Player | null => {
+          if (!p) return null;
+          return {
+            id: p.id,
+            name: p.name,
+            level: Number(p.level) || 0,
+            maxHp: Number(p.maxHp) || 0,
+            hp: Number(p.hp) || 0,
+            attack: Number(p.attack) || 0,
+            defense: Number(p.defense) || 0,
+            words: Array.isArray(p.words) ? p.words.slice(0, 5) : [],
+          };
+        };
+        const you: Player | null = sanitize(payload.you);
+        const opp: Player | null = sanitize(payload.opponent);
         if (you) setPlayer(you);
         if (opp) setOpponent(opp);
         // set current turn if present
@@ -84,21 +101,43 @@ export default function App() {
     es.addEventListener('turn_result', (ev: any) => {
       try {
         const payload = JSON.parse((ev as MessageEvent).data);
+        // Log raw JSON payload in the UI so it's easy to inspect turn_result contents
+        try {
+          setLog((l) => [`Raw turn_result: ${JSON.stringify(payload)}`, ...l]);
+        } catch (e) {
+          // ignore logging errors
+        }
         const q = payload.q;
         const applied = payload.applied;
-        // log both the generic result and any personalized message
+        // show potential vs applied damage when present
+        const potential = q?.potential ?? q?.damage ?? null;
+        const potentialStr = potential !== null ? ` potential=${potential}` : '';
         setLog((l) => [
-          `Turn result: ${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`,
+          `Turn result: ${q?.kind ?? 'unknown'}${potentialStr} applied=${applied ?? 0}`,
           ...(payload.message ? [`Message: ${payload.message}`] : []),
           ...l,
         ]);
         // update local match/opponent state if present
         if (payload.match) {
-          const me = payload.match.a?.id === forPlayerId ? payload.match.a : payload.match.b;
-          const opponentObj =
-            payload.match.a?.id === forPlayerId ? payload.match.b : payload.match.a;
+          const sanitize = (p: any): Player | null => {
+            if (!p) return null;
+            return {
+              id: p.id,
+              name: p.name,
+              level: Number(p.level) || 0,
+              maxHp: Number(p.maxHp) || 0,
+              hp: Number(p.hp) || 0,
+              attack: Number(p.attack) || 0,
+              defense: Number(p.defense) || 0,
+              words: Array.isArray(p.words) ? p.words.slice(0, 5) : [],
+            };
+          };
+          const a = sanitize(payload.match.a);
+          const b = sanitize(payload.match.b);
+          const me = a?.id === forPlayerId ? a : b;
+          const opponentObj = a?.id === forPlayerId ? b : a;
           if (me) setPlayer(me);
-          if (opponentObj) setOpponent(opponentObj);
+          if (opponentObj) setOpponent(opponentObj as Player);
           const oppWords: string[] =
             (opponentObj && Array.isArray(opponentObj.words) && opponentObj.words) || [];
           setOpponentWords(oppWords.slice(0, 5));
@@ -115,7 +154,7 @@ export default function App() {
         setRoundCompleted(true);
         // if server sent a personalized message, prefer it; otherwise show generic
         setLastResult(
-          payload.message ?? `${q?.kind ?? 'unknown'} dmg=${q?.damage ?? applied ?? 0}`,
+          payload.message ?? `${q?.kind ?? 'unknown'}${potentialStr} applied=${applied ?? 0}`,
         );
 
         // send ACK back to server indicating we've processed this turn_result
@@ -196,6 +235,30 @@ export default function App() {
     };
   }, [playerId]);
 
+  // When the window gains focus, focus the appropriate input:
+  // - if not in a match, focus the player name input
+  // - if in a match, focus the round word input
+  useEffect(() => {
+    const onFocus = () => {
+      try {
+        if (!matchId) {
+          // if name was submitted, focus the matchmake button so the user can start matchmaking
+          if (nameSubmitted) {
+            if (matchmakeButtonRef.current) matchmakeButtonRef.current.focus();
+          } else {
+            // focus player name input when not in match and name not submitted
+            if (nameInputRef.current) nameInputRef.current.focus();
+          }
+        } else {
+          // focus the text input for typing the word when in a match
+          if (inputRef.current) inputRef.current.focus();
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [matchId]);
+
   async function createPlayer() {
     try {
       const id = name;
@@ -210,6 +273,14 @@ export default function App() {
       setLog((l) => [`Created player ${name}`, ...l]);
       // if server returned player object with words, update local words
       if (data && Array.isArray(data.words) && data.words.length) setWords(data.words.slice(0, 5));
+      // hide the name input now that the player has been created locally
+      setNameSubmitted(true);
+      // focus the matchmake button so the user can start matchmaking immediately
+      setTimeout(() => {
+        try {
+          matchmakeButtonRef.current && matchmakeButtonRef.current.focus();
+        } catch (e) {}
+      }, 50);
     } catch (err) {
       setLog((l) => [`createPlayer error: ${(err as Error).message}`, ...l]);
     }
@@ -402,17 +473,25 @@ export default function App() {
         </div>
       </div>
 
-      <div>
-        <label>Player name:</label>
-        <input
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            sessionStorage.setItem('name', e.target.value);
+      {!nameSubmitted && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            createPlayer();
           }}
-        />
-        <button onClick={createPlayer}>Create Player (local)</button>
-      </div>
+        >
+          <label>Player name:</label>
+          <input
+            ref={nameInputRef}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              sessionStorage.setItem('name', e.target.value);
+            }}
+          />
+          <button type="submit">Create Player (local)</button>
+        </form>
+      )}
 
       <div>
         <label>My words (5):</label>
@@ -424,7 +503,9 @@ export default function App() {
       </div>
 
       <div>
-        <button onClick={matchmake}>Matchmake (call server)</button>
+        <button ref={matchmakeButtonRef} onClick={matchmake}>
+          Matchmake (call server)
+        </button>
         <div>Opponent words: {opponentWords.join(', ')}</div>
       </div>
 
@@ -443,7 +524,12 @@ export default function App() {
               <div style={{ color: '#222', marginTop: 6 }}>Last result: {lastResult}</div>
             )}
           </div>
-          <div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitAnswer(answerInput);
+            }}
+          >
             <input
               ref={inputRef}
               value={answerInput}
@@ -453,15 +539,10 @@ export default function App() {
                   : 'Waiting... you can start typing and keep your input'
               }
               onChange={(e) => setAnswerInput((e.target as HTMLInputElement).value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  submitAnswer(answerInput);
-                }
-              }}
               disabled={waitingForResult}
               style={{ padding: '8px', fontSize: 16, width: '100%', boxSizing: 'border-box' }}
             />
-          </div>
+          </form>
         </div>
       </div>
 

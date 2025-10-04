@@ -85,6 +85,11 @@ export class MatchController {
     return this.matchService.ackTurn(matchId, playerId, turn);
   }
 
+  @Get('debug/last-event/:playerId')
+  lastEvent(@Param('playerId') playerId: string) {
+    return this.matchService.getLastEmitted(playerId);
+  }
+
   @Post('resolve')
   resolve(
     @Body()
