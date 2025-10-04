@@ -368,10 +368,8 @@ export class MatchService {
     const defenderText = entry.texts.get(defenderId) ?? null;
 
     const q = resolveQTE(
-      Number.isFinite(attackerTime) ? attackerTime : null,
-      Number.isFinite(defenderTime) ? defenderTime : null,
-      attackerText,
-      defenderText,
+      { time: Number.isFinite(attackerTime) ? attackerTime : null, text: attackerText },
+      { time: Number.isFinite(defenderTime) ? defenderTime : null, text: defenderText },
       entry.word ?? null,
       attacker.attack,
     );
@@ -520,10 +518,8 @@ export class MatchService {
     if (!defender) throw new Error('defender not in match or match incomplete');
 
     const q = resolveQTE(
-      typeof attackerTime === 'number' ? attackerTime : null,
-      typeof defenderTime === 'number' ? defenderTime : null,
-      undefined,
-      undefined,
+      { time: typeof attackerTime === 'number' ? attackerTime : null },
+      { time: typeof defenderTime === 'number' ? defenderTime : null },
       undefined,
       attacker.attack,
     );

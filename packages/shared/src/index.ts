@@ -12,23 +12,40 @@ export function pickRandomWord(words: string[]): string {
 }
 
 // returns damage and result kind
+export type QTEInput = { time?: number | null; text?: string | null };
+
+export type TieBreaker = 'attacker' | 'defender' | 'random' | 'none';
+
 export function resolveQTE(
-  attackerTime: number | null,
-  defenderTime: number | null,
-  attackerText?: string | null,
-  defenderText?: string | null,
+  attackerInput: QTEInput | null,
+  defenderInput: QTEInput | null,
   expectedWord?: string | null,
   baseDamage = 10,
+  tieBreaker: TieBreaker = 'attacker',
 ): QTEResult {
+  // normalize inputs
+  const attackerTime =
+    attackerInput && typeof attackerInput.time === 'number' ? attackerInput.time : null;
+  const defenderTime =
+    defenderInput && typeof defenderInput.time === 'number' ? defenderInput.time : null;
+  const attackerText = attackerInput ? (attackerInput.text ?? null) : null;
+  const defenderText = defenderInput ? (defenderInput.text ?? null) : null;
   const makeDamage = (kind: Exclude<QTEResult['kind'], 'miss' | 'none'>, raw: number) => {
     const dmg = Math.round(raw);
     return { kind, damage: Math.max(1, dmg) } as any;
   };
-  // If no text args are provided, preserve the original timing-only behavior
+  // If no text args are provided, preserve the original timing-only behavior.
+  // Detect whether the caller provided `text` on the input objects (not just that
+  // the coerced attackerText/defenderText became null). Use presence of the
+  // 'text' property or an explicit expectedWord to decide.
   const textArgsProvided =
-    typeof attackerText !== 'undefined' ||
-    typeof defenderText !== 'undefined' ||
-    typeof expectedWord !== 'undefined';
+    typeof expectedWord !== 'undefined' ||
+    (attackerInput !== null &&
+      attackerInput !== undefined &&
+      Object.prototype.hasOwnProperty.call(attackerInput, 'text')) ||
+    (defenderInput !== null &&
+      defenderInput !== undefined &&
+      Object.prototype.hasOwnProperty.call(defenderInput, 'text'));
   if (!textArgsProvided) {
     // attackerTime or defenderTime null means not completed
     if (attackerTime === null) return { kind: 'miss' };
@@ -40,6 +57,15 @@ export function resolveQTE(
 
     // way faster: difference less than -0.3s -> critical (1.5x)
     if (diff < -0.3) return makeDamage('critical', baseDamage * 1.5);
+    // tie handling
+    if (diff === 0) {
+      if (tieBreaker === 'attacker') return makeDamage('hit', baseDamage * 1.0);
+      if (tieBreaker === 'defender') return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
+      if (tieBreaker === 'none') return { kind: 'none' };
+      // random
+      if (Math.random() < 0.5) return makeDamage('hit', baseDamage * 1.0);
+      return { kind: 'block', damage: Math.round(baseDamage * 0.25) };
+    }
     // faster: attacker faster than defender
     if (diff < 0) return makeDamage('hit', baseDamage * 1.0);
     // slower but defender faster
@@ -87,10 +113,9 @@ export function resolveQTE(
   const diff = attackerTime !== null && defenderTime !== null ? attackerTime - defenderTime : 0;
 
   // Accuracy-first rules:
-  // 1) If defender is significantly more accurate and faster, parry.
-  if (defenderAcc > attackerAcc + 0.2 && diff >= 0.25) {
-    return makeDamage('parry', baseDamage * (0.5 + defenderAcc));
-  }
+  // If accuracy differs, accuracy decides the outcome. Only when accuracies are equal
+  // (within EPS) do we consult timing.
+  const EPS = 1e-6;
 
   // compute a time factor from relative submission times: attackerTime proportion of total
   // smaller attackerTime means more time remaining -> larger factor. Clamp to [0.1, 1].
@@ -102,28 +127,37 @@ export function resolveQTE(
 
   const ACC_CRIT_DELTA = 0.25; // if attacker accuracy exceeds defender by this much -> critical
 
-  // If attacker is substantially more accurate -> attacker wins by accuracy
-  if (attackerAcc > defenderAcc + 0.02) {
-    // critical if accuracy advantage is large
-    if (attackerAcc - defenderAcc >= ACC_CRIT_DELTA || diff < -0.3) {
-      // critical scaled by accuracy and time remaining
+  // Accuracy comparison primary
+  if (attackerAcc > defenderAcc + EPS) {
+    // attacker has higher accuracy
+    if (attackerAcc - defenderAcc >= ACC_CRIT_DELTA) {
       const raw = baseDamage * 1.5 * (0.8 + attackerAcc) * timeFactor;
       return makeDamage('critical', raw);
     }
-    // normal hit: scale by accuracy and time remaining
     const raw = baseDamage * (0.8 + attackerAcc) * timeFactor;
     return makeDamage('hit', raw);
   }
 
-  // If accuracies are very close, fall back to timing-driven outcomes but still apply timeFactor
-  // way faster -> critical
+  if (defenderAcc > attackerAcc + EPS) {
+    // defender has higher accuracy -> defender parries/counters
+    const raw = baseDamage * (0.5 + defenderAcc) * timeFactor;
+    return makeDamage('parry', raw);
+  }
+
+  // Accuracies effectively equal -> decide by timing
   if (diff < -0.3) return makeDamage('critical', baseDamage * 1.5 * timeFactor);
-  // faster -> hit
+  if (diff === 0) {
+    if (tieBreaker === 'attacker') return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
+    if (tieBreaker === 'defender')
+      return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
+    if (tieBreaker === 'none') return { kind: 'none' };
+    // random
+    if (Math.random() < 0.5) return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
+    return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
+  }
   if (diff < 0) return makeDamage('hit', baseDamage * (0.8 + attackerAcc) * timeFactor);
-  // slightly slower -> block
   if (diff > 0 && diff < 0.3)
     return makeDamage('block', baseDamage * 0.25 * (0.5 + attackerAcc) * timeFactor);
-  // way slower -> parry
   if (diff >= 0.3) return makeDamage('parry', baseDamage * (0.5 + defenderAcc) * timeFactor);
 
   return { kind: 'none' };
