@@ -8,15 +8,13 @@
   "scripts": {
     "bootstrap": "yarn install",
     "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/shared build && yarn --cwd packages/server dev\"",
-    "build": "yarn --cwd packages/client build && yarn --cwd packages/server build",
-    "start": "node packages/server/dist/index.js",
-    "test": "vitest"
+    "build": "yarn --cwd packages/client build && yarn --cwd packages/server build"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "concurrently": "9.2.1",
+    "prettier": "3.6.2",
+    "prettier-plugin-organize-imports": "4.3.0",
+    "typescript": "5.9.2"
   },
   "packageManager": "yarn@4.10.3"
 }

@@ -1,3 +1,5 @@
+import { Player } from './models';
+
 export type QTEResult =
   | { kind: 'miss' }
   | { kind: 'hit'; damage: number }
@@ -10,6 +12,15 @@ export function pickRandomWord(words: string[]): string {
   if (words.length === 0) throw new Error('no words');
   return words[Math.floor(Math.random() * words.length)];
 }
+
+export enum SSEEventType {
+  MESSAGE = 'message',
+  MATCH_READY = 'match_ready',
+  TURN_RESULT = 'turn_result',
+  QTE_START = 'qte_start',
+}
+
+export * from './models';
 
 // returns damage and result kind
 export type QTEInput = { time?: number | null; text?: string | null };
@@ -165,17 +176,6 @@ export function resolveQTE(
 }
 
 // --- Player & Match helpers ---
-export type Player = {
-  id: string;
-  name?: string;
-  level: number;
-  maxHp: number;
-  hp: number;
-  attack: number;
-  defense: number;
-  words: string[];
-};
-
 export function statsForLevel(level: number) {
   const maxHp = 100 + level * 10;
   const attack = 10 + level * 2;
@@ -183,12 +183,7 @@ export function statsForLevel(level: number) {
   return { maxHp, attack, defense };
 }
 
-export function createPlayer(
-  id: string,
-  name: string | undefined,
-  level = 1,
-  words: string[] = [],
-): Player {
+export function createPlayer(id: string, name: string, level = 1, words: string[] = []): Player {
   const s = statsForLevel(level);
   return {
     id,
