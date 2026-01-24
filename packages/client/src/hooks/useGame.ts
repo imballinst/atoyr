@@ -186,7 +186,7 @@ export function useGame() {
         }));
       } else {
         if (import.meta.env.DEV) {
-          console.debug(`Incorrect answer: ${answer}. Expected: ${state.currentWord.word}.`);
+          console.debug(`Incorrect answer: ${answer}. Expected: ${state.currentWord.word.toUpperCase()}.`);
         }
 
         const penalty = Math.min(WRONG_ANSWER_PENALTY_SECONDS, state.remainingSeconds);

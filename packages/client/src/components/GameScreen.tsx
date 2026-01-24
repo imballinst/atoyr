@@ -25,9 +25,13 @@ export function GameScreen({
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
 
-  const speakLetters = useCallback((letters: string) => {
+  const speakLetters = useCallback((letters: string, definition: string) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+
+    const definitionUtterance = new SpeechSynthesisUtterance(definition);
+    window.speechSynthesis.speak(definitionUtterance);
+
     letters.split('').forEach((letter, i) => {
       const utterance = new SpeechSynthesisUtterance(letter);
       window.speechSynthesis.speak(utterance);
@@ -40,11 +44,11 @@ export function GameScreen({
     // Small delay to ensure focus is set before speaking
     const speakTimeout = setTimeout(() => {
       if (autoVoice) {
-        speakLetters(scrambled);
+        speakLetters(scrambled, definition);
       }
     }, 50);
     return () => clearTimeout(speakTimeout);
-  }, [scrambled, speakLetters, autoVoice]);
+  }, [scrambled, definition, speakLetters, autoVoice]);
 
   useEffect(() => {
     function handleClick() {
@@ -132,7 +136,7 @@ export function GameScreen({
         </div>
 
         <button
-          onClick={() => speakLetters(scrambled)}
+          onClick={() => speakLetters(scrambled, definition)}
           className="bg-dark-interactive-primary text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-dark-interactive-hover hover:scale-110 active:scale-95"
           aria-label="Speak letters"
         >

@@ -60,32 +60,50 @@ _Note: MVP is client-only. Full version will include:_
 
 **Scope**: Client-side only with in-memory storage
 
-1. Word Bucket Generation
-   - Filter dwyl word list for 5-letter words
-   - Generate definitions via LLM script
-   - Output to `packages/client/src/data/words.json`
+**Status**: ✅ Complete and fully implemented
 
-2. Game Logic
-   - Timer management with penalty tracking
-   - Word scrambling with edit distance calculation
-   - Answer validation and scoring
-   - No-skip retry mechanism
+### Implemented Features
 
-3. UI Components
-   - StartScreen: Game initialization
-   - GameScreen: Active gameplay with timer, word, keyboard input
-   - ResultsScreen: Final score, accuracy, leaderboard
-   - Wordle-style on-screen keyboard
-   - SpeechSynthesis integration
+1. **Word Bucket Generation**
+   - ✅ Filter dwyl word list for 5-letter words
+   - ✅ Generate definitions via LLM script
+   - ✅ Output to `packages/client/src/data/words.json`
 
-4. State Management
-   - React hooks for game state, timer, leaderboard
-   - Cookie-based leaderboard persistence (1 week)
+2. **Game Logic**
+   - ✅ Timer management with penalty tracking (30 seconds base)
+   - ✅ Auto voice mode: +5 seconds per word when enabled
+   - ✅ Word scrambling with edit distance calculation
+   - ✅ Answer validation and scoring
+   - ✅ No-skip retry mechanism with unlimited attempts
+   - ✅ Leaderboard cookie persistence (7-day expiry)
+   - ✅ Session word deduplication (no repeats per game)
 
-5. Testing
-   - Unit tests for scrambling, edit distance, validation logic
-   - State management tests
-   - Timer behavior tests
+3. **UI Components**
+   - ✅ StartScreen: Game initialization with auto-voice toggle
+   - ✅ GameScreen: Active gameplay with timer, scrambled word, definition, keyboard input
+   - ✅ ResultsScreen: Final score, accuracy, leaderboard display
+   - ✅ Wordle-style on-screen keyboard (full QWERTY layout)
+   - ✅ Speaker button for manual text-to-speech
+   - ✅ Responsive design (mobile-first, max 430px)
+
+4. **State Management**
+   - ✅ React hooks for game state, timer, leaderboard
+   - ✅ Cookie-based leaderboard persistence (7-day expiry)
+   - ✅ localStorage for auto-voice preference
+   - ✅ Set-based tracking for session word usage
+
+5. **Accessibility Features**
+   - ✅ SpeechSynthesis: Automatically reads each letter when auto-voice enabled
+   - ✅ Speaker button: Manual trigger to re-read letters
+   - ✅ Physical keyboard support alongside on-screen keyboard
+   - ✅ Screen reader friendly markup
+   - ✅ Dark theme with high contrast colors
+
+6. **Testing**
+   - ✅ Unit tests for scrambling algorithm
+   - ✅ Unit tests for edit distance calculation
+   - ✅ Unit tests for answer validation
+   - ✅ Vitest configuration for client and shared packages
 
 ## Future Enhancements
 

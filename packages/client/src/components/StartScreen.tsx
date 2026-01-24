@@ -31,21 +31,21 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
         <div className="text-left mb-10">
           <p className="text-sm text-dark-text-secondary mb-6">Unscramble 5-letter words as fast as you can!</p>
-          <ul className="text-xs text-dark-text-tertiary space-y-3">
+          <ul className="text-xs text-dark-text-tertiary space-y-2">
             <li className="flex gap-3">
-              <span className="text-dark-interactive-success font-bold flex-shrink-0">✓</span>
+              <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
               <span>You have 30 seconds</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-dark-interactive-success font-bold flex-shrink-0">✓</span>
+              <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
               <span>Wrong answers cost 1 second</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-dark-interactive-success font-bold flex-shrink-0">✓</span>
+              <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
               <span>Type using the keyboard or click the on-screen buttons</span>
             </li>
             <li className="flex gap-3">
-              <span className="text-dark-interactive-success font-bold flex-shrink-0">✓</span>
+              <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
               <span>Press Enter or click Submit to guess</span>
             </li>
           </ul>

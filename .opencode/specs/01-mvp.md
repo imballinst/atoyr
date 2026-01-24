@@ -61,25 +61,29 @@ For MVP, all logic runs in the browser:
 
 ### 2. Game Timer
 
-**Goal**: Run a fixed 30-second countdown timer.
+**Goal**: Run a fixed 30-second countdown timer with optional auto-voice extension.
 
 **Implementation**:
 
-- Fixed duration: `GAME_DURATION_SECONDS = 30` (global constant)
+- Base duration: `GAME_DURATION_SECONDS = 30` (global constant)
+- **Auto-voice mode**: +5 seconds per word when enabled (for screen reader users to have time to listen)
 - Timer runs continuously (no pausing between words)
 - Store timer state in React state
 - Use `setInterval` with 1-second ticks
-- Display remaining time in UI
+- Display remaining time in UI with color change when ≤5 seconds
 - Emit "time up" event when timer reaches 0
 - **Wrong answer penalty**: Deduct 1 second per incorrect submission
+- **Auto-voice preference**: Persisted in localStorage across sessions
 
 ```typescript
 const GAME_DURATION_SECONDS = 30;
+const AUTO_VOICE_EXTRA_SECONDS = 5; // Extra time per word
 const WRONG_ANSWER_PENALTY_SECONDS = 1;
 
 interface TimerState {
   remainingSeconds: number;
   isRunning: boolean;
+  autoVoice: boolean; // Tracks if audio is enabled
 }
 ```
 
@@ -120,23 +124,32 @@ function scrambleWord(word: string): string | null {
 ```typescript
 type GameState =
   | { phase: 'idle' }
-  | { phase: 'playing'; currentWord: WordEntry; scrambled: string }
+  | { phase: 'playing'; currentWord: WordEntry; scrambled: string; autoVoice: boolean }
   | { phase: 'finished'; score: number; totalWords: number };
 ```
 
 **Flow**:
 
-1. **Idle**: Player sees "Start Game" button
+1. **Idle**: Player sees "Start Game" button with optional "Enable auto text-to-speech" checkbox
+   - Auto-voice preference is persisted in localStorage
+   - Checkbox shows last selected state
+
 2. **Playing**:
-   - Timer starts (30 seconds, runs continuously)
+   - Timer starts (30 seconds base, +5 seconds per word if auto-voice enabled)
+   - Timer runs continuously throughout session
    - Random word selected from bucket (no repeats in session)
    - Scrambled letters displayed with definition
-   - SpeechSynthesis announces each letter
+   - If auto-voice enabled:
+     - SpeechSynthesis automatically announces each letter
+     - Scrambled letters shown for screen readers only
+     - Extra 5 seconds added per word for listening time
+   - Speaker button available for manual letter re-reading
    - Player types answer using on-screen keyboard or physical keyboard
    - If correct: increment score, load next word
    - If incorrect: deduct 1 second, show feedback, allow unlimited retries (no skip option)
    - Repeat until timer ends
-3. **Finished**: Show final score + accuracy, save to leaderboard, option to play again
+
+3. **Finished**: Show final score + accuracy, display leaderboard from cookies, option to play again
 
 ### 5. Answer Validation
 
@@ -181,27 +194,47 @@ const LEADERBOARD_COOKIE_EXPIRY_DAYS = 7;
 ```
 App
 ├── StartScreen
+│   ├── Game Instructions
+│   ├── Auto-Voice Checkbox (localStorage-persisted)
 │   └── StartButton
 ├── GameScreen
-│   ├── Timer
+│   ├── Timer (color change when ≤5 seconds)
 │   ├── ScrambledWord
 │   ├── Definition
+│   ├── SpeakerButton (manual text-to-speech)
 │   ├── AnswerInput
-│   └── Score
+│   ├── ScoreDisplay
+│   └── OnScreenKeyboard (Wordle-style QWERTY)
 └── ResultsScreen
-    ├── FinalScore
+    ├── FinalScore Display
+    ├── AccuracyStats
+    ├── Leaderboard (from cookies)
     └── PlayAgainButton
 ```
 
 ### Key UI Elements
 
-1. **Timer Display**: Prominent countdown showing seconds remaining
-2. **Scrambled Letters**: Large, clear display of scrambled letters in individual boxes (Wordle-style)
-3. **Definition**: Text hint showing the word's definition (max 5 words)
-4. **Speaker Button**: Triggers SpeechSynthesis to read letters aloud
-5. **Answer Display**: Shows current typed letters in boxes
-6. **On-Screen Keyboard**: Wordle-like QWERTY keyboard at bottom
-7. **Score Counter**: Shows correct count and accuracy
+1. **Start Screen**:
+   - Title and tagline
+   - Game instructions (rules, how to play)
+   - Auto-voice checkbox with explanation
+   - Start button
+
+2. **Game Screen**:
+   - **Timer Display**: Prominent countdown showing seconds remaining (color changes to red when ≤5 seconds)
+   - **Score Display**: Shows correct count and accuracy percentage
+   - **Scrambled Letters**: Large, clear display in individual boxes (Wordle-style)
+   - **Definition**: Text hint showing the word's definition (max 5 words)
+   - **Speaker Button**: Triggers SpeechSynthesis to read letters aloud
+   - **Answer Display**: Shows current typed letters in boxes matching scrambled word length
+   - **On-Screen Keyboard**: Wordle-like QWERTY layout at bottom with feedback states
+   - **Feedback**: Visual indication of correct/incorrect answers
+
+3. **Results Screen**:
+   - Final score and accuracy metrics
+   - Leaderboard showing all games from cookie (sorted, with timestamps)
+   - Play again button
+   - Link back to start screen
 
 ### Responsive Design (Mobile-First)
 
@@ -214,9 +247,12 @@ App
 
 ### Accessibility
 
-- **SpeechSynthesis**: Automatically reads each letter when a new word appears
-- **Speaker button**: Manual trigger to re-read letters
+- **SpeechSynthesis**: Automatically reads each letter when auto-voice is enabled (opt-in via checkbox)
+- **Speaker button**: Manual trigger to re-read letters anytime
 - **Keyboard support**: Physical keyboard input works alongside on-screen keyboard
+- **Extra time for audio**: Auto-voice mode adds 5 seconds per word to allow time for listening
+- **High contrast**: Dark theme with high contrast text and interactive elements
+- **Screen reader friendly**: Proper semantic HTML and ARIA labels
 
 ## File Structure
 
@@ -271,17 +307,56 @@ scripts/
    - Score incrementing
    - Timer behavior
 
-## Implementation Order
+## Implementation Status
 
-1. [ ] Create word scraper script
-2. [ ] Generate initial word bucket JSON
-3. [ ] Implement `editDistance` utility with tests
-4. [ ] Implement `scramble` utility with tests
-5. [ ] Implement `validation` utility with tests
-6. [ ] Create `useGame` hook with tests
-7. [ ] Build UI components
-8. [ ] Integration testing
-9. [ ] Polish and styling
+### Completed ✅
+
+1. [x] Create word scraper script
+2. [x] Generate initial word bucket JSON
+3. [x] Implement `editDistance` utility with tests
+4. [x] Implement `scramble` utility with tests
+5. [x] Implement `validation` utility with tests
+6. [x] Create `useGame` hook with tests
+7. [x] Build UI components (StartScreen, GameScreen, ResultsScreen)
+8. [x] Implement on-screen Wordle-style keyboard
+9. [x] Add auto-voice feature with localStorage persistence
+10. [x] Implement leaderboard with cookie storage (7-day expiry)
+11. [x] Add speaker button for manual text-to-speech
+12. [x] Implement responsive mobile-first design
+13. [x] Add dark theme styling
+14. [x] Integration testing and polish
+15. [x] Deploy MVP
+
+---
+
+## Implementation Notes
+
+### Auto-Voice Feature
+
+The auto-voice feature is designed for accessibility and screen reader users:
+
+- **Optional Opt-In**: Players can enable/disable via checkbox on start screen
+- **Persistent Preference**: Last selection stored in localStorage
+- **Extra Time Allowance**: +5 seconds per word when enabled to allow listening time
+- **Letter Pronunciation**: Browser's SpeechSynthesis API reads each letter individually
+- **Manual Re-read**: Speaker button available anytime during gameplay
+- **Screen Reader Compatibility**: When enabled, scrambled letters are shown for screen readers
+
+### Leaderboard Storage
+
+- Stored in browser cookies with 7-day expiration
+- JSON format: array of GameResult objects
+- Includes timestamp, score, total attempts, and calculated accuracy
+- Auto-clears after 7 days of inactivity
+- Per-browser storage (not synced across devices)
+
+### Game State Management
+
+- Uses React hooks for centralized state
+- Set-based tracking prevents word repeats within session
+- Timer runs independently via setInterval
+- Score automatically incremented on correct answers
+- Time penalties applied immediately on incorrect answers
 
 ---
 
@@ -300,12 +375,14 @@ All questions have been resolved and incorporated into the spec above. Keeping f
 
 4. **Wrong Answer Handling**: ✅ 1 second penalty per wrong answer. No skip option. Unlimited retries.
 
-5. **Timer Configuration**: ✅ Fixed 30 seconds (global constant). Runs continuously.
+5. **Timer Configuration**: ✅ Fixed 30 seconds base (global constant) + 5 seconds per word if auto-voice enabled. Runs continuously.
 
-6. **Score Display**: ✅ Show correct count AND accuracy. Leaderboard stored in cookie (1 week expiry).
+6. **Score Display**: ✅ Show correct count AND accuracy. Leaderboard stored in cookie (7 day expiry).
 
 7. **Word Repetition**: ✅ No repeats within session. Cross-session tracking deferred to full version.
 
-8. **Accessibility**: ✅ SpeechSynthesis for letters. Mobile-first Wordle-style keyboard. Max width 500px, keyboard max 430px.
+8. **Accessibility**: ✅ Optional auto-voice via checkbox with localStorage persistence. +5 seconds per word. Manual speaker button. Mobile-first Wordle-style keyboard. Max width 430px.
+
+9. **Auto-Voice Extra Time**: ✅ +5 seconds per word to allow listening time for screen readers and accessibility users.
 
 </details>
