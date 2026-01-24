@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface GameScreenProps {
   scrambled: string;
@@ -7,6 +7,7 @@ interface GameScreenProps {
   totalAttempts: number;
   remainingSeconds: number;
   expectedWord: string;
+  autoVoice: boolean;
   onSubmit: (answer: string) => void;
 }
 
@@ -17,28 +18,34 @@ export function GameScreen({
   totalAttempts,
   remainingSeconds,
   expectedWord,
+  autoVoice,
   onSubmit,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (textInputRef.current) {
-      textInputRef.current.focus();
-    }
-    speakLetters(scrambled);
-  }, [scrambled]);
-
-  const speakLetters = (letters: string) => {
+  const speakLetters = useCallback((letters: string) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     letters.split('').forEach((letter, i) => {
       const utterance = new SpeechSynthesisUtterance(letter);
-      utterance.rate = 0.8;
-      setTimeout(() => window.speechSynthesis.speak(utterance), i * 400);
+      window.speechSynthesis.speak(utterance);
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (textInputRef.current) {
+      textInputRef.current.focus();
+    }
+    // Small delay to ensure focus is set before speaking
+    const speakTimeout = setTimeout(() => {
+      if (autoVoice) {
+        speakLetters(scrambled);
+      }
+    }, 50);
+    return () => clearTimeout(speakTimeout);
+  }, [scrambled, speakLetters, autoVoice]);
 
   const handleLetterClick = (letter: string) => {
     if (answer.length < 5) {
@@ -73,7 +80,9 @@ export function GameScreen({
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center p-4 bg-dark-bg-primary overflow-hidden">
       <div className="w-full max-w-[430px] mx-auto flex justify-between items-center mb-6 gap-4">
-        <div className={`text-4xl font-mono font-bold w-25 text-center bg-dark-bg-tertiary p-3 rounded-lg ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'}`}>
+        <div
+          className={`text-4xl font-mono font-bold w-25 text-center bg-dark-bg-tertiary p-3 rounded-lg ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'}`}
+        >
           {remainingSeconds}s
         </div>
         <div className="flex gap-4 flex-1">
@@ -114,7 +123,10 @@ export function GameScreen({
 
         <div className="flex gap-2 justify-center w-full">
           {answer.split('').map((letter, i) => (
-            <div key={i} className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary">
+            <div
+              key={i}
+              className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
+            >
               {letter}
             </div>
           ))}
@@ -194,8 +206,11 @@ export function GameScreen({
         </div>
 
         {feedback && (
-          <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${feedback === 'correct' ? 'text-green-500' : 'text-red-500'
-            }`}>
+          <div
+            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${
+              feedback === 'correct' ? 'text-green-500' : 'text-red-500'
+            }`}
+          >
             {feedback === 'correct' ? '✓' : '✗'}
           </div>
         )}

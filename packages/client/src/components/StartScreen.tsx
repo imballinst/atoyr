@@ -1,16 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (autoVoice: boolean) => void;
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
+  const [autoVoice, setAutoVoice] = useState(() => {
+    const stored = localStorage.getItem('atoyr_auto_voice');
+    if (stored === null) return false;
+
+    const value = JSON.parse(stored);
+    return typeof value === 'boolean' ? value : false;
+  });
+
+  const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.checked;
+    setAutoVoice(newValue);
+    localStorage.setItem('atoyr_auto_voice', JSON.stringify(newValue));
+  };
+
+  const handleStart = () => {
+    onStart(autoVoice);
+  };
+
   return (
     <div className="w-screen h-screen flex items-center justify-center p-5 bg-dark-bg-primary">
       <div className="rounded-2xl p-10 text-center w-full max-w-[430px]">
-        <h1 className="text-5xl font-bold text-dark-interactive-primary mb-3">
-          Atoyr
-        </h1>
+        <h1 className="text-5xl font-bold text-dark-interactive-primary mb-3">Atoyr</h1>
         <p className="text-base text-dark-text-secondary font-medium mb-10">A Test of Your Reflexes</p>
 
         <div className="text-left mb-10">
@@ -35,12 +51,26 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </ul>
         </div>
 
+        <div className="flex items-center gap-3 mb-4">
+          <input type="checkbox" id="auto-voice" checked={autoVoice} onChange={handleAutoVoiceChange} className="w-4 h-4 cursor-pointer" />
+          <label htmlFor="auto-voice" className="text-sm text-left text-dark-text-secondary cursor-pointer flex-1">
+            Enable automatic text-to-speech*
+          </label>
+        </div>
+
         <button
-          onClick={onStart}
+          onClick={handleStart}
           className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
         >
           Start Game
         </button>
+
+        <hr className="my-8 border-t border-t-dark-border-primary" />
+
+        <p className="text-xs text-dark-text-tertiary italic text-left">
+          * Uses your browser's built-in text-to-speech functionality. You will get 5 extra seconds for each word, but the scrambled letters
+          will only be shown for screen readers.
+        </p>
       </div>
     </div>
   );

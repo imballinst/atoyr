@@ -20,6 +20,7 @@ export default function App() {
         totalAttempts={state.totalAttempts}
         remainingSeconds={state.remainingSeconds}
         expectedWord={state.currentWord.word}
+        autoVoice={state.autoVoice}
         onSubmit={submitAnswer}
       />
     );

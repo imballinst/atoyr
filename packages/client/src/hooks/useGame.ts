@@ -50,11 +50,12 @@ export function useGame() {
     remainingSeconds: GAME_DURATION_SECONDS,
     usedWords: new Set(),
     gameResults: [],
+    autoVoice: false,
   });
 
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((autoVoice: boolean = false) => {
     const initialWord = getRandomWord(new Set());
     if (!initialWord) {
       alert('No words available');
@@ -80,6 +81,7 @@ export function useGame() {
       totalAttempts: 0,
       remainingSeconds: GAME_DURATION_SECONDS,
       usedWords: new Set([initialWord.word]),
+      autoVoice,
     }));
   }, []);
 
@@ -206,6 +208,7 @@ export function useGame() {
       remainingSeconds: GAME_DURATION_SECONDS,
       usedWords: new Set(),
       gameResults: state.gameResults,
+      autoVoice: false,
     });
   }, [state.gameResults]);
 

@@ -22,6 +22,7 @@ export interface GameState {
   remainingSeconds: number;
   usedWords: Set<string>;
   gameResults: GameResult[];
+  autoVoice: boolean;
 }
 
 export const GAME_DURATION_SECONDS = 30;
