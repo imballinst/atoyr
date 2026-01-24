@@ -93,7 +93,7 @@ export function GameScreen({
           {scrambled.split('').map((letter, i) => (
             <div
               key={i}
-              className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-2xl rounded-lg shadow"
+              className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow"
             >
               {letter}
             </div>

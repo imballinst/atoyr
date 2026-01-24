@@ -6,9 +6,9 @@ interface StartScreenProps {
 
 export function StartScreen({ onStart }: StartScreenProps) {
   return (
-    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">
+    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-dark-bg-primary">
       <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-[430px]">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-2">
+        <h1 className="text-5xl font-bold text-dark-interactive-primary mb-2">
           Atoyr
         </h1>
         <p className="text-base text-gray-500 font-medium mb-6">A Test of Your Reflexes</p>
@@ -37,7 +37,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
         <button
           onClick={onStart}
-          className="w-full py-3 px-6 text-base font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow"
+          className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
         >
           Start Game
         </button>

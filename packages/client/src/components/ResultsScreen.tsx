@@ -12,7 +12,7 @@ export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
 
   return (
-    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">
+    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-dark-bg-primary">
       <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-[430px]">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Game Over!</h1>
 
@@ -33,7 +33,7 @@ export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }
 
         <button
           onClick={onPlayAgain}
-          className="w-full py-3 px-6 text-base font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow mb-6"
+          className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow mb-6 hover:bg-dark-interactive-hover"
         >
           Play Again
         </button>
