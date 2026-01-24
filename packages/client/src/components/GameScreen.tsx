@@ -68,7 +68,7 @@ export function GameScreen({
 
   return (
     <div className="w-screen h-screen max-w-2xl mx-auto flex flex-col items-center justify-center p-4 bg-gray-50 overflow-hidden">
-      <div className="w-full max-w-md flex justify-between items-center mb-6 gap-4">
+      <div className="w-full max-w-[430px] mx-auto flex justify-between items-center mb-6 gap-4">
         <div className={`text-4xl font-bold min-w-20 text-center bg-white p-3 rounded-lg shadow ${timerColor}`}>
           {remainingSeconds}s
         </div>
@@ -84,7 +84,7 @@ export function GameScreen({
         </div>
       </div>
 
-      <div className="flex flex-col items-center w-full max-w-md gap-4">
+      <div className="flex flex-col items-center w-full max-w-[430px] mx-auto gap-4">
         <div className="bg-white p-4 rounded-lg text-center text-sm italic text-gray-500 min-h-10 flex items-center justify-center shadow w-full">
           {definition}
         </div>
@@ -132,7 +132,7 @@ export function GameScreen({
           aria-label="Answer input"
         />
 
-        <div className="w-full flex flex-col gap-3">
+        <div className="w-full max-w-[430px] mx-auto flex flex-col gap-3">
           <div className="grid grid-cols-10 gap-1.5 w-full">
             {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((key) => (
               <button

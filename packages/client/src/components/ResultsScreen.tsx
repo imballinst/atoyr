@@ -13,7 +13,7 @@ export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }
 
   return (
     <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">
-      <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-sm">
+      <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-[430px]">
         <h1 className="text-4xl font-bold mb-6 text-gray-800">Game Over!</h1>
 
         <div className="grid grid-cols-3 gap-3 mb-8">

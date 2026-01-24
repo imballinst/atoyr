@@ -7,7 +7,7 @@ interface StartScreenProps {
 export function StartScreen({ onStart }: StartScreenProps) {
   return (
     <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">
-      <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-sm">
+      <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-[430px]">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-2">
           Atoyr
         </h1>
