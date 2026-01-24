@@ -5,6 +5,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 ## Conventions
 
 - Use TypeScript
+- Use TailwindCSS (v4)
 - Use Prettier for formatting
 - Use Yarn Modern with nodeLinker node_modules
 - Use latest React, no need for useCallback and useMemo
