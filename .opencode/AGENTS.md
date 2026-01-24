@@ -8,6 +8,8 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - Use Prettier for formatting
 - Use Yarn Modern with nodeLinker node_modules
 - Use latest React, no need for useCallback and useMemo
+- DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
+- DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 
 ## Structure
 

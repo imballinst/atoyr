@@ -1,24 +1,98 @@
 # Core
 
+## Game Overview
+
+"A Test of Your Reflexes" (Atoyr) is a word unscrambling game where players are shown scrambled 5-letter words with definitions and must unscramble them within a time limit.
+
 ## Features
 
-1. Set up a time, for example, 30 seconds. The client initiates this. The server will then generate a UUID to be associated with the "session".
-2. During that 30 seconds period, grab a word from the **bucket**.
-   1. This is retrieved from SSE, not client-side. The SSE is sent according to the UUID.
-   2. The SSE also sends a unique "token" which is responsible to determine whether the request comes from the server or from elsewhere (e.g. script).
-3. Scramble the order of letters of the bucket. Scramble the word 10 times and then get the lowest edit distance. Send the word via SSE.
-4. When the player submits a correct answer, the UI Sends a HTTP request. The server will count this as correct answer.
-   1. If the answer is correct AND contains the said "token", then the request is valid.
-   2. If the answer is incorrect OR does not contain the said "token", then the request is invalid.
-5. When the time ends, count the number of words that were successful to be re-ordered.
-   1. The timer "end status" will come from SSE. The server will send the number of correct answers.
-6. Store this in a SQLite database.
+### Core Gameplay
 
-## Behind the scenes features
+1. **Timer**: Fixed 30-second countdown that runs continuously throughout the game
+   - Wrong answers incur 1-second penalty
+   - Timer stops when it reaches 0
 
-1. Find a way to scrape Merriam-Webster for 5-letter words, A-Z. These will go into a something called a **Bucket**.
+2. **Word Bucket**: Collection of 5-letter words with definitions
+   - Source: dwyl/english-words (https://github.com/dwyl/english-words/blob/master/words.txt)
+   - Definitions: LLM-generated (paraphrased, non-formal, max 5 words each)
+   - Format: `{ word: string; definition: string }`
+   - Minimum 100-500 words for MVP
 
-# MVP Features
+3. **Word Scrambling**: Maximize difficulty through strategic shuffling
+   - Generate 10 random shuffles of the word
+   - Calculate edit distance (Levenshtein) for each
+   - Select the shuffle with **highest** edit distance (hardest to unscramble)
+   - If all shuffles match the original, skip the word and select another
+   - No word repeats within a single session
 
-1. Implement the "Behind the scenes" features.
-2. Implement all the features above client-side. There is no need for SSE or HTTP. For SQLite, store it in-memory.
+4. **Answer Validation**
+   - Compare player input (case-insensitive, trimmed) to original word
+   - Correct answer: increment score, load next word
+   - Incorrect answer: 1-second time penalty, show feedback, allow unlimited retries (no skip)
+
+5. **Scoring & Results**
+   - Track both correct count and total attempts
+   - Display accuracy (correct/attempts)
+   - Leaderboard: stored in cookie as JSON, expires after 1 week
+   - Save result on game end with timestamp
+
+### Accessibility Features
+
+- **SpeechSynthesis**: Automatically reads each letter when a new word appears
+- **Speaker Button**: Manual trigger to re-read letters
+- **Input Methods**: Both physical keyboard and on-screen Wordle-style keyboard
+- **Mobile-First Design**:
+  - Max container width: 500px
+  - Keyboard optimized for 300px minimum, scales up to 430px maximum
+  - Desktop browsers display at mobile viewport size
+
+## Backend Implementation (Full Version)
+
+_Note: MVP is client-only. Full version will include:_
+
+1. Session Management: Server generates UUID for each game session
+2. SSE (Server-Sent Events): Delivers words and timing events to client
+3. Token Authentication: Unique token per word to validate requests
+4. HTTP API: Endpoint to submit answers and receive validation
+5. Database: SQLite storage for game results and leaderboard
+
+## MVP Implementation
+
+**Scope**: Client-side only with in-memory storage
+
+1. Word Bucket Generation
+   - Filter dwyl word list for 5-letter words
+   - Generate definitions via LLM script
+   - Output to `packages/client/src/data/words.json`
+
+2. Game Logic
+   - Timer management with penalty tracking
+   - Word scrambling with edit distance calculation
+   - Answer validation and scoring
+   - No-skip retry mechanism
+
+3. UI Components
+   - StartScreen: Game initialization
+   - GameScreen: Active gameplay with timer, word, keyboard input
+   - ResultsScreen: Final score, accuracy, leaderboard
+   - Wordle-style on-screen keyboard
+   - SpeechSynthesis integration
+
+4. State Management
+   - React hooks for game state, timer, leaderboard
+   - Cookie-based leaderboard persistence (1 week)
+
+5. Testing
+   - Unit tests for scrambling, edit distance, validation logic
+   - State management tests
+   - Timer behavior tests
+
+## Future Enhancements
+
+- Backend server with SSE integration
+- Persistent database (SQLite)
+- Multi-player support
+- Difficulty levels
+- Custom word lists
+- Analytics and statistics tracking
+- Cross-session word tracking (to avoid repeats across plays)
