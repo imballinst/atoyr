@@ -19,6 +19,7 @@ export default function App() {
         score={state.score}
         totalAttempts={state.totalAttempts}
         remainingSeconds={state.remainingSeconds}
+        expectedWord={state.currentWord.word}
         onSubmit={submitAnswer}
       />
     );

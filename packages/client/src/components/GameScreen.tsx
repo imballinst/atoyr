@@ -6,6 +6,7 @@ interface GameScreenProps {
   score: number;
   totalAttempts: number;
   remainingSeconds: number;
+  expectedWord: string;
   onSubmit: (answer: string) => void;
 }
 
@@ -15,6 +16,7 @@ export function GameScreen({
   score,
   totalAttempts,
   remainingSeconds,
+  expectedWord,
   onSubmit,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
@@ -25,6 +27,7 @@ export function GameScreen({
     if (textInputRef.current) {
       textInputRef.current.focus();
     }
+    speakLetters(scrambled);
   }, [scrambled]);
 
   const speakLetters = (letters: string) => {
@@ -49,9 +52,11 @@ export function GameScreen({
 
   const handleSubmit = () => {
     if (answer.trim().length === 0) return;
+    const isCorrect = answer.trim().toLowerCase() === expectedWord.toLowerCase();
+    setFeedback(isCorrect ? 'correct' : 'incorrect');
     onSubmit(answer);
-    setFeedback(null);
     setAnswer('');
+    setTimeout(() => setFeedback(null), 600);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -64,12 +69,11 @@ export function GameScreen({
   };
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
-  const timerColor = remainingSeconds <= 5 ? 'text-red-500' : 'text-gray-800';
 
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center p-4 bg-dark-bg-primary overflow-hidden">
       <div className="w-full max-w-[430px] mx-auto flex justify-between items-center mb-6 gap-4">
-        <div className={`text-4xl font-mono font-bold w-25 text-center bg-dark-bg-tertiary p-3 rounded-lg ${timerColor === 'text-red-500' ? 'text-red-500' : 'text-dark-text-primary'}`}>
+        <div className={`text-4xl font-mono font-bold w-25 text-center bg-dark-bg-tertiary p-3 rounded-lg ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'}`}>
           {remainingSeconds}s
         </div>
         <div className="flex gap-4 flex-1">
