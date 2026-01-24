@@ -8,7 +8,8 @@
   "scripts": {
     "bootstrap": "yarn install",
     "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/shared build && yarn --cwd packages/server dev\"",
-    "build": "yarn --cwd packages/client build && yarn --cwd packages/server build"
+    "build": "yarn --cwd packages/client build && yarn --cwd packages/server build",
+    "test": "yarn workspaces foreach test"
   },
   "devDependencies": {
     "concurrently": "9.2.1",
