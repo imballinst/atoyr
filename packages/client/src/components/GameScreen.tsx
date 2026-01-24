@@ -67,25 +67,25 @@ export function GameScreen({
   const timerColor = remainingSeconds <= 5 ? 'text-red-500' : 'text-gray-800';
 
   return (
-    <div className="w-screen h-screen max-w-2xl mx-auto flex flex-col items-center justify-center p-4 bg-gray-50 overflow-hidden">
+    <div className="w-screen h-screen flex flex-col items-center justify-center p-4 bg-dark-bg-primary overflow-hidden">
       <div className="w-full max-w-[430px] mx-auto flex justify-between items-center mb-6 gap-4">
-        <div className={`text-4xl font-bold min-w-20 text-center bg-white p-3 rounded-lg shadow ${timerColor}`}>
+        <div className={`text-4xl font-mono font-bold w-25 text-center bg-dark-bg-tertiary p-3 rounded-lg ${timerColor === 'text-red-500' ? 'text-red-500' : 'text-dark-text-primary'}`}>
           {remainingSeconds}s
         </div>
         <div className="flex gap-4 flex-1">
-          <div className="flex-1 bg-white p-3 rounded-lg text-center shadow">
-            <div className="text-xs text-gray-500">{score} correct</div>
-            <div className="text-sm font-semibold text-gray-800">{accuracy}%</div>
+          <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
+            <div className="text-xs text-dark-text-tertiary">{score} correct</div>
+            <div className="text-sm font-semibold text-dark-text-primary">{accuracy}%</div>
           </div>
-          <div className="flex-1 bg-white p-3 rounded-lg text-center shadow">
-            <div className="text-xs text-gray-500">attempts</div>
-            <div className="text-sm font-semibold text-gray-800">{totalAttempts}</div>
+          <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
+            <div className="text-xs text-dark-text-tertiary">Attempts</div>
+            <div className="text-sm font-semibold text-dark-text-primary">{totalAttempts}</div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col items-center w-full max-w-[430px] mx-auto gap-4">
-        <div className="bg-white p-4 rounded-lg text-center text-sm italic text-gray-500 min-h-10 flex items-center justify-center shadow w-full">
+        <div className="bg-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 flex items-center justify-center w-full">
           {definition}
         </div>
 
@@ -102,7 +102,7 @@ export function GameScreen({
 
         <button
           onClick={() => speakLetters(scrambled)}
-          className="bg-blue-500 text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-blue-700 hover:scale-110 active:scale-95 shadow"
+          className="bg-dark-interactive-primary text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-dark-interactive-hover hover:scale-110 active:scale-95"
           aria-label="Speak letters"
         >
           🔊
@@ -110,13 +110,13 @@ export function GameScreen({
 
         <div className="flex gap-2 justify-center w-full">
           {answer.split('').map((letter, i) => (
-            <div key={i} className="w-12 h-12 flex items-center justify-center bg-white border-2 border-gray-300 font-bold text-2xl rounded-lg shadow">
+            <div key={i} className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary">
               {letter}
             </div>
           ))}
           {answer.length < 5 &&
             Array.from({ length: 5 - answer.length }).map((_, i) => (
-              <div key={`empty-${i}`} className="w-12 h-12 bg-gray-100 border-2 border-gray-300 rounded-lg shadow" />
+              <div key={`empty-${i}`} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />
             ))}
         </div>
 
@@ -137,7 +137,7 @@ export function GameScreen({
             {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((key) => (
               <button
                 key={key}
-                className="aspect-square bg-white border-2 border-gray-300 rounded font-semibold text-xs transition duration-200 shadow hover:bg-blue-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="aspect-square bg-dark-bg-tertiary border-2 border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleLetterClick(key)}
                 disabled={answer.length >= 5}
               >
@@ -149,7 +149,7 @@ export function GameScreen({
             {['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].map((key) => (
               <button
                 key={key}
-                className="aspect-square bg-white border-2 border-gray-300 rounded font-semibold text-xs transition duration-200 shadow hover:bg-blue-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="aspect-square bg-dark-bg-tertiary border-2 border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleLetterClick(key)}
                 disabled={answer.length >= 5}
               >
@@ -161,7 +161,7 @@ export function GameScreen({
             {['Z', 'X', 'C', 'V', 'B', 'N', 'M'].map((key) => (
               <button
                 key={key}
-                className="aspect-square bg-white border-2 border-gray-300 rounded font-semibold text-xs transition duration-200 shadow hover:bg-blue-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="aspect-square bg-dark-bg-tertiary border-2 border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleLetterClick(key)}
                 disabled={answer.length >= 5}
               >
@@ -174,16 +174,16 @@ export function GameScreen({
         <div className="grid grid-cols-3 gap-1.5 w-full">
           <button
             onClick={handleBackspace}
-            className="col-span-1 py-3 bg-red-500 text-white font-semibold text-sm rounded transition duration-200 shadow hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+            className="col-span-1 py-3 bg-dark-interactive-error text-white font-semibold text-sm rounded transition duration-200 hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
             aria-label="Backspace"
           >
-            ← Back
+            ← Backspace
           </button>
-          <div className="col-span-2" />
+
           <button
             onClick={handleSubmit}
             disabled={answer.length === 0}
-            className="col-span-3 py-3 bg-green-500 text-white font-semibold text-sm rounded transition duration-200 shadow hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="col-span-2 py-3 bg-dark-interactive-success text-white font-semibold text-sm rounded transition duration-200 hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit
           </button>

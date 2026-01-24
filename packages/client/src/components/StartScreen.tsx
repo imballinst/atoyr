@@ -6,9 +6,9 @@ interface StartScreenProps {
 
 export function StartScreen({ onStart }: StartScreenProps) {
   return (
-    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-dark-bg-primary">
+    <div className="w-screen h-screen flex items-center justify-center p-5 bg-dark-bg-primary">
       <div className="rounded-2xl p-10 text-center w-full max-w-[430px]">
-        <h1 className="text-5xl font-bold text-dark-interactive-primary mb-6">
+        <h1 className="text-5xl font-bold text-dark-interactive-primary mb-3">
           Atoyr
         </h1>
         <p className="text-base text-dark-text-secondary font-medium mb-10">A Test of Your Reflexes</p>
