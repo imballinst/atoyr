@@ -79,7 +79,7 @@ export function useGame() {
       scrambled,
       score: 0,
       totalAttempts: 0,
-      remainingSeconds: GAME_DURATION_SECONDS,
+      remainingSeconds: autoVoice ? GAME_DURATION_SECONDS + 5 : GAME_DURATION_SECONDS,
       usedWords: new Set([initialWord.word]),
       autoVoice,
     }));
@@ -194,6 +194,11 @@ export function useGame() {
           remainingSeconds: Math.max(0, prev.remainingSeconds - penalty),
         }));
       }
+
+      setState((prev) => ({
+        ...prev,
+        remainingSeconds: state.autoVoice ? prev.remainingSeconds + 5 : prev.remainingSeconds,
+      }));
     },
     [state],
   );

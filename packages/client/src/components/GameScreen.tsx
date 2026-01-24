@@ -103,14 +103,22 @@ export function GameScreen({
         </div>
 
         <div className="flex gap-2 justify-center w-full">
-          {scrambled.split('').map((letter, i) => (
-            <div
-              key={i}
-              className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow"
-            >
-              {letter}
+          {autoVoice ? (
+            <div className="sr-only" role="status" aria-live="polite" aria-label={`Letters to unscramble: ${scrambled}`}>
+              {scrambled.split('').map((letter, i) => (
+                <span key={i}>{letter}</span>
+              ))}
             </div>
-          ))}
+          ) : (
+            scrambled.split('').map((letter, i) => (
+              <div
+                key={i}
+                className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow"
+              >
+                {letter}
+              </div>
+            ))
+          )}
         </div>
 
         <button
