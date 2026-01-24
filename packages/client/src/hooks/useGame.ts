@@ -185,7 +185,9 @@ export function useGame() {
           usedWords: new Set([...prev.usedWords, nextWord.word]),
         }));
       } else {
-        console.debug(`Incorrect answer: ${answer}. Expected: ${state.currentWord.word}.`);
+        if (import.meta.env.DEV) {
+          console.debug(`Incorrect answer: ${answer}. Expected: ${state.currentWord.word}.`);
+        }
 
         const penalty = Math.min(WRONG_ANSWER_PENALTY_SECONDS, state.remainingSeconds);
         setState((prev) => ({

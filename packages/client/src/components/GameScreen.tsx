@@ -35,9 +35,8 @@ export function GameScreen({
   }, []);
 
   useEffect(() => {
-    if (textInputRef.current) {
-      textInputRef.current.focus();
-    }
+    textInputRef.current?.focus();
+
     // Small delay to ensure focus is set before speaking
     const speakTimeout = setTimeout(() => {
       if (autoVoice) {
@@ -46,6 +45,17 @@ export function GameScreen({
     }, 50);
     return () => clearTimeout(speakTimeout);
   }, [scrambled, speakLetters, autoVoice]);
+
+  useEffect(() => {
+    function handleClick() {
+      textInputRef.current?.focus();
+    }
+
+    window.addEventListener('click', handleClick);
+    return () => {
+      window.removeEventListener('click', handleClick);
+    };
+  }, []);
 
   const handleLetterClick = (letter: string) => {
     if (answer.length < 5) {
@@ -113,7 +123,7 @@ export function GameScreen({
             scrambled.split('').map((letter, i) => (
               <div
                 key={i}
-                className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow"
+                className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow uppercase"
               >
                 {letter}
               </div>
