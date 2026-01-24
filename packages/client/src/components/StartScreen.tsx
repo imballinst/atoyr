@@ -6,22 +6,39 @@ interface StartScreenProps {
 
 export function StartScreen({ onStart }: StartScreenProps) {
   return (
-    <div className="start-screen">
-      <div className="start-card">
-        <h1>Atoyr</h1>
-        <p className="subtitle">A Test of Your Reflexes</p>
+    <div className="w-screen h-screen max-w-2xl mx-auto flex items-center justify-center p-5 bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-500">
+      <div className="bg-white rounded-2xl p-10 text-center shadow-2xl w-full max-w-sm">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-2">
+          Atoyr
+        </h1>
+        <p className="text-base text-gray-500 font-medium mb-6">A Test of Your Reflexes</p>
 
-        <div className="instructions">
-          <p>Unscramble 5-letter words as fast as you can!</p>
-          <ul>
-            <li>You have 30 seconds</li>
-            <li>Wrong answers cost 1 second</li>
-            <li>Type using the keyboard or click the on-screen buttons</li>
-            <li>Press Enter or click Submit to guess</li>
+        <div className="text-left mb-8">
+          <p className="text-sm text-gray-600 mb-4">Unscramble 5-letter words as fast as you can!</p>
+          <ul className="text-xs text-gray-700 space-y-2">
+            <li className="flex gap-3">
+              <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+              <span>You have 30 seconds</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+              <span>Wrong answers cost 1 second</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+              <span>Type using the keyboard or click the on-screen buttons</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+              <span>Press Enter or click Submit to guess</span>
+            </li>
           </ul>
         </div>
 
-        <button className="start-btn" onClick={onStart}>
+        <button
+          onClick={onStart}
+          className="w-full py-3 px-6 text-base font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow"
+        >
           Start Game
         </button>
       </div>
