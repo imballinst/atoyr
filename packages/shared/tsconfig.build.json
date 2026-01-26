@@ -6,6 +6,5 @@
     "module": "CommonJS",
     "rootDir": "src"
   },
-  "files": ["src"],
   "include": ["src"]
 }

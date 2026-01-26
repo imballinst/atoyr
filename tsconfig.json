@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "esnext",
+    "module": "CommonJS",
     "lib": ["ES2020", "DOM"],
     "strict": true,
     "esModuleInterop": true,
+    "tsBuildInfoFile": null,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "moduleResolution": "nodenext",
+    "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "composite": true,
     "paths": {
-      "@atoyr/shared": ["packages/shared/src"]
+      "@atoyr/shared": ["packages/shared/src/index.ts"]
     }
   }
 }

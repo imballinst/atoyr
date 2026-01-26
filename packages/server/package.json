@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch",
-    "dev:debug": "nest start --debug --watch",
-    "build": "nest build",
+    "dev": "yarn --cwd ../../packages/shared build && nest start --watch",
+    "dev:debug": "yarn --cwd ../../packages/shared build && nest start --debug --watch",
+    "build": "yarn --cwd ../../packages/shared build && nest build",
     "start": "node dist/server/src/main.js",
     "start:prod": "node dist/server/src/main.js",
-    "test": "vitest run"
+    "test": "yarn --cwd ../../packages/shared build && vitest run"
   },
   "dependencies": {
     "@atoyr/shared": "workspace:*",
@@ -18,9 +18,9 @@
     "@nestjs/event-emitter": "2.0.4",
     "@nestjs/platform-express": "11.1.6",
     "@nestjs/typeorm": "9.0.1",
+    "better-sqlite3": "12.6.2",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "sqlite3": "5.1.6",
     "typeorm": "0.3.17",
     "uuid": "9.0.1"
   },

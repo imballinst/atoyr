@@ -9,7 +9,8 @@
     "bootstrap": "yarn install",
     "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/shared build && yarn --cwd packages/server dev\"",
     "build": "yarn --cwd packages/client build && yarn --cwd packages/server build",
-    "test": "yarn workspaces foreach test"
+    "test": "yarn workspaces foreach test",
+    "prepare": "yarn --cwd node_modules/better-sqlite3 build-release"
   },
   "devDependencies": {
     "concurrently": "9.2.1",
