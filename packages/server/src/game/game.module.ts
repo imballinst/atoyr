@@ -9,5 +9,6 @@ import { GameService } from './game.service';
   imports: [SessionModule, WordModule],
   controllers: [GameController, GameGateway],
   providers: [GameService],
+  exports: [GameService],
 })
 export class GameModule {}

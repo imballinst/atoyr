@@ -8,5 +8,6 @@ import { ResultEntity } from './result.entity';
   imports: [TypeOrmModule.forFeature([ResultEntity])],
   controllers: [LeaderboardController],
   providers: [LeaderboardService],
+  exports: [LeaderboardService],
 })
 export class LeaderboardModule {}

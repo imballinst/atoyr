@@ -1,27 +1,27 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('results')
-@Index('idx_results_score', ['score'], { order: 'DESC' })
-@Index('idx_results_timestamp', ['timestamp'], { order: 'DESC' })
+@Index('idx_results_score', ['score'])
+@Index('idx_results_timestamp', ['timestamp'])
 export class ResultEntity {
   @PrimaryColumn('text')
-  id: string;
+  id!: string;
 
   @Column('text')
-  sessionId: string;
+  sessionId!: string;
 
   @CreateDateColumn({ type: 'integer' })
-  timestamp: number;
+  timestamp!: number;
 
   @Column('integer')
-  score: number;
+  score!: number;
 
   @Column('integer')
-  totalAttempts: number;
+  totalAttempts!: number;
 
   @Column('real')
-  accuracy: number;
+  accuracy!: number;
 
   @Column('integer')
-  durationMs: number;
+  durationMs!: number;
 }

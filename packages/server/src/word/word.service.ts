@@ -1,6 +1,9 @@
 import { WordEntry } from '@atoyr/shared';
 import { Injectable } from '@nestjs/common';
-import wordData from '../data/words.json';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+const wordData = JSON.parse(readFileSync(path.join(process.cwd(), 'src/data/words.json'), 'utf-8'));
 
 @Injectable()
 export class WordService {

@@ -2,10 +2,21 @@ import { SSEEvent } from '@atoyr/shared';
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import EventSource from 'eventsource';
+import * as fs from 'fs';
+import * as path from 'path';
 import { AppModule } from '../src/app.module';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 
 export async function createTestApp(): Promise<INestApplication> {
+  // Ensure test database directory exists
+  const dbDir = path.join(process.cwd(), 'database');
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+
+  // Set test database path
+  process.env.DATABASE_PATH = path.join(dbDir, 'atoyr.test.sqlite');
+
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: '*',

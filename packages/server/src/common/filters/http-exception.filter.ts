@@ -23,9 +23,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.issues[0]?.message || 'Invalid request data';
       code = 'INVALID_REQUEST';
     } else if (exception instanceof Error) {
-      status = HttpStatus.BAD_REQUEST;
       message = exception.message;
-      code = 'ERROR';
+      code = 'DATABASE_ERROR';
+      // Log full error in development
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error:', exception);
+      }
     }
 
     response.status(status).json({
