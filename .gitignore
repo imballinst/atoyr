@@ -4,3 +4,20 @@ dist
 packages/*/dist
 /*.log
 *.tsbuildinfo
+
+.vscode
+
+# Go
+bin/
+packages/server/bin/
+*.exe
+*.dll
+
+# Old NestJS artifacts (to be removed)
+packages/server/.swcrc
+packages/server/tsconfig.json
+packages/server/vitest.config.ts
+packages/server/nest-cli.json
+packages/server/src/
+packages/server/test/
+packages/server/database/

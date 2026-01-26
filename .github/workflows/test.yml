@@ -12,33 +12,34 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        go-version: ['1.21', '1.22']
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Run Go unit tests
+        working-directory: packages/server
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Build Go server
+        working-directory: packages/server
+        run: go build -o bin/server ./cmd
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
 
-      - name: Install dependencies
+      - name: Install JavaScript dependencies
         run: yarn install --frozen-lockfile
 
-      - name: TypeScript check (shared)
-        run: yarn --cwd packages/shared build
-
-      - name: TypeScript check (server)
-        run: yarn --cwd packages/server build
-
-      - name: TypeScript check (client)
+      - name: Build client
         run: yarn --cwd packages/client build
-
-      - name: Run server unit tests
-        run: yarn --cwd packages/server test
-
-      - name: Run client tests
-        run: yarn --cwd packages/client test
 
   build:
     runs-on: ubuntu-latest
@@ -47,6 +48,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build Go server
+        working-directory: packages/server
+        run: go build -o bin/server ./cmd
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -54,12 +64,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-
-      - name: Build shared package
-        run: yarn --cwd packages/shared build
-
-      - name: Build server
-        run: yarn --cwd packages/server build
 
       - name: Build client
         run: yarn --cwd packages/client build
@@ -70,5 +74,4 @@ jobs:
           name: build-artifacts
           path: |
             packages/client/dist
-            packages/server/dist
-            packages/shared/dist
+            packages/server/bin
