@@ -1,0 +1,842 @@
+[
+  {
+    "word": "about",
+    "definition": "roughly; in total"
+  },
+  {
+    "word": "above",
+    "definition": "higher than; over something"
+  },
+  {
+    "word": "abuse",
+    "definition": "treat badly or use wrongly"
+  },
+  {
+    "word": "acute",
+    "definition": "sharp or severe; intense"
+  },
+  {
+    "word": "admit",
+    "definition": "allow entry; confess honestly"
+  },
+  {
+    "word": "adopt",
+    "definition": "take in as your own"
+  },
+  {
+    "word": "adore",
+    "definition": "love deeply; worship"
+  },
+  {
+    "word": "adult",
+    "definition": "fully grown person or animal"
+  },
+  {
+    "word": "after",
+    "definition": "following in time or space"
+  },
+  {
+    "word": "again",
+    "definition": "one more time; repeatedly"
+  },
+  {
+    "word": "agent",
+    "definition": "person acting on behalf of another"
+  },
+  {
+    "word": "agree",
+    "definition": "share same opinion; consent"
+  },
+  {
+    "word": "ahead",
+    "definition": "in front; forward direction"
+  },
+  {
+    "word": "alarm",
+    "definition": "sudden fear or warning signal"
+  },
+  {
+    "word": "album",
+    "definition": "collection of musical recordings"
+  },
+  {
+    "word": "alert",
+    "definition": "watchful and ready; warning"
+  },
+  {
+    "word": "alien",
+    "definition": "from outer space; foreign"
+  },
+  {
+    "word": "align",
+    "definition": "arrange in straight line"
+  },
+  {
+    "word": "alike",
+    "definition": "similar in many ways"
+  },
+  {
+    "word": "alive",
+    "definition": "living; full of energy"
+  },
+  {
+    "word": "allow",
+    "definition": "permit or give permission"
+  },
+  {
+    "word": "alone",
+    "definition": "by yourself; single"
+  },
+  {
+    "word": "along",
+    "definition": "moving by the side of"
+  },
+  {
+    "word": "alter",
+    "definition": "change or modify something"
+  },
+  {
+    "word": "angel",
+    "definition": "heavenly spiritual being"
+  },
+  {
+    "word": "anger",
+    "definition": "strong feeling of displeasure"
+  },
+  {
+    "word": "angle",
+    "definition": "corner; space between two lines"
+  },
+  {
+    "word": "angry",
+    "definition": "feeling or showing displeasure"
+  },
+  {
+    "word": "ankle",
+    "definition": "joint between leg and foot"
+  },
+  {
+    "word": "annoy",
+    "definition": "bother or irritate someone"
+  },
+  {
+    "word": "apart",
+    "definition": "separated; not together"
+  },
+  {
+    "word": "apple",
+    "definition": "red or green round fruit"
+  },
+  {
+    "word": "apply",
+    "definition": "put on; make request for"
+  },
+  {
+    "word": "arena",
+    "definition": "large open space for events"
+  },
+  {
+    "word": "argue",
+    "definition": "disagree and debate heatedly"
+  },
+  {
+    "word": "arise",
+    "definition": "come up; get out of bed"
+  },
+  {
+    "word": "armor",
+    "definition": "protective covering in battle"
+  },
+  {
+    "word": "armed",
+    "definition": "carrying weapons; equipped"
+  },
+  {
+    "word": "arose",
+    "definition": "past tense of arise"
+  },
+  {
+    "word": "array",
+    "definition": "display or arrangement of items"
+  },
+  {
+    "word": "arrow",
+    "definition": "pointed shaft shot from bow"
+  },
+  {
+    "word": "aside",
+    "definition": "to the side; apart"
+  },
+  {
+    "word": "asset",
+    "definition": "valuable thing or property"
+  },
+  {
+    "word": "atlas",
+    "definition": "book of maps"
+  },
+  {
+    "word": "attic",
+    "definition": "space in roof of building"
+  },
+  {
+    "word": "audio",
+    "definition": "sound reproduction system"
+  },
+  {
+    "word": "audit",
+    "definition": "official financial examination"
+  },
+  {
+    "word": "avoid",
+    "definition": "keep away from; prevent"
+  },
+  {
+    "word": "awake",
+    "definition": "stop sleeping; alert"
+  },
+  {
+    "word": "award",
+    "definition": "give prize or recognition"
+  },
+  {
+    "word": "aware",
+    "definition": "having knowledge; conscious"
+  },
+  {
+    "word": "badly",
+    "definition": "in a negative manner; severely"
+  },
+  {
+    "word": "baker",
+    "definition": "person who bakes bread"
+  },
+  {
+    "word": "basis",
+    "definition": "foundation or main principle"
+  },
+  {
+    "word": "beach",
+    "definition": "sandy or pebbly shore"
+  },
+  {
+    "word": "beard",
+    "definition": "hair on man's face"
+  },
+  {
+    "word": "beast",
+    "definition": "large wild animal"
+  },
+  {
+    "word": "began",
+    "definition": "past tense of begin"
+  },
+  {
+    "word": "begin",
+    "definition": "start something new"
+  },
+  {
+    "word": "being",
+    "definition": "existing; creature"
+  },
+  {
+    "word": "below",
+    "definition": "lower than; underneath"
+  },
+  {
+    "word": "bench",
+    "definition": "long seat for multiple people"
+  },
+  {
+    "word": "berry",
+    "definition": "small round fruit"
+  },
+  {
+    "word": "birth",
+    "definition": "coming into existence"
+  },
+  {
+    "word": "black",
+    "definition": "darkest color; no light"
+  },
+  {
+    "word": "blade",
+    "definition": "sharp cutting edge"
+  },
+  {
+    "word": "blame",
+    "definition": "hold responsible for error"
+  },
+  {
+    "word": "blank",
+    "definition": "empty; showing nothing"
+  },
+  {
+    "word": "bleed",
+    "definition": "lose blood from wound"
+  },
+  {
+    "word": "bless",
+    "definition": "make holy; show approval"
+  },
+  {
+    "word": "blind",
+    "definition": "unable to see; unaware"
+  },
+  {
+    "word": "block",
+    "definition": "solid cube; obstruct passage"
+  },
+  {
+    "word": "blood",
+    "definition": "red liquid in veins"
+  },
+  {
+    "word": "board",
+    "definition": "flat piece of wood"
+  },
+  {
+    "word": "boost",
+    "definition": "lift or push upward"
+  },
+  {
+    "word": "booth",
+    "definition": "small enclosed space"
+  },
+  {
+    "word": "bound",
+    "definition": "obliged; moving fast"
+  },
+  {
+    "word": "brain",
+    "definition": "organ that thinks"
+  },
+  {
+    "word": "brand",
+    "definition": "product name; mark with heat"
+  },
+  {
+    "word": "brave",
+    "definition": "showing courage; fearless"
+  },
+  {
+    "word": "bread",
+    "definition": "baked food made from flour"
+  },
+  {
+    "word": "break",
+    "definition": "crack or fracture something"
+  },
+  {
+    "word": "breed",
+    "definition": "produce offspring; type"
+  },
+  {
+    "word": "brick",
+    "definition": "rectangular building block"
+  },
+  {
+    "word": "bride",
+    "definition": "woman on wedding day"
+  },
+  {
+    "word": "brief",
+    "definition": "short in duration; concise"
+  },
+  {
+    "word": "bring",
+    "definition": "carry toward speaker"
+  },
+  {
+    "word": "brink",
+    "definition": "edge of cliff or container"
+  },
+  {
+    "word": "broad",
+    "definition": "wide; spanning great distance"
+  },
+  {
+    "word": "broke",
+    "definition": "past tense of break; poor"
+  },
+  {
+    "word": "brown",
+    "definition": "dark color like earth"
+  },
+  {
+    "word": "build",
+    "definition": "construct by assembling"
+  },
+  {
+    "word": "built",
+    "definition": "past tense of build"
+  },
+  {
+    "word": "burst",
+    "definition": "break open suddenly"
+  },
+  {
+    "word": "buyer",
+    "definition": "person who purchases items"
+  },
+  {
+    "word": "cabin",
+    "definition": "small simple house"
+  },
+  {
+    "word": "cable",
+    "definition": "thick rope or wire"
+  },
+  {
+    "word": "camel",
+    "definition": "desert animal with humps"
+  },
+  {
+    "word": "canal",
+    "definition": "artificial waterway"
+  },
+  {
+    "word": "candy",
+    "definition": "sweet confection or treat"
+  },
+  {
+    "word": "canoe",
+    "definition": "small narrow boat"
+  },
+  {
+    "word": "canon",
+    "definition": "general principle or rule"
+  },
+  {
+    "word": "caper",
+    "definition": "playful prank or trick"
+  },
+  {
+    "word": "cargo",
+    "definition": "goods carried by ship"
+  },
+  {
+    "word": "carol",
+    "definition": "joyful song; sing happily"
+  },
+  {
+    "word": "carry",
+    "definition": "transport from one place"
+  },
+  {
+    "word": "carve",
+    "definition": "cut into shape with tool"
+  },
+  {
+    "word": "catch",
+    "definition": "capture or seize something"
+  },
+  {
+    "word": "cause",
+    "definition": "reason why; bring about"
+  },
+  {
+    "word": "chain",
+    "definition": "series of linked rings"
+  },
+  {
+    "word": "chair",
+    "definition": "furniture to sit on"
+  },
+  {
+    "word": "chalk",
+    "definition": "white substance for writing"
+  },
+  {
+    "word": "champ",
+    "definition": "champion; bite noisily"
+  },
+  {
+    "word": "chant",
+    "definition": "repeat rhythmic phrase"
+  },
+  {
+    "word": "chaos",
+    "definition": "complete disorder and confusion"
+  },
+  {
+    "word": "charm",
+    "definition": "appeal or attraction; magical"
+  },
+  {
+    "word": "chart",
+    "definition": "map or graph of data"
+  },
+  {
+    "word": "chase",
+    "definition": "pursue or follow quickly"
+  },
+  {
+    "word": "cheap",
+    "definition": "low price; poor quality"
+  },
+  {
+    "word": "cheat",
+    "definition": "act dishonestly to gain"
+  },
+  {
+    "word": "check",
+    "definition": "verify or control; chess term"
+  },
+  {
+    "word": "cheek",
+    "definition": "side of face below eye"
+  },
+  {
+    "word": "cheer",
+    "definition": "shout support; make happy"
+  },
+  {
+    "word": "chess",
+    "definition": "strategy board game"
+  },
+  {
+    "word": "chest",
+    "definition": "front of torso; box"
+  },
+  {
+    "word": "chief",
+    "definition": "leader; most important"
+  },
+  {
+    "word": "child",
+    "definition": "young human person"
+  },
+  {
+    "word": "chill",
+    "definition": "make or become cold"
+  },
+  {
+    "word": "china",
+    "definition": "fine porcelain; Asian country"
+  },
+  {
+    "word": "chirp",
+    "definition": "make short bird sound"
+  },
+  {
+    "word": "choke",
+    "definition": "have trouble breathing"
+  },
+  {
+    "word": "chord",
+    "definition": "multiple musical notes together"
+  },
+  {
+    "word": "chore",
+    "definition": "routine household task"
+  },
+  {
+    "word": "chose",
+    "definition": "past tense of choose"
+  },
+  {
+    "word": "chunk",
+    "definition": "thick solid piece"
+  },
+  {
+    "word": "churn",
+    "definition": "agitate; make butter"
+  },
+  {
+    "word": "cider",
+    "definition": "apple juice drink"
+  },
+  {
+    "word": "cigar",
+    "definition": "rolled tobacco product"
+  },
+  {
+    "word": "cinch",
+    "definition": "tighten; something easy"
+  },
+  {
+    "word": "civic",
+    "definition": "relating to citizens"
+  },
+  {
+    "word": "claim",
+    "definition": "assert as true; demand"
+  },
+  {
+    "word": "clamp",
+    "definition": "device to hold tight"
+  },
+  {
+    "word": "clang",
+    "definition": "loud metallic sound"
+  },
+  {
+    "word": "clank",
+    "definition": "sharp metallic ringing noise"
+  },
+  {
+    "word": "clash",
+    "definition": "collide noisily; conflict"
+  },
+  {
+    "word": "clasp",
+    "definition": "fasten or grip tightly"
+  },
+  {
+    "word": "class",
+    "definition": "group of similar things"
+  },
+  {
+    "word": "clean",
+    "definition": "free from dirt; pure"
+  },
+  {
+    "word": "clear",
+    "definition": "transparent; easy to understand"
+  },
+  {
+    "word": "clerk",
+    "definition": "office worker"
+  },
+  {
+    "word": "click",
+    "definition": "make sharp sound"
+  },
+  {
+    "word": "cliff",
+    "definition": "high steep rock face"
+  },
+  {
+    "word": "climb",
+    "definition": "move upward; ascend"
+  },
+  {
+    "word": "cling",
+    "definition": "hold tightly; stick to"
+  },
+  {
+    "word": "cloak",
+    "definition": "loose sleeveless robe"
+  },
+  {
+    "word": "clock",
+    "definition": "device that shows time"
+  },
+  {
+    "word": "clone",
+    "definition": "identical copy; produce copy"
+  },
+  {
+    "word": "close",
+    "definition": "shut; near in distance"
+  },
+  {
+    "word": "cloth",
+    "definition": "woven fabric material"
+  },
+  {
+    "word": "cloud",
+    "definition": "floating mass of water vapor"
+  },
+  {
+    "word": "clove",
+    "definition": "spice; split garlic bulb"
+  },
+  {
+    "word": "clown",
+    "definition": "comic entertainer; foolish person"
+  },
+  {
+    "word": "coach",
+    "definition": "trainer; horse-drawn carriage"
+  },
+  {
+    "word": "coast",
+    "definition": "seashore; glide without power"
+  },
+  {
+    "word": "cobra",
+    "definition": "venomous snake species"
+  },
+  {
+    "word": "cocoa",
+    "definition": "chocolate powder; tropical plant"
+  },
+  {
+    "word": "comet",
+    "definition": "space object with tail"
+  },
+  {
+    "word": "comic",
+    "definition": "humorous; funny entertainer"
+  },
+  {
+    "word": "comma",
+    "definition": "punctuation mark; pause"
+  },
+  {
+    "word": "couch",
+    "definition": "sofa; lying furniture"
+  },
+  {
+    "word": "cough",
+    "definition": "expel air from lungs"
+  },
+  {
+    "word": "could",
+    "definition": "past tense of can; might"
+  },
+  {
+    "word": "count",
+    "definition": "determine total number"
+  },
+  {
+    "word": "court",
+    "definition": "legal venue; playing area"
+  },
+  {
+    "word": "cover",
+    "definition": "put something on top"
+  },
+  {
+    "word": "crack",
+    "definition": "break or fracture surface"
+  },
+  {
+    "word": "craft",
+    "definition": "skill in making things"
+  },
+  {
+    "word": "cramp",
+    "definition": "painful muscle contraction"
+  },
+  {
+    "word": "crane",
+    "definition": "large bird; lifting machine"
+  },
+  {
+    "word": "crank",
+    "definition": "arm of rotating shaft"
+  },
+  {
+    "word": "crash",
+    "definition": "violent collision; failure"
+  },
+  {
+    "word": "crate",
+    "definition": "wooden shipping box"
+  },
+  {
+    "word": "crave",
+    "definition": "desire intensely; want badly"
+  },
+  {
+    "word": "crawl",
+    "definition": "move on hands and knees"
+  },
+  {
+    "word": "crazy",
+    "definition": "insane; wildly enthusiastic"
+  },
+  {
+    "word": "creak",
+    "definition": "make squeaking sound"
+  },
+  {
+    "word": "cream",
+    "definition": "pale yellow dairy product"
+  },
+  {
+    "word": "creep",
+    "definition": "move slowly and quietly"
+  },
+  {
+    "word": "crest",
+    "definition": "top or peak; wave peak"
+  },
+  {
+    "word": "crime",
+    "definition": "unlawful act or offense"
+  },
+  {
+    "word": "crimp",
+    "definition": "compress into folds"
+  },
+  {
+    "word": "crisp",
+    "definition": "dry and brittle; fresh"
+  },
+  {
+    "word": "croak",
+    "definition": "frog sound; complain"
+  },
+  {
+    "word": "crook",
+    "definition": "bend; criminal person"
+  },
+  {
+    "word": "cross",
+    "definition": "go across; angry emotion"
+  },
+  {
+    "word": "crowd",
+    "definition": "large group of people"
+  },
+  {
+    "word": "crown",
+    "definition": "royal headpiece; top"
+  },
+  {
+    "word": "crude",
+    "definition": "in natural state; rude"
+  },
+  {
+    "word": "cruel",
+    "definition": "causing pain or suffering"
+  },
+  {
+    "word": "crumb",
+    "definition": "small piece of bread"
+  },
+  {
+    "word": "crush",
+    "definition": "press with force; defeat"
+  },
+  {
+    "word": "crust",
+    "definition": "hard outer layer"
+  },
+  {
+    "word": "cubic",
+    "definition": "shaped like a cube"
+  },
+  {
+    "word": "cupid",
+    "definition": "Roman god of love"
+  },
+  {
+    "word": "curly",
+    "definition": "having curls or waves"
+  },
+  {
+    "word": "curry",
+    "definition": "spiced dish or sauce"
+  },
+  {
+    "word": "curse",
+    "definition": "invoke harm; evil incantation"
+  },
+  {
+    "word": "curve",
+    "definition": "smooth bending line"
+  },
+  {
+    "word": "cycle",
+    "definition": "series of events repeated"
+  },
+  {
+    "word": "cynic",
+    "definition": "distrusts human motives"
+  }
+]
