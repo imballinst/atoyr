@@ -1601,19 +1601,23 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
 5. Implement leaderboard service
 6. Add API controllers
 
-### Phase 3: Client Integration
+### Phase 3: Testing & CI/CD
+
+1. Write unit tests for all services
+2. Write e2e tests for API endpoints and SSE
+3. Set up GitHub Actions CI/CD pipeline:
+   - Run TypeScript checks on shared and server packages
+   - Run unit and e2e tests on server
+   - Build both client and server
+   - Optional: Build and push Docker image
+
+### Phase 4: Client Integration
 
 1. Create `useServerGame` hook that uses SSE
 2. Add API client for HTTP endpoints
 3. Update UI components to use server-backed state
 4. Maintain fallback to local mode if server unavailable
-
-### Phase 4: Testing & Deployment
-
-1. Write unit tests for all services
-2. Write e2e tests for API endpoints and SSE
-3. Set up CI/CD pipeline
-4. Deploy server and update client build
+5. Update client tests to cover server integration scenarios
 
 ## Error Handling
 
