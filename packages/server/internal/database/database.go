@@ -1,11 +1,11 @@
 package database
 
 import (
+	"atoyr/server/internal/models"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"atoyr/server/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -14,7 +14,7 @@ import (
 func Initialize() (*gorm.DB, error) {
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
-		dbPath = filepath.Join(os.Getenv("HOME"), ".atoyr", "atoyr.sqlite")
+		return nil, fmt.Errorf("DATABASE_PATH environment variable is not set")
 	}
 
 	// Ensure directory exists
@@ -23,14 +23,10 @@ func Initialize() (*gorm.DB, error) {
 	}
 
 	// Determine log level based on environment
-	logLevel := logger.Silent
-	if os.Getenv("NODE_ENV") == "development" {
-		logLevel = logger.Info
-	}
-
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
-		Logger: logger.Default.LogMode(logLevel),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

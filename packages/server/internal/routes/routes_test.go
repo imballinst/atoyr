@@ -9,6 +9,7 @@ import (
 
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -32,10 +33,18 @@ func setupTestRouter(t *testing.T) *gin.Engine {
 
 	// Create services
 	wordService := &services.WordService{}
-	wordService.words = []string{
-		"hello", "world", "apple", "banana", "cherry",
-		"dragon", "elephant", "forest", "guitar", "horizon",
-	}
+	wordService.SetWords([]services.WordDefinition{
+		{Word: "hello"},
+		{Word: "world"},
+		{Word: "apple"},
+		{Word: "banana"},
+		{Word: "cherry"},
+		{Word: "dragon"},
+		{Word: "elephant"},
+		{Word: "forest"},
+		{Word: "guitar"},
+		{Word: "horizon"},
+	})
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)

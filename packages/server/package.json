@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "postinstall": "go mod tidy",
-    "dev": "go run ./cmd",
-    "build": "go build -o bin/server ./cmd",
+    "dev": "go run ./cmd/main.go",
+    "build": "go build -o bin/server ./cmd/main.go",
     "start": "./bin/server",
     "test": "go test -v ./..."
   },

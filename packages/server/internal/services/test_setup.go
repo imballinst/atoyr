@@ -1,10 +1,10 @@
 package services
 
 import (
-	"os"
 	"testing"
 
 	"atoyr/server/internal/models"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -24,9 +24,17 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func setupTestWordService(t *testing.T) *WordService {
 	ws := &WordService{
-		words: []string{
-			"hello", "world", "apple", "banana", "cherry",
-			"dragon", "elephant", "forest", "guitar", "horizon",
+		words: []WordDefinition{
+			{Word: "hello"},
+			{Word: "world"},
+			{Word: "apple"},
+			{Word: "banana"},
+			{Word: "cherry"},
+			{Word: "dragon"},
+			{Word: "elephant"},
+			{Word: "forest"},
+			{Word: "guitar"},
+			{Word: "horizon"},
 		},
 	}
 	return ws

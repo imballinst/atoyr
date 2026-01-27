@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"atoyr/server/internal/services"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -163,8 +164,8 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 	}()
 
 	// Keep connection open
-	c.Stream(func(w *gin.ResponseWriter) bool {
-		return true
-	})
-	done <- true
+	// c.Stream(func(w *gin.ResponseWriter) bool {
+	// 	return true
+	// })
+	// done <- true
 }

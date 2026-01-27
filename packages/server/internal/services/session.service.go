@@ -1,12 +1,12 @@
 package services
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"atoyr/server/internal/models"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -63,9 +63,9 @@ func (s *SessionService) SetCurrentWord(sessionID, word, token string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]interface{}{
-			"current_word":        word,
-			"current_word_token":  token,
-			"remaining_seconds":   30,
+			"current_word":       word,
+			"current_word_token": token,
+			"remaining_seconds":  30,
 		}).Error; err != nil {
 		return fmt.Errorf("failed to set current word: %w", err)
 	}
@@ -99,7 +99,7 @@ func (s *SessionService) UpdatePhase(sessionID, phase string) error {
 	return nil
 }
 
-func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int) error {
+func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Update("score", gorm.Expr("score + ?", scoreIncrement)).Error; err != nil {

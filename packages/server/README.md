@@ -240,7 +240,7 @@ make clean
 
 ## Environment Variables
 
-- `NODE_ENV` - "development" or "production" (default: "development")
+- `ENV` - "development" or "production" (default: "development")
 - `PORT` - HTTP server port (default: 3000)
 - `DATABASE_PATH` - SQLite database file path (default: ~/.atoyr/atoyr.sqlite)
 - `WORDS_PATH` - Path to words.json file (default: ../client/src/data/words.json)
@@ -290,7 +290,7 @@ CMD ["/server"]
 Create `.env` file or export variables:
 
 ```bash
-export NODE_ENV=production
+export ENV=production
 export PORT=3000
 export DATABASE_PATH=/var/lib/atoyr/atoyr.sqlite
 ```

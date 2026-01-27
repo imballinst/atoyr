@@ -9,14 +9,25 @@ import (
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/routes"
 	"atoyr/server/internal/services"
+
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Set environment
-	if os.Getenv("NODE_ENV") == "" {
-		os.Setenv("NODE_ENV", "development")
+	log.Println("Starting server...")
+
+	err := godotenv.Load(".env.local")
+	if err != nil {
+		log.Println("Error loading .env.local file")
 	}
+
+	// Set environment
+	if os.Getenv("ENV") == "" {
+		os.Setenv("ENV", "development")
+	}
+
+	log.Println("Initializing database...")
 
 	// Initialize database
 	db, err := database.Initialize()

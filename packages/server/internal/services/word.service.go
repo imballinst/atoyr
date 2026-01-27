@@ -3,15 +3,18 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
 type WordService struct {
-	words []string
+	words []WordDefinition
+}
+
+type WordDefinition struct {
+	Word        string   `json:"word"`
+	Definitions []string `json:"definitions"`
 }
 
 func NewWordService() (*WordService, error) {
@@ -25,24 +28,21 @@ func NewWordService() (*WordService, error) {
 func (w *WordService) loadWords() error {
 	wordsPath := os.Getenv("WORDS_PATH")
 	if wordsPath == "" {
-		// Default to the client data file
-		wordsPath = filepath.Join(os.Getenv("PWD"), "..", "client", "src", "data", "words.json")
+		return fmt.Errorf("WORDS_PATH environment variable is not set")
 	}
 
-	data, err := ioutil.ReadFile(wordsPath)
+	data, err := os.ReadFile(wordsPath)
 	if err != nil {
 		return fmt.Errorf("failed to read words file: %w", err)
 	}
 
-	var response struct {
-		Words []string `json:"words"`
-	}
+	var dbContent []WordDefinition
 
-	if err := json.Unmarshal(data, &response); err != nil {
+	if err := json.Unmarshal(data, &dbContent); err != nil {
 		return fmt.Errorf("failed to parse words file: %w", err)
 	}
 
-	w.words = response.Words
+	w.words = dbContent
 	return nil
 }
 
@@ -60,8 +60,8 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, error) {
 	// Find available words
 	available := []string{}
 	for _, word := range w.words {
-		if !excluded[strings.ToLower(word)] {
-			available = append(available, word)
+		if !excluded[strings.ToLower(word.Word)] {
+			available = append(available, word.Word)
 		}
 	}
 
@@ -70,4 +70,8 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, error) {
 	}
 
 	return available[rand.Intn(len(available))], nil
+}
+
+func (w *WordService) SetWords(words []WordDefinition) {
+	w.words = words
 }

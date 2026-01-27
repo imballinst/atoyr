@@ -5,23 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // SessionEntity represents an active game session
 type SessionEntity struct {
-	ID                string    `gorm:"primaryKey;type:text"`
-	CreatedAt         time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ExpiresAt         time.Time `gorm:"type:datetime;index:idx_sessions_expires"`
-	Phase             string    `gorm:"type:text;default:idle"`
-	Score             int32     `gorm:"type:integer;default:0"`
-	TotalAttempts     int32     `gorm:"type:integer;default:0"`
-	RemainingSeconds  int32     `gorm:"type:integer"`
-	AutoVoice         bool      `gorm:"type:boolean;default:false"`
-	UsedWords         StringArray `gorm:"type:text;default:'[]'"`
-	CurrentWord       string    `gorm:"type:text"`
-	CurrentWordToken  string    `gorm:"type:text"`
+	ID               string      `gorm:"primaryKey;type:text"`
+	CreatedAt        time.Time   `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	ExpiresAt        time.Time   `gorm:"type:datetime;index:idx_sessions_expires"`
+	Phase            string      `gorm:"type:text;default:idle"`
+	Score            int32       `gorm:"type:integer;default:0"`
+	TotalAttempts    int32       `gorm:"type:integer;default:0"`
+	RemainingSeconds int32       `gorm:"type:integer"`
+	AutoVoice        bool        `gorm:"type:boolean;default:false"`
+	UsedWords        StringArray `gorm:"type:text;default:'[]'"`
+	WordDefinitions  StringArray `gorm:"type:text;default:'[]'"`
+	CurrentWord      string      `gorm:"type:text"`
+	CurrentWordToken string      `gorm:"type:text"`
 }
 
 // ResultEntity represents a completed game result
@@ -52,12 +51,12 @@ func (sa *StringArray) Scan(value interface{}) error {
 
 // GameSessionState represents the current state of a game
 type GameSessionState struct {
-	Phase             string   `json:"phase"`
-	Score             int32    `json:"score"`
-	TotalAttempts     int32    `json:"totalAttempts"`
-	RemainingSeconds  int32    `json:"remainingSeconds"`
-	UsedWords         []string `json:"usedWords"`
-	CurrentWordToken  string   `json:"currentWordToken"`
+	Phase            string   `json:"phase"`
+	Score            int32    `json:"score"`
+	TotalAttempts    int32    `json:"totalAttempts"`
+	RemainingSeconds int32    `json:"remainingSeconds"`
+	UsedWords        []string `json:"usedWords"`
+	CurrentWordToken string   `json:"currentWordToken"`
 }
 
 func (s *SessionEntity) GetState() GameSessionState {

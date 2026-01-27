@@ -10,8 +10,8 @@ import (
 )
 
 type GameService struct {
-	sessionService    *SessionService
-	wordService       *WordService
+	sessionService     *SessionService
+	wordService        *WordService
 	leaderboardService *LeaderboardService
 }
 
@@ -97,7 +97,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer string) (map[string]interfa
 
 	if answerToken == expectedToken {
 		result["correct"] = true
-		scoreIncrement := int(session.RemainingSeconds)
+		scoreIncrement := int32(session.RemainingSeconds)
 		if err := g.sessionService.UpdateScore(sessionID, scoreIncrement); err != nil {
 			return nil, err
 		}
