@@ -13,6 +13,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
 - DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
+- DO NOT create additional Markdown files in `.opencode` folder unless otherwise stated.
 
 ## Structure
 
