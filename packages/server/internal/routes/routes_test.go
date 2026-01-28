@@ -67,7 +67,8 @@ func setupTestRouter(t *testing.T) *gin.Engine {
 func TestGameRoutes_StartGame(t *testing.T) {
 	router := setupTestRouter(t)
 
-	payload := StartGameRequest{AutoVoice: true}
+	autoVoice := true
+	payload := StartGameRequest{AutoVoice: &autoVoice}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/game/start", bytes.NewBuffer(body))
@@ -100,7 +101,8 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	router := setupTestRouter(t)
 
 	// Start a game first
-	startPayload := StartGameRequest{AutoVoice: false}
+	autoVoice := false
+	startPayload := StartGameRequest{AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
 	req, _ := http.NewRequest("POST", "/api/game/start", bytes.NewBuffer(startBody))

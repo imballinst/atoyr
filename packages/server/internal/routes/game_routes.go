@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"fmt"
+	"io"
+	"log"
 	"net/http"
 
 	"atoyr/server/internal/services"
@@ -30,33 +33,33 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 }
 
 type StartGameRequest struct {
-	AutoVoice bool `json:"autoVoice" binding:"required"`
+	AutoVoice *bool `json:"autoVoice" binding:"required"`
 }
 
 type StartGameResponse struct {
-	SessionID  string `json:"sessionId"`
+	SessionID   string `json:"sessionId"`
 	CurrentWord string `json:"currentWord"`
-	Token      string `json:"token"`
+	Token       string `json:"token"`
 }
 
 func (gr *GameRoutes) StartGame(c *gin.Context) {
 	var req StartGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, " + err.Error()})
 		return
 	}
 
 	// Create session
-	session, err := gr.sessionService.Create(req.AutoVoice)
+	session, err := gr.sessionService.Create(*req.AutoVoice)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session, " + err.Error()})
 		return
 	}
 
 	// Start game
 	session, err = gr.gameService.StartGame(session.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start game"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start game, " + err.Error()})
 		return
 	}
 
@@ -93,6 +96,8 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 
 	session, err := gr.sessionService.FindByID(sessionID)
 	if err != nil {
+		log.Println("Failed to find session for SSE:", err)
+
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
 	}
@@ -105,67 +110,71 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 
 	// Send initial state
 	c.SSEvent("start", gin.H{
-		"sessionId":      session.ID,
-		"currentWord":    session.CurrentWord,
-		"token":          session.CurrentWordToken,
+		"sessionId":        session.ID,
+		"currentWord":      session.CurrentWord,
+		"token":            session.CurrentWordToken,
 		"remainingSeconds": session.RemainingSeconds,
 	})
 
-	// Create a ticker for sending updates every second
-	ticker := make(chan struct{}, 1)
-	done := make(chan bool, 1)
+	var clientChan chan string
 
-	// Goroutine to emit updates
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			default:
-				session, err := gr.sessionService.FindByID(sessionID)
-				if err != nil {
-					return
-				}
+	c.Stream(func(w io.Writer) bool {
+		if _, ok := <-clientChan; ok {
+			session, err := gr.sessionService.FindByID(sessionID)
+			if err != nil {
+				fmt.Println("Cannot get session by ID: " + err.Error())
+				return false
+			}
 
-				// Send tick event
-				c.SSEvent("tick", gin.H{
-					"remainingSeconds": session.RemainingSeconds,
-					"phase":            session.Phase,
-					"score":            session.Score,
+			// Send tick event
+			c.SSEvent("tick", gin.H{
+				"remainingSeconds": session.RemainingSeconds,
+				"phase":            session.Phase,
+				"score":            session.Score,
+			})
+
+			// If game is finished, send finish event and close
+			if session.Phase == "finished" {
+				c.SSEvent("finish", gin.H{
+					"score":         session.Score,
+					"totalAttempts": session.TotalAttempts,
+					"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
 				})
-
-				// If game is finished, send finish event and close
-				if session.Phase == "finished" {
-					c.SSEvent("finish", gin.H{
-						"score":         session.Score,
-						"totalAttempts": session.TotalAttempts,
-						"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
-					})
-					return
-				}
-
-				// Wait 1 second before next update
-				<-ticker
+				return true
 			}
+			return true
 		}
-	}()
 
-	// Send ticker signals
-	go func() {
-		for {
-			select {
-			case <-done:
+		return false
+	})
+	for {
+		select {
+		case <-clientGone:
+			fmt.Printf("Session %s disconnected.\n", sessionID)
+			return
+		case <-ticker.C:
+			session, err := gr.sessionService.FindByID(sessionID)
+			if err != nil {
+				fmt.Println("Cannot get session by ID: " + err.Error())
 				return
-			default:
-				ticker <- struct{}{}
-				// Sleep is done in the client loop
+			}
+
+			// Send tick event
+			c.SSEvent("tick", gin.H{
+				"remainingSeconds": session.RemainingSeconds,
+				"phase":            session.Phase,
+				"score":            session.Score,
+			})
+
+			// If game is finished, send finish event and close
+			if session.Phase == "finished" {
+				c.SSEvent("finish", gin.H{
+					"score":         session.Score,
+					"totalAttempts": session.TotalAttempts,
+					"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
+				})
+				return
 			}
 		}
-	}()
-
-	// Keep connection open
-	// c.Stream(func(w *gin.ResponseWriter) bool {
-	// 	return true
-	// })
-	// done <- true
+	}
 }

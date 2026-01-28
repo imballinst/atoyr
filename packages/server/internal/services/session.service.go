@@ -19,15 +19,16 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autovVoice bool) (*models.SessionEntity, error) {
+func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 	session := &models.SessionEntity{
 		ID:               uuid.New().String(),
 		Phase:            "waiting-for-opponent",
 		Score:            0,
 		TotalAttempts:    0,
 		RemainingSeconds: 30,
-		AutoVoice:        autovVoice,
+		AutoVoice:        autoVoice,
 		UsedWords:        []string{},
+		WordDefinitions:  []string{},
 		CurrentWord:      "",
 		CurrentWordToken: "",
 		CreatedAt:        time.Now(),

@@ -1,11 +1,12 @@
-import { useGame } from './hooks/useGame';
-import { StartScreen } from './components/StartScreen';
 import { GameScreen } from './components/GameScreen';
 import { ResultsScreen } from './components/ResultsScreen';
+import { StartScreen } from './components/StartScreen';
+import { useServerGame } from './hooks/useServerGame';
 import './styles.css';
 
 export default function App() {
-  const { state, startGame, submitAnswer, resetGame } = useGame();
+  const gameHook = useServerGame();
+  const { state, startGame, submitAnswer, resetGame } = gameHook;
 
   if (state.phase === 'idle') {
     return <StartScreen onStart={startGame} />;
@@ -28,12 +29,7 @@ export default function App() {
 
   if (state.phase === 'finished') {
     return (
-      <ResultsScreen
-        score={state.score}
-        totalAttempts={state.totalAttempts}
-        leaderboard={state.gameResults}
-        onPlayAgain={resetGame}
-      />
+      <ResultsScreen score={state.score} totalAttempts={state.totalAttempts} leaderboard={state.gameResults} onPlayAgain={resetGame} />
     );
   }
 

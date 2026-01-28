@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "bootstrap": "yarn install",
-    "dev": "concurrently \"yarn --cwd packages/client dev\" \"go run ./packages/server/cmd\"",
+    "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/server dev\"",
     "build": "yarn --cwd packages/client build && cd packages/server && go build -o bin/server ./cmd",
     "test": "yarn --cwd packages/client test && cd packages/server && go test -v ./..."
   },
