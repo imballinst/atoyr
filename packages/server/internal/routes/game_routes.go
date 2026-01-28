@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"atoyr/server/internal/services"
 
@@ -116,65 +117,37 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 		"remainingSeconds": session.RemainingSeconds,
 	})
 
-	var clientChan chan string
-
 	c.Stream(func(w io.Writer) bool {
-		if _, ok := <-clientChan; ok {
-			session, err := gr.sessionService.FindByID(sessionID)
-			if err != nil {
-				fmt.Println("Cannot get session by ID: " + err.Error())
-				return false
-			}
+		fmt.Println("Streaming data...")
+		time.Sleep(time.Second)
 
-			// Send tick event
+		session, err := gr.sessionService.FindByID(sessionID)
+		if err != nil {
+			fmt.Println("Cannot get session by ID: " + err.Error())
+			return false
+		}
+
+		fmt.Println(session.RemainingSeconds, session.Phase)
+
+		if session.Phase == "playing" {
 			c.SSEvent("tick", gin.H{
 				"remainingSeconds": session.RemainingSeconds,
 				"phase":            session.Phase,
 				"score":            session.Score,
 			})
-
-			// If game is finished, send finish event and close
-			if session.Phase == "finished" {
-				c.SSEvent("finish", gin.H{
-					"score":         session.Score,
-					"totalAttempts": session.TotalAttempts,
-					"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
-				})
-				return true
-			}
 			return true
 		}
 
+		if session.Phase == "finished" {
+			c.SSEvent("finish", gin.H{
+				"score":         session.Score,
+				"totalAttempts": session.TotalAttempts,
+				"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
+			})
+		}
+
+		fmt.Println("false...")
+
 		return false
 	})
-	for {
-		select {
-		case <-clientGone:
-			fmt.Printf("Session %s disconnected.\n", sessionID)
-			return
-		case <-ticker.C:
-			session, err := gr.sessionService.FindByID(sessionID)
-			if err != nil {
-				fmt.Println("Cannot get session by ID: " + err.Error())
-				return
-			}
-
-			// Send tick event
-			c.SSEvent("tick", gin.H{
-				"remainingSeconds": session.RemainingSeconds,
-				"phase":            session.Phase,
-				"score":            session.Score,
-			})
-
-			// If game is finished, send finish event and close
-			if session.Phase == "finished" {
-				c.SSEvent("finish", gin.H{
-					"score":         session.Score,
-					"totalAttempts": session.TotalAttempts,
-					"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
-				})
-				return
-			}
-		}
-	}
 }

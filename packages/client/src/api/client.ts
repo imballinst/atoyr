@@ -74,14 +74,21 @@ export class GameAPI {
   subscribeToSSE(sessionId: string, onEvent: (data: Record<string, unknown>) => void, onError: (error: Error) => void): () => void {
     const eventSource = new EventSource(`${this.baseUrl}/game/sse/${sessionId}`);
 
-    eventSource.onmessage = (event) => {
+    const handleEvent = (event: MessageEvent) => {
+      console.info('SSE message received:', event.type, event.data);
+
       try {
         const data = JSON.parse(event.data);
-        onEvent(data);
+        onEvent({ ...data, eventType: event.type });
       } catch (err) {
         onError(new Error(`Failed to parse SSE event: ${err}`));
       }
     };
+
+    // Listen for named events from the server
+    eventSource.addEventListener('start', handleEvent);
+    eventSource.addEventListener('tick', handleEvent);
+    eventSource.addEventListener('finish', handleEvent);
 
     eventSource.onerror = (event) => {
       console.error(event);
