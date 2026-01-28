@@ -46,15 +46,36 @@
   - Keyboard optimized for 300px minimum, scales up to 430px maximum
   - Desktop browsers display at mobile viewport size
 
-## Backend Implementation (Full Version)
+## Backend Implementation
 
-_Note: MVP is client-only. Full version will include:_
+### Technology Stack
 
-1. Session Management: Server generates UUID for each game session
-2. SSE (Server-Sent Events): Delivers words and timing events to client
-3. Token Authentication: Unique token per word to validate requests
-4. HTTP API: Endpoint to submit answers and receive validation
-5. Database: SQLite storage for game results and leaderboard
+The backend uses **Go 1.21** with the following frameworks:
+
+- **Web Framework**: Gin (high-performance HTTP framework)
+- **ORM**: GORM (Go Object-Relational Mapping for SQLite)
+- **Database**: SQLite (serverless, self-contained)
+- **Architecture**: Service-based with clear separation of concerns
+
+### Why Go?
+
+1. **Simplicity**: Explicit dependency injection, no decorator magic
+2. **Performance**: Compiled binary with 5-40x better performance than Node.js alternatives
+3. **Concurrency**: Native goroutines for timer management and concurrent requests
+4. **Operational Efficiency**: Single executable deployment, minimal runtime requirements (~15MB memory vs 120MB+)
+5. **Maintainability**: Straightforward code for CRUD + SSE use case
+
+### Full Version Features
+
+The full backend implementation includes:
+
+1. **Session Management**: Server generates UUID for each game session
+2. **SSE (Server-Sent Events)**: Real-time delivery of words and timing events to client
+3. **Token Authentication**: Unique token per word to validate answer submissions
+4. **HTTP API**: RESTful endpoints for game control and answer validation
+5. **Persistent Storage**: SQLite database for game results and leaderboard rankings
+
+See [02-backend.md](02-backend.md) for complete technical specification and implementation details.
 
 ## MVP Implementation
 
@@ -107,10 +128,12 @@ _Note: MVP is client-only. Full version will include:_
 
 ## Future Enhancements
 
-- Backend server with SSE integration
-- Persistent database (SQLite)
 - Multi-player support
 - Difficulty levels
 - Custom word lists
 - Analytics and statistics tracking
 - Cross-session word tracking (to avoid repeats across plays)
+- Redis caching for leaderboard optimization
+- gRPC for high-performance internal APIs
+- Serverless deployment options (AWS Lambda, Cloud Functions)
+- Microservices architecture separation

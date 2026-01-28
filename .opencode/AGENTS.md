@@ -4,13 +4,15 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 
 ## Conventions
 
-- Use TypeScript
+- Use TypeScript (except for the `packages/server` which is using Go).
 - Use TailwindCSS (v4)
 - Use Prettier for formatting
 - Use Yarn Modern with nodeLinker node_modules
 - Use latest React, no need for useCallback and useMemo
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
+- When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
+- DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
 
 ## Structure
 

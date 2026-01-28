@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.25']
 
     steps:
       - uses: actions/checkout@v4
@@ -67,11 +67,3 @@ jobs:
 
       - name: Build client
         run: yarn --cwd packages/client build
-
-      - name: Archive build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            packages/client/dist
-            packages/server/bin
