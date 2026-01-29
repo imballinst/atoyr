@@ -44,7 +44,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	session, _ = ss.FindByID(session.ID)
 	word := session.CurrentWord
 
-	result, err := gs.SubmitAnswer(session.ID, word)
+	result, err := gs.SubmitAnswer(session.ID, word, session.CurrentWordToken)
 	if err != nil {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	session, _ := ss.Create(false)
 	gs.StartGame(session.ID)
 
-	result, err := gs.SubmitAnswer(session.ID, "wronganswer")
+	result, err := gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 	if err != nil {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
@@ -110,13 +110,13 @@ func TestGameService_AttemptCounting(t *testing.T) {
 	session, _ := ss.Create(false)
 	gs.StartGame(session.ID)
 
-	gs.SubmitAnswer(session.ID, "wronganswer")
+	gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 	session, _ = ss.FindByID(session.ID)
 	if session.TotalAttempts != 1 {
 		t.Errorf("Expected total attempts 1, got %d", session.TotalAttempts)
 	}
 
-	gs.SubmitAnswer(session.ID, "wronganswer2")
+	gs.SubmitAnswer(session.ID, "wronganswer2", session.CurrentWordToken)
 	session, _ = ss.FindByID(session.ID)
 	if session.TotalAttempts != 2 {
 		t.Errorf("Expected total attempts 2, got %d", session.TotalAttempts)
