@@ -6,16 +6,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export interface StartGameResponse {
   sessionId: string;
-  currentWord: string;
+  scrambledWord: string;
+  scrambledWordDefinition: string;
   token: string;
+  remainingSeconds: number;
 }
 
 export interface SubmitAnswerResponse {
   correct: boolean;
   score: number;
   attempts: number;
-  remaining: number;
-  newWord?: string;
+  remainingSeconds: number;
+  scrambledWord?: string;
+  scrambledWordDefinition?: string;
+  token?: string;
 }
 
 export interface LeaderboardEntry {
@@ -79,7 +83,7 @@ export class GameAPI {
 
       try {
         const data = JSON.parse(event.data);
-        onEvent({ ...data, eventType: event.type });
+        onEvent({ ...data, type: event.type });
       } catch (err) {
         onError(new Error(`Failed to parse SSE event: ${err}`));
       }

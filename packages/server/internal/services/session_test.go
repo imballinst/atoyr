@@ -61,7 +61,7 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 
 	session, _ := service.Create(false)
 
-	err := service.SetCurrentWord(session.ID, "test", "token123")
+	err := service.SetCurrentWord(session.ID, "test", "definition", "token123")
 	if err != nil {
 		t.Fatalf("Failed to set current word: %v", err)
 	}

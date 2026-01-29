@@ -13,8 +13,8 @@ type WordService struct {
 }
 
 type WordDefinition struct {
-	Word        string   `json:"word"`
-	Definitions []string `json:"definitions"`
+	Word       string `json:"word"`
+	Definition string `json:"definition"`
 }
 
 func NewWordService() (*WordService, error) {
@@ -46,9 +46,9 @@ func (w *WordService) loadWords() error {
 	return nil
 }
 
-func (w *WordService) GetRandomWord(excludeWords []string) (string, error) {
+func (w *WordService) GetRandomWord(excludeWords []string) (string, string, error) {
 	if len(w.words) == 0 {
-		return "", fmt.Errorf("no words available")
+		return "", "", fmt.Errorf("no words available")
 	}
 
 	// Create a map for excluded words for O(1) lookup
@@ -59,17 +59,20 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, error) {
 
 	// Find available words
 	available := []string{}
-	for _, word := range w.words {
+	availableDefinitions := []string{}
+	for idx, word := range w.words {
 		if !excluded[strings.ToLower(word.Word)] {
 			available = append(available, word.Word)
+			availableDefinitions = append(availableDefinitions, w.words[idx].Definition)
 		}
 	}
 
 	if len(available) == 0 {
-		return "", fmt.Errorf("all words have been used")
+		return "", "", fmt.Errorf("all words have been used")
 	}
 
-	return available[rand.Intn(len(available))], nil
+	idx := rand.Intn(len(available))
+	return available[idx], availableDefinitions[idx], nil
 }
 
 func (w *WordService) SetWords(words []WordDefinition) {

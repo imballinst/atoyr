@@ -9,18 +9,19 @@ import (
 
 // SessionEntity represents an active game session
 type SessionEntity struct {
-	ID               string      `gorm:"primaryKey;type:text"`
-	CreatedAt        time.Time   `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ExpiresAt        time.Time   `gorm:"type:datetime;index:idx_sessions_expires"`
-	Phase            string      `gorm:"type:text;default:idle"`
-	Score            int32       `gorm:"type:integer;default:0"`
-	TotalAttempts    int32       `gorm:"type:integer;default:0"`
-	RemainingSeconds int32       `gorm:"type:integer"`
-	AutoVoice        bool        `gorm:"type:boolean;default:false"`
-	UsedWords        StringArray `gorm:"type:text;default:'[]'"`
-	WordDefinitions  StringArray `gorm:"type:text;default:'[]'"`
-	CurrentWord      string      `gorm:"type:text"`
-	CurrentWordToken string      `gorm:"type:text"`
+	ID                    string      `gorm:"primaryKey;type:text"`
+	CreatedAt             time.Time   `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	ExpiresAt             time.Time   `gorm:"type:datetime;index:idx_sessions_expires"`
+	Phase                 string      `gorm:"type:text;default:idle"`
+	Score                 int32       `gorm:"type:integer;default:0"`
+	TotalAttempts         int32       `gorm:"type:integer;default:0"`
+	RemainingSeconds      int32       `gorm:"type:integer"`
+	AutoVoice             bool        `gorm:"type:boolean;default:false"`
+	UsedWords             StringArray `gorm:"type:text;default:'[]'"`
+	WordDefinitions       StringArray `gorm:"type:text;default:'[]'"`
+	CurrentWord           string      `gorm:"type:text"`
+	CurrentWordDefinition string      `gorm:"type:text"`
+	CurrentWordToken      string      `gorm:"type:text"`
 }
 
 // ResultEntity represents a completed game result

@@ -17,7 +17,7 @@ import (
 	"atoyr/server/internal/models"
 )
 
-func setupTestRouter(t *testing.T) *gin.Engine {
+func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	// Set Gin to release mode for tests
 	gin.SetMode(gin.TestMode)
 
@@ -61,11 +61,11 @@ func setupTestRouter(t *testing.T) *gin.Engine {
 	leaderboardRoutes := NewLeaderboardRoutes(leaderboardService)
 	leaderboardRoutes.Register(router)
 
-	return router
+	return router, sessionService
 }
 
 func TestGameRoutes_StartGame(t *testing.T) {
-	router := setupTestRouter(t)
+	router, _ := setupTestRouter(t)
 
 	autoVoice := true
 	payload := StartGameRequest{AutoVoice: &autoVoice}
@@ -88,17 +88,25 @@ func TestGameRoutes_StartGame(t *testing.T) {
 		t.Error("Session ID is empty")
 	}
 
-	if response.CurrentWord == "" {
+	if response.ScrambledWord == "" {
 		t.Error("Current word is empty")
+	}
+
+	if response.ScrambledWordDefinition == "" {
+		t.Error("Current word definition is empty")
 	}
 
 	if response.Token == "" {
 		t.Error("Token is empty")
 	}
+
+	if response.RemainingSeconds == 0 {
+		t.Error("Remaining seconds is empty")
+	}
 }
 
 func TestGameRoutes_SubmitAnswer(t *testing.T) {
-	router := setupTestRouter(t)
+	router, sessionService := setupTestRouter(t)
 
 	// Start a game first
 	autoVoice := false
@@ -114,10 +122,12 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	var startResponse StartGameResponse
 	json.Unmarshal(w.Body.Bytes(), &startResponse)
 
+	session, _ := sessionService.FindByID(startResponse.SessionID)
+
 	// Submit answer
 	answerPayload := SubmitAnswerRequest{
 		SessionID: startResponse.SessionID,
-		Answer:    startResponse.CurrentWord,
+		Answer:    session.CurrentWord,
 	}
 	answerBody, _ := json.Marshal(answerPayload)
 
@@ -144,7 +154,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 }
 
 func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
-	router := setupTestRouter(t)
+	router, _ := setupTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/leaderboard", nil)
 	w := httptest.NewRecorder()
@@ -167,7 +177,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 }
 
 func TestLeaderboardRoutes_Pagination(t *testing.T) {
-	router := setupTestRouter(t)
+	router, _ := setupTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/leaderboard?page=0&limit=5", nil)
 	w := httptest.NewRecorder()

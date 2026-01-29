@@ -49,11 +49,11 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
 
-	if result["correct"] != true {
+	if result.Correct {
 		t.Error("Expected correct answer to be true")
 	}
 
-	if result["score"].(int) == 0 {
+	if result.Score == 0 {
 		t.Error("Expected score to be greater than 0")
 	}
 }
@@ -73,7 +73,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
 
-	if result["correct"] != false {
+	if !result.Correct {
 		t.Error("Expected correct answer to be false")
 	}
 }

@@ -7,7 +7,7 @@ import (
 func TestWordService_GetRandomWord(t *testing.T) {
 	ws := setupTestWordService(t)
 
-	word, err := ws.GetRandomWord([]string{})
+	word, _, err := ws.GetRandomWord([]string{})
 	if err != nil {
 		t.Fatalf("Failed to get random word: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestWordService_ExcludeWords(t *testing.T) {
 
 	// Exclude all words except one
 	exclude := []string{"hello", "world", "apple", "banana", "cherry", "dragon", "elephant", "forest", "guitar"}
-	word, err := ws.GetRandomWord(exclude)
+	word, _, err := ws.GetRandomWord(exclude)
 	if err != nil {
 		t.Fatalf("Failed to get random word: %v", err)
 	}
@@ -54,7 +54,7 @@ func TestWordService_AllWordsUsed(t *testing.T) {
 		excluded = append(excluded, w.Word)
 	}
 
-	_, err := ws.GetRandomWord(excluded)
+	_, _, err := ws.GetRandomWord(excluded)
 	if err == nil {
 		t.Error("Expected error when all words are excluded")
 	}
@@ -69,7 +69,7 @@ func TestWordService_CaseInsensitive(t *testing.T) {
 
 	// Exclude with different case
 	Excluded := []string{"HELLO", "World", "APPLE"}
-	word, err := ws.GetRandomWord(Excluded)
+	word, _, err := ws.GetRandomWord(Excluded)
 	if err != nil {
 		t.Fatalf("Failed to get random word: %v", err)
 	}

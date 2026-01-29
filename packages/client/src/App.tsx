@@ -12,15 +12,17 @@ export default function App() {
     return <StartScreen onStart={startGame} />;
   }
 
-  if (state.phase === 'playing' && state.currentWord && state.scrambled) {
+  const { currentWord, currentWordToken } = state;
+
+  if (state.phase === 'playing' && currentWord && currentWordToken) {
     return (
       <GameScreen
-        scrambled={state.scrambled}
-        definition={state.currentWord.definition}
+        token={currentWordToken}
+        scrambled={currentWord.scrambled}
+        definition={currentWord.definition}
         score={state.score}
         totalAttempts={state.totalAttempts}
         remainingSeconds={state.remainingSeconds}
-        expectedWord={state.currentWord.word}
         autoVoice={state.autoVoice}
         onSubmit={submitAnswer}
       />

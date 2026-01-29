@@ -21,18 +21,19 @@ func NewSessionService(db *gorm.DB) *SessionService {
 
 func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 	session := &models.SessionEntity{
-		ID:               uuid.New().String(),
-		Phase:            "waiting-for-opponent",
-		Score:            0,
-		TotalAttempts:    0,
-		RemainingSeconds: 30,
-		AutoVoice:        autoVoice,
-		UsedWords:        []string{},
-		WordDefinitions:  []string{},
-		CurrentWord:      "",
-		CurrentWordToken: "",
-		CreatedAt:        time.Now(),
-		ExpiresAt:        time.Now().Add(5 * time.Minute),
+		ID:                    uuid.New().String(),
+		Phase:                 "waiting-for-opponent",
+		Score:                 0,
+		TotalAttempts:         0,
+		RemainingSeconds:      30,
+		AutoVoice:             autoVoice,
+		UsedWords:             []string{},
+		WordDefinitions:       []string{},
+		CurrentWordDefinition: "",
+		CurrentWord:           "",
+		CurrentWordToken:      "",
+		CreatedAt:             time.Now(),
+		ExpiresAt:             time.Now().Add(5 * time.Minute),
 	}
 
 	if err := s.db.Create(session).Error; err != nil {
@@ -60,13 +61,13 @@ func (s *SessionService) Update(session *models.SessionEntity) error {
 	return nil
 }
 
-func (s *SessionService) SetCurrentWord(sessionID, word, token string) error {
+func (s *SessionService) SetCurrentWord(sessionID, word, wordDefinition, token string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]interface{}{
-			"current_word":       word,
-			"current_word_token": token,
-			"remaining_seconds":  30,
+			"current_word":            word,
+			"current_word_definition": wordDefinition,
+			"current_word_token":      token,
 		}).Error; err != nil {
 		return fmt.Errorf("failed to set current word: %w", err)
 	}

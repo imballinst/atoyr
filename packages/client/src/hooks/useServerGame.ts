@@ -9,8 +9,6 @@ import { GAME_DURATION_SECONDS, GameResult, GameState, LEADERBOARD_COOKIE_NAME }
 
 interface ServerGameSession {
   sessionId: string;
-  currentWord: string;
-  token: string;
   autoVoice: boolean;
 }
 
@@ -37,7 +35,7 @@ export function useServerGame() {
   const [state, setState] = useState<GameState>({
     phase: 'idle',
     currentWord: null,
-    scrambled: null,
+    currentWordToken: null,
     score: 0,
     totalAttempts: 0,
     remainingSeconds: GAME_DURATION_SECONDS,
@@ -66,40 +64,30 @@ export function useServerGame() {
       .then((response) => {
         sessionRef.current = {
           sessionId: response.sessionId,
-          currentWord: response.currentWord,
-          token: response.token,
           autoVoice,
         };
+        setState((prev) => ({
+          ...prev,
+          remainingSeconds: response.remainingSeconds,
+          currentWord: {
+            scrambled: response.scrambledWord,
+            definition: response.scrambledWordDefinition,
+          },
+          currentWordToken: response.token,
+        }));
 
         // Subscribe to SSE events
         sseUnsubscribeRef.current = gameAPI.subscribeToSSE(
           response.sessionId,
           (event) => {
-            console.log('SSE event received:', event);
-
             const eventType = (event.type as string) || '';
 
-            if (eventType === 'word:new') {
-              setState((prev) => ({
-                ...prev,
-                currentWord: {
-                  word: event.word as string,
-                  definition: event.definition as string,
-                },
-                scrambled: event.scrambled as string,
-              }));
-
-              // Update session ref with new token
-              if (sessionRef.current) {
-                sessionRef.current.token = event.token as string;
-                sessionRef.current.currentWord = event.word as string;
-              }
-            } else if (eventType === 'timer:tick') {
+            if (eventType === 'tick') {
               setState((prev) => ({
                 ...prev,
                 remainingSeconds: event.remainingSeconds as number,
               }));
-            } else if (eventType === 'game:finished') {
+            } else if (eventType === 'finish') {
               const accuracy = (event.totalAttempts as number) > 0 ? (event.score as number) / (event.totalAttempts as number) : 0;
 
               const result: GameResult = {
@@ -122,8 +110,6 @@ export function useServerGame() {
                 totalAttempts: event.totalAttempts as number,
                 gameResults: leaderboard,
               }));
-            } else if (eventType === 'error') {
-              console.error('SSE error:', event.message);
             }
           },
           (error) => {
@@ -146,26 +132,35 @@ export function useServerGame() {
   }, []);
 
   const submitAnswer = useCallback(
-    (answer: string) => {
+    (answer: string, token: string, { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void }) => {
       if (state.phase !== 'playing' || !sessionRef.current) return;
 
       const session = sessionRef.current;
 
       gameAPI
-        .submitAnswer(session.sessionId, session.token, answer)
+        .submitAnswer(session.sessionId, token, answer)
         .then((response: SubmitAnswerResponse) => {
           setState((prev) => ({
             ...prev,
             score: response.score,
             totalAttempts: response.attempts,
-            remainingSeconds: response.remaining,
+            remainingSeconds: response.remainingSeconds,
           }));
 
-          if (response.correct && response.newWord) {
+          const { scrambledWord, scrambledWordDefinition, token } = response;
+
+          if (response.correct && scrambledWord && scrambledWordDefinition && token) {
             setState((prev) => ({
               ...prev,
-              scrambled: response.newWord || null,
+              currentWord: {
+                scrambled: scrambledWord,
+                definition: scrambledWordDefinition,
+              },
+              currentWordToken: token,
             }));
+            onSuccess?.();
+          } else {
+            onError?.();
           }
         })
         .catch((err) => {
@@ -191,6 +186,7 @@ export function useServerGame() {
       phase: 'idle',
       currentWord: null,
       scrambled: null,
+      currentWordToken: null,
       score: 0,
       totalAttempts: 0,
       remainingSeconds: GAME_DURATION_SECONDS,

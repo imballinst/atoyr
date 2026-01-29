@@ -3,7 +3,7 @@
 // ============================================
 
 export interface WordEntry {
-  word: string;
+  scrambled: string;
   definition: string;
 }
 
@@ -49,7 +49,7 @@ export interface GameSessionState {
 export interface GameState {
   phase: GamePhase;
   currentWord: WordEntry | null;
-  scrambled: string | null;
+  currentWordToken: string | null;
   score: number;
   totalAttempts: number;
   remainingSeconds: number;

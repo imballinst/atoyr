@@ -4,15 +4,27 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/utils"
 )
 
 type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
+}
+
+type SubmitAnswerResult struct {
+	Correct                 bool   `json:"correct"`
+	ScrambledWord           string `json:"scrambledWord"`
+	ScrambledWordDefinition string `json:"scrambledWordDefinition"`
+	Token                   string `json:"token"`
+	Score                   int32  `json:"score"`
+	Attempts                int32  `json:"attempts"`
+	RemainingSeconds        int32  `json:"remainingSeconds"`
 }
 
 func NewGameService(sessionService *SessionService, wordService *WordService, leaderboardService *LeaderboardService) *GameService {
@@ -52,14 +64,14 @@ func (g *GameService) EmitWord(sessionID string) error {
 		return err
 	}
 
-	word, err := g.wordService.GetRandomWord(session.UsedWords)
+	word, definition, err := g.wordService.GetRandomWord(session.UsedWords)
 	if err != nil {
 		// All words used, finish game
 		return g.FinishGame(sessionID)
 	}
 
 	token := g.generateToken(word)
-	if err := g.sessionService.SetCurrentWord(sessionID, word, token); err != nil {
+	if err := g.sessionService.SetCurrentWord(sessionID, word, definition, token); err != nil {
 		return err
 	}
 
@@ -70,7 +82,7 @@ func (g *GameService) EmitWord(sessionID string) error {
 	return nil
 }
 
-func (g *GameService) SubmitAnswer(sessionID, answer string) (map[string]interface{}, error) {
+func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnswerResult, error) {
 	session, err := g.sessionService.FindByID(sessionID)
 	if err != nil {
 		return nil, err
@@ -84,24 +96,25 @@ func (g *GameService) SubmitAnswer(sessionID, answer string) (map[string]interfa
 		return nil, err
 	}
 
-	result := map[string]interface{}{
-		"correct":   false,
-		"score":     session.Score,
-		"attempts":  session.TotalAttempts + 1,
-		"remaining": session.RemainingSeconds,
+	result := &SubmitAnswerResult{
+		Correct:          false,
+		Score:            session.Score,
+		Attempts:         session.TotalAttempts + 1,
+		RemainingSeconds: session.RemainingSeconds,
 	}
 
 	// Validate answer by checking token
-	expectedToken := g.generateToken(session.CurrentWord)
-	answerToken := g.generateToken(answer)
+	expectedToken := session.CurrentWordToken
 
-	if answerToken == expectedToken {
-		result["correct"] = true
-		scoreIncrement := int32(session.RemainingSeconds)
-		if err := g.sessionService.UpdateScore(sessionID, scoreIncrement); err != nil {
+	if token != expectedToken {
+		log.Printf("submitted answer token: %s, expected %s\n", token, expectedToken)
+	} else if answer != session.CurrentWord {
+		log.Printf("submitted answer: %s, expected %s\n", answer, session.CurrentWord)
+	} else {
+		result.Correct = true
+		if err := g.sessionService.UpdateScore(sessionID, 1); err != nil {
 			return nil, err
 		}
-		result["score"] = session.Score + scoreIncrement
 
 		// Emit next word
 		if err := g.EmitWord(sessionID); err != nil {
@@ -114,7 +127,10 @@ func (g *GameService) SubmitAnswer(sessionID, answer string) (map[string]interfa
 
 		// Reset timer for next word
 		session, _ = g.sessionService.FindByID(sessionID)
-		result["newWord"] = session.CurrentWord
+		result.ScrambledWord = utils.ScrambleWord(session.CurrentWord)
+		result.ScrambledWordDefinition = session.CurrentWordDefinition
+		result.Token = g.generateToken(session.CurrentWord)
+		result.Score = session.Score
 	}
 
 	return result, nil

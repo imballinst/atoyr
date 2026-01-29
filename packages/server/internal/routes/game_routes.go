@@ -5,9 +5,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"atoyr/server/internal/services"
+	"atoyr/server/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,9 +40,11 @@ type StartGameRequest struct {
 }
 
 type StartGameResponse struct {
-	SessionID   string `json:"sessionId"`
-	CurrentWord string `json:"currentWord"`
-	Token       string `json:"token"`
+	SessionID               string `json:"sessionId"`
+	ScrambledWord           string `json:"scrambledWord"`
+	ScrambledWordDefinition string `json:"scrambledWordDefinition"`
+	Token                   string `json:"token"`
+	RemainingSeconds        int32  `json:"remainingSeconds"`
 }
 
 func (gr *GameRoutes) StartGame(c *gin.Context) {
@@ -65,15 +69,18 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, StartGameResponse{
-		SessionID:   session.ID,
-		CurrentWord: session.CurrentWord,
-		Token:       session.CurrentWordToken,
+		SessionID:               session.ID,
+		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
+		ScrambledWordDefinition: session.CurrentWordDefinition,
+		Token:                   session.CurrentWordToken,
+		RemainingSeconds:        session.RemainingSeconds,
 	})
 }
 
 type SubmitAnswerRequest struct {
 	SessionID string `json:"sessionId" binding:"required"`
 	Answer    string `json:"answer" binding:"required"`
+	Token     string `json:"token" binding:"required"`
 }
 
 func (gr *GameRoutes) SubmitAnswer(c *gin.Context) {
@@ -83,7 +90,7 @@ func (gr *GameRoutes) SubmitAnswer(c *gin.Context) {
 		return
 	}
 
-	result, err := gr.gameService.SubmitAnswer(req.SessionID, req.Answer)
+	result, err := gr.gameService.SubmitAnswer(req.SessionID, strings.ToLower(req.Answer), req.Token)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -95,7 +102,7 @@ func (gr *GameRoutes) SubmitAnswer(c *gin.Context) {
 func (gr *GameRoutes) SSE(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	session, err := gr.sessionService.FindByID(sessionID)
+	_, err := gr.sessionService.FindByID(sessionID)
 	if err != nil {
 		log.Println("Failed to find session for SSE:", err)
 
@@ -108,14 +115,6 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
-
-	// Send initial state
-	c.SSEvent("start", gin.H{
-		"sessionId":        session.ID,
-		"currentWord":      session.CurrentWord,
-		"token":            session.CurrentWordToken,
-		"remainingSeconds": session.RemainingSeconds,
-	})
 
 	c.Stream(func(w io.Writer) bool {
 		fmt.Println("Streaming data...")
@@ -144,9 +143,11 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 				"totalAttempts": session.TotalAttempts,
 				"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
 			})
+
+			time.Sleep(time.Second)
 		}
 
-		fmt.Println("false...")
+		fmt.Println("closing SSE connection...")
 
 		return false
 	})

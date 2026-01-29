@@ -3,24 +3,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 interface GameScreenProps {
   scrambled: string;
   definition: string;
+  token: string;
   score: number;
   totalAttempts: number;
   remainingSeconds: number;
-  expectedWord: string;
   autoVoice: boolean;
-  onSubmit: (answer: string) => void;
+  onSubmit: (answer: string, token: string, { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void }) => void;
 }
 
-export function GameScreen({
-  scrambled,
-  definition,
-  score,
-  totalAttempts,
-  remainingSeconds,
-  expectedWord,
-  autoVoice,
-  onSubmit,
-}: GameScreenProps) {
+export function GameScreen({ scrambled, definition, score, totalAttempts, remainingSeconds, autoVoice, token, onSubmit }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
@@ -73,11 +64,18 @@ export function GameScreen({
 
   const handleSubmit = () => {
     if (answer.trim().length === 0) return;
-    const isCorrect = answer.trim().toLowerCase() === expectedWord.toLowerCase();
-    setFeedback(isCorrect ? 'correct' : 'incorrect');
-    onSubmit(answer);
+    setFeedback(null);
+    onSubmit(answer, token, {
+      onSuccess: () => {
+        setFeedback('correct');
+        setTimeout(() => setFeedback(null), 1000);
+      },
+      onError: () => {
+        setFeedback('incorrect');
+        setTimeout(() => setFeedback(null), 1000);
+      },
+    });
     setAnswer('');
-    setTimeout(() => setFeedback(null), 600);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
