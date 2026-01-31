@@ -22,6 +22,7 @@ export default function App() {
         definition={currentWord.definition}
         score={state.score}
         totalAttempts={state.totalAttempts}
+        correctAttemptTimestamps={state.correctAttemptTimestamps}
         remainingSeconds={state.remainingSeconds}
         autoVoice={state.autoVoice}
         onSubmit={submitAnswer}

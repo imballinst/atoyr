@@ -16,5 +16,8 @@
     "paths": {
       "@atoyr/shared": ["packages/shared/src/index.ts"]
     }
-  }
+  },
+  "references": [
+    { "path": "packages/shared" }
+  ]
 }

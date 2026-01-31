@@ -82,14 +82,14 @@ func TestSessionService_UpdateScore(t *testing.T) {
 
 	session, _ := service.Create(false)
 
-	service.UpdateScore(session.ID, 10)
+	service.UpdateScore(session.ID, 10, []string{})
 	found, _ := service.FindByID(session.ID)
 
 	if found.Score != 10 {
 		t.Errorf("Expected score 10, got %d", found.Score)
 	}
 
-	service.UpdateScore(session.ID, 5)
+	service.UpdateScore(session.ID, 5, []string{})
 	found, _ = service.FindByID(session.ID)
 
 	if found.Score != 15 {

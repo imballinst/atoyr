@@ -4,7 +4,10 @@
     "jsx": "react-jsx",
     "module": "ES2020",
     "moduleResolution": "bundler",
-    "types": ["vite/client", "node"]
+    "types": ["vite/client"],
+    "paths": {
+      "@atoyr/shared": ["../packages/shared/src/index.ts"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

@@ -1,17 +1,25 @@
+import { GameState } from '@atoyr/shared';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-interface GameScreenProps {
+interface GameScreenProps
+  extends Pick<GameState, 'score' | 'totalAttempts' | 'remainingSeconds' | 'autoVoice' | 'correctAttemptTimestamps'> {
   scrambled: string;
   definition: string;
   token: string;
-  score: number;
-  totalAttempts: number;
-  remainingSeconds: number;
-  autoVoice: boolean;
   onSubmit: (answer: string, token: string, { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void }) => void;
 }
 
-export function GameScreen({ scrambled, definition, score, totalAttempts, remainingSeconds, autoVoice, token, onSubmit }: GameScreenProps) {
+export function GameScreen({
+  scrambled,
+  definition,
+  score,
+  totalAttempts,
+  correctAttemptTimestamps,
+  remainingSeconds,
+  autoVoice,
+  token,
+  onSubmit,
+}: GameScreenProps) {
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
@@ -99,12 +107,14 @@ export function GameScreen({ scrambled, definition, score, totalAttempts, remain
         </div>
         <div className="flex gap-4 flex-1">
           <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
-            <div className="text-xs text-dark-text-tertiary">{score} correct</div>
+            <div className="text-xs text-dark-text-tertiary">
+              {score}/{totalAttempts} correct
+            </div>
             <div className="text-sm font-semibold text-dark-text-primary">{accuracy}%</div>
           </div>
           <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
-            <div className="text-xs text-dark-text-tertiary">Attempts</div>
-            <div className="text-sm font-semibold text-dark-text-primary">{totalAttempts}</div>
+            <div className="text-xs text-dark-text-tertiary">Streak</div>
+            <div className="text-sm font-semibold text-dark-text-primary">{correctAttemptTimestamps.length}</div>
           </div>
         </div>
       </div>

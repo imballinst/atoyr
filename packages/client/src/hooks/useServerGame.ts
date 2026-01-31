@@ -31,18 +31,21 @@ function getCookie(name: string): string | null {
   return null;
 }
 
+const INITIAL_STATE: GameState = {
+  phase: 'idle',
+  currentWord: null,
+  currentWordToken: null,
+  score: 0,
+  totalAttempts: 0,
+  correctAttemptTimestamps: [],
+  remainingSeconds: GAME_DURATION_SECONDS,
+  usedWords: new Set(),
+  gameResults: [],
+  autoVoice: false,
+};
+
 export function useServerGame() {
-  const [state, setState] = useState<GameState>({
-    phase: 'idle',
-    currentWord: null,
-    currentWordToken: null,
-    score: 0,
-    totalAttempts: 0,
-    remainingSeconds: GAME_DURATION_SECONDS,
-    usedWords: new Set(),
-    gameResults: [],
-    autoVoice: false,
-  });
+  const [state, setState] = useState(INITIAL_STATE);
 
   const sessionRef = useRef<ServerGameSession | null>(null);
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
@@ -143,6 +146,7 @@ export function useServerGame() {
           setState((prev) => ({
             ...prev,
             score: response.score,
+            correctAttemptTimestamps: response.correctAttemptTimestamps,
             totalAttempts: response.attempts,
             remainingSeconds: response.remainingSeconds,
           }));
@@ -183,16 +187,8 @@ export function useServerGame() {
     sessionRef.current = null;
 
     setState((prev) => ({
-      phase: 'idle',
-      currentWord: null,
-      scrambled: null,
-      currentWordToken: null,
-      score: 0,
-      totalAttempts: 0,
-      remainingSeconds: GAME_DURATION_SECONDS,
-      usedWords: new Set(),
+      ...INITIAL_STATE,
       gameResults: prev.gameResults,
-      autoVoice: false,
     }));
   }, []);
 

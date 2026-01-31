@@ -21,19 +21,20 @@ func NewSessionService(db *gorm.DB) *SessionService {
 
 func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 	session := &models.SessionEntity{
-		ID:                    uuid.New().String(),
-		Phase:                 "waiting-for-opponent",
-		Score:                 0,
-		TotalAttempts:         0,
-		RemainingSeconds:      30,
-		AutoVoice:             autoVoice,
-		UsedWords:             []string{},
-		WordDefinitions:       []string{},
-		CurrentWordDefinition: "",
-		CurrentWord:           "",
-		CurrentWordToken:      "",
-		CreatedAt:             time.Now(),
-		ExpiresAt:             time.Now().Add(5 * time.Minute),
+		ID:                       uuid.New().String(),
+		Phase:                    "waiting-for-opponent",
+		Score:                    0,
+		TotalAttempts:            0,
+		RemainingSeconds:         30,
+		AutoVoice:                autoVoice,
+		UsedWords:                []string{},
+		WordDefinitions:          []string{},
+		CorrectAttemptTimestamps: []string{},
+		CurrentWordDefinition:    "",
+		CurrentWord:              "",
+		CurrentWordToken:         "",
+		CreatedAt:                time.Now(),
+		ExpiresAt:                time.Now().Add(5 * time.Minute),
 	}
 
 	if err := s.db.Create(session).Error; err != nil {
@@ -101,10 +102,14 @@ func (s *SessionService) UpdatePhase(sessionID, phase string) error {
 	return nil
 }
 
-func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32) error {
+func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32, correctAttemptTimestamps []string) error {
+	fmt.Println(correctAttemptTimestamps)
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
-		Update("score", gorm.Expr("score + ?", scoreIncrement)).Error; err != nil {
+		Updates(map[string]interface{}{
+			"score":                      gorm.Expr("score + ?", scoreIncrement),
+			"correct_attempt_timestamps": []string{"hehe"},
+		}).Error; err != nil {
 		return fmt.Errorf("failed to update score: %w", err)
 	}
 	return nil

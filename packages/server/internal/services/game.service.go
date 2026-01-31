@@ -18,13 +18,14 @@ type GameService struct {
 }
 
 type SubmitAnswerResult struct {
-	Correct                 bool   `json:"correct"`
-	ScrambledWord           string `json:"scrambledWord"`
-	ScrambledWordDefinition string `json:"scrambledWordDefinition"`
-	Token                   string `json:"token"`
-	Score                   int32  `json:"score"`
-	Attempts                int32  `json:"attempts"`
-	RemainingSeconds        int32  `json:"remainingSeconds"`
+	Correct                  bool     `json:"correct"`
+	ScrambledWord            string   `json:"scrambledWord"`
+	ScrambledWordDefinition  string   `json:"scrambledWordDefinition"`
+	CorrectAttemptTimestamps []string `json:"correctAttemptTimestamps"`
+	Token                    string   `json:"token"`
+	Score                    int32    `json:"score"`
+	Attempts                 int32    `json:"attempts"`
+	RemainingSeconds         int32    `json:"remainingSeconds"`
 }
 
 func NewGameService(sessionService *SessionService, wordService *WordService, leaderboardService *LeaderboardService) *GameService {
@@ -97,24 +98,25 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 	}
 
 	result := &SubmitAnswerResult{
-		Correct:          false,
-		Score:            session.Score,
-		Attempts:         session.TotalAttempts + 1,
-		RemainingSeconds: session.RemainingSeconds,
+		Correct:                  false,
+		Score:                    session.Score,
+		Attempts:                 session.TotalAttempts + 1,
+		RemainingSeconds:         session.RemainingSeconds,
+		CorrectAttemptTimestamps: []string{},
 	}
 
 	// Validate answer by checking token
 	expectedToken := session.CurrentWordToken
+	scoreIncrement := int32(0)
 
 	if token != expectedToken {
-		log.Printf("submitted answer token: %s, expected %s\n", token, expectedToken)
+		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, expectedToken)
 	} else if answer != session.CurrentWord {
-		log.Printf("submitted answer: %s, expected %s\n", answer, session.CurrentWord)
+		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 	} else {
 		result.Correct = true
-		if err := g.sessionService.UpdateScore(sessionID, 1); err != nil {
-			return nil, err
-		}
+		result.CorrectAttemptTimestamps = append(result.CorrectAttemptTimestamps, time.Now().Format(time.RFC3339))
+		scoreIncrement = 1
 
 		// Emit next word
 		if err := g.EmitWord(sessionID); err != nil {
@@ -131,6 +133,10 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		result.ScrambledWordDefinition = session.CurrentWordDefinition
 		result.Token = g.generateToken(session.CurrentWord)
 		result.Score = session.Score
+	}
+
+	if err := g.sessionService.UpdateScore(sessionID, scoreIncrement, result.CorrectAttemptTimestamps); err != nil {
+		return nil, err
 	}
 
 	return result, nil

@@ -57,6 +57,8 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 	// Create session
 	session, err := gr.sessionService.Create(*req.AutoVoice)
 	if err != nil {
+		log.Println("Failed to create session:", err)
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session, " + err.Error()})
 		return
 	}
@@ -64,6 +66,8 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 	// Start game
 	session, err = gr.gameService.StartGame(session.ID)
 	if err != nil {
+		log.Println("Failed to start game:", err)
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start game, " + err.Error()})
 		return
 	}

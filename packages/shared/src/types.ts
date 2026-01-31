@@ -52,6 +52,7 @@ export interface GameState {
   currentWordToken: string | null;
   score: number;
   totalAttempts: number;
+  correctAttemptTimestamps: string[];
   remainingSeconds: number;
   usedWords: Set<string>;
   gameResults: GameResult[];
