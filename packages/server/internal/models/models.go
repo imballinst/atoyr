@@ -1,10 +1,37 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
 )
+
+type JSON json.RawMessage
+
+// Scan scan value into Jsonb, implements sql.Scanner interface
+func (j *JSON) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+	}
+
+	result := json.RawMessage{}
+	err := json.Unmarshal(bytes, &result)
+	*j = JSON(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (j JSON) Value() (driver.Value, error) {
+	if len(j) == 0 {
+		return nil, nil
+	}
+	return json.RawMessage(j).MarshalJSON()
+}
 
 // SessionEntity represents an active game session
 type SessionEntity struct {
@@ -15,7 +42,7 @@ type SessionEntity struct {
 	Score                    int32          `gorm:"type:integer;default:0"`
 	TotalAttempts            int32          `gorm:"type:integer;default:0"`
 	RemainingSeconds         int32          `gorm:"type:integer"`
-	CorrectAttemptTimestamps pq.StringArray `gorm:"type:text;default:'[]'"`
+	CorrectAttemptTimestamps JSON           `gorm:"type:jsonb;default:'[]'"`
 	AutoVoice                bool           `gorm:"type:boolean;default:false"`
 	UsedWords                pq.StringArray `gorm:"type:text;default:'[]'"`
 	WordDefinitions          pq.StringArray `gorm:"type:text;default:'[]'"`

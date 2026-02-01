@@ -97,6 +97,7 @@ export function GameScreen({
   };
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
+  const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
 
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center p-4 bg-dark-bg-primary overflow-hidden">
@@ -115,7 +116,7 @@ export function GameScreen({
           </div>
           <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
             <div className="text-xs text-dark-text-tertiary">Streak</div>
-            <div className="text-sm font-semibold text-dark-text-primary">{correctAttemptTimestamps.length}</div>
+            <div className="text-sm font-semibold text-dark-text-primary">{currentStreak.length}</div>
           </div>
         </div>
       </div>

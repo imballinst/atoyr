@@ -17,7 +17,7 @@ export interface SubmitAnswerResponse {
   score: number;
   attempts: number;
   remainingSeconds: number;
-  correctAttemptTimestamps: string[];
+  correctAttemptTimestamps: string[][];
   scrambledWord?: string;
   scrambledWordDefinition?: string;
   token?: string;

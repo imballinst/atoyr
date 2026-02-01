@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -30,7 +31,7 @@ func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 		AutoVoice:                autoVoice,
 		UsedWords:                pq.StringArray{},
 		WordDefinitions:          pq.StringArray{},
-		CorrectAttemptTimestamps: pq.StringArray{},
+		CorrectAttemptTimestamps: models.JSON([]byte("[]")),
 		CurrentWordDefinition:    "",
 		CurrentWord:              "",
 		CurrentWordToken:         "",
@@ -103,12 +104,17 @@ func (s *SessionService) UpdatePhase(sessionID, phase string) error {
 	return nil
 }
 
-func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32, correctAttemptTimestamps []string) error {
+func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32, correctAttemptTimestamps [][]string) error {
+	correctAttemptTimestampsJson, err := json.Marshal(correctAttemptTimestamps)
+	if err != nil {
+		return fmt.Errorf("failed to marshal correct attempt timestamps: %w", err)
+	}
+
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]interface{}{
 			"score":                      gorm.Expr("score + ?", scoreIncrement),
-			"correct_attempt_timestamps": pq.StringArray(correctAttemptTimestamps),
+			"correct_attempt_timestamps": correctAttemptTimestampsJson,
 		}).Error; err != nil {
 		return fmt.Errorf("failed to update score: %w", err)
 	}

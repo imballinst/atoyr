@@ -32,7 +32,13 @@ export default function App() {
 
   if (state.phase === 'finished') {
     return (
-      <ResultsScreen score={state.score} totalAttempts={state.totalAttempts} leaderboard={state.gameResults} onPlayAgain={resetGame} />
+      <ResultsScreen
+        score={state.score}
+        totalAttempts={state.totalAttempts}
+        leaderboard={state.gameResults}
+        onPlayAgain={resetGame}
+        correctAttemptTimestamps={state.correctAttemptTimestamps}
+      />
     );
   }
 

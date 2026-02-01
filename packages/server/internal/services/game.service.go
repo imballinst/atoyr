@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -18,14 +19,14 @@ type GameService struct {
 }
 
 type SubmitAnswerResult struct {
-	Correct                  bool     `json:"correct"`
-	ScrambledWord            string   `json:"scrambledWord"`
-	ScrambledWordDefinition  string   `json:"scrambledWordDefinition"`
-	CorrectAttemptTimestamps []string `json:"correctAttemptTimestamps"`
-	Token                    string   `json:"token"`
-	Score                    int32    `json:"score"`
-	Attempts                 int32    `json:"attempts"`
-	RemainingSeconds         int32    `json:"remainingSeconds"`
+	Correct                  bool       `json:"correct"`
+	ScrambledWord            string     `json:"scrambledWord"`
+	ScrambledWordDefinition  string     `json:"scrambledWordDefinition"`
+	CorrectAttemptTimestamps [][]string `json:"correctAttemptTimestamps"`
+	Token                    string     `json:"token"`
+	Score                    int32      `json:"score"`
+	Attempts                 int32      `json:"attempts"`
+	RemainingSeconds         int32      `json:"remainingSeconds"`
 }
 
 func NewGameService(sessionService *SessionService, wordService *WordService, leaderboardService *LeaderboardService) *GameService {
@@ -97,12 +98,17 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		return nil, err
 	}
 
+	correctAttemptTimestamps, err := convertTimestampJSONToStringArray(session.CorrectAttemptTimestamps)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &SubmitAnswerResult{
 		Correct:                  false,
 		Score:                    session.Score,
 		Attempts:                 session.TotalAttempts + 1,
 		RemainingSeconds:         session.RemainingSeconds,
-		CorrectAttemptTimestamps: []string{},
+		CorrectAttemptTimestamps: correctAttemptTimestamps,
 	}
 
 	// Validate answer by checking token
@@ -111,11 +117,23 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 
 	if token != expectedToken {
 		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, expectedToken)
+
+		result.CorrectAttemptTimestamps = append(correctAttemptTimestamps, []string{})
 	} else if answer != session.CurrentWord {
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
+
+		result.CorrectAttemptTimestamps = append(correctAttemptTimestamps, []string{})
 	} else {
+		if len(result.CorrectAttemptTimestamps) == 0 {
+			result.CorrectAttemptTimestamps = append(result.CorrectAttemptTimestamps, []string{})
+		}
+
+		lastIdx := len(result.CorrectAttemptTimestamps) - 1
+		currentStreakTimestamps := result.CorrectAttemptTimestamps[lastIdx]
+		currentStreakTimestamps = append(currentStreakTimestamps, time.Now().Format(time.RFC3339))
+
 		result.Correct = true
-		result.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, time.Now().Format(time.RFC3339))
+		result.CorrectAttemptTimestamps = append(correctAttemptTimestamps[:lastIdx], currentStreakTimestamps)
 		scoreIncrement = 1
 
 		// Emit next word
@@ -202,4 +220,10 @@ func (g *GameService) startTimer(sessionID string) {
 func (g *GameService) generateToken(word string) string {
 	hash := sha256.Sum256([]byte(word))
 	return hex.EncodeToString(hash[:])
+}
+
+func convertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {
+	var result [][]string
+	err := json.Unmarshal([]byte(j), &result)
+	return result, err
 }

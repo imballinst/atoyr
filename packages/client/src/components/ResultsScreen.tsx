@@ -1,15 +1,13 @@
-import React from 'react';
-import { GameResult } from '../types/game';
+import { GameResult, GameState } from '../types/game';
 
-interface ResultsScreenProps {
-  score: number;
-  totalAttempts: number;
+interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' | 'correctAttemptTimestamps'> {
   leaderboard: GameResult[];
   onPlayAgain: () => void;
 }
 
-export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }: ResultsScreenProps) {
+export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, leaderboard, onPlayAgain }: ResultsScreenProps) {
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
+  const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center p-5 bg-dark-bg-primary">
@@ -18,16 +16,18 @@ export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }
 
         <div className="grid grid-cols-7 gap-3 mb-8">
           <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-2">
-            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Correct</div>
-            <div className="text-3xl font-bold text-dark-text-primary">{score}</div>
-          </div>
-          <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-2">
-            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Attempts</div>
-            <div className="text-3xl font-bold text-dark-text-primary">{totalAttempts}</div>
+            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Score</div>
+            <div className="text-3xl font-bold text-dark-text-primary">
+              {score}/{totalAttempts}
+            </div>
           </div>
           <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-3">
             <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Accuracy</div>
             <div className="text-3xl font-bold text-dark-interactive-success">{accuracy}%</div>
+          </div>
+          <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-2">
+            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Longest streak</div>
+            <div className="text-3xl font-bold text-dark-text-primary">{longestStreak}</div>
           </div>
         </div>
 
@@ -48,8 +48,10 @@ export function ResultsScreen({ score, totalAttempts, leaderboard, onPlayAgain }
                 .map((result, i) => (
                   <div key={result.id} className="flex justify-between gap-3 p-3 bg-dark-bg-tertiary rounded text-xs">
                     <div className="font-semibold text-dark-text-primary min-w-8">#{i + 1}</div>
-                    <div className='flex gap-x-1 font-mono'>
-                      <div className="flex-1 text-center font-semibold text-dark-text-primary">{result.score}/{result.totalAttempts}</div>
+                    <div className="flex gap-x-1 font-mono">
+                      <div className="flex-1 text-center font-semibold text-dark-text-primary">
+                        {result.score}/{result.totalAttempts}
+                      </div>
                       <div className="font-semibold text-dark-interactive-success w-10 text-right">
                         ({(result.accuracy * 100).toFixed(0)}%)
                       </div>
