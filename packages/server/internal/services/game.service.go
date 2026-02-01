@@ -56,8 +56,8 @@ func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error)
 	// Start timer
 	go g.startTimer(sessionID)
 
-	session, _ = g.sessionService.FindByID(sessionID)
-	return session, nil
+	session, err = g.sessionService.FindByID(sessionID)
+	return session, err
 }
 
 func (g *GameService) EmitWord(sessionID string) error {
@@ -73,11 +73,9 @@ func (g *GameService) EmitWord(sessionID string) error {
 	}
 
 	token := g.generateToken(word)
-	if err := g.sessionService.SetCurrentWord(sessionID, word, definition, token); err != nil {
-		return err
-	}
+	newUsedWords := append(session.UsedWords, word)
 
-	if err := g.sessionService.AddUsedWord(sessionID, word); err != nil {
+	if err := g.sessionService.SetCurrentWord(sessionID, word, definition, token, newUsedWords); err != nil {
 		return err
 	}
 

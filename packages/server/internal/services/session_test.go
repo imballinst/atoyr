@@ -61,7 +61,7 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 
 	session, _ := service.Create(false)
 
-	err := service.SetCurrentWord(session.ID, "test", "definition", "token123")
+	err := service.SetCurrentWord(session.ID, "test", "definition", "token123", []string{"test"})
 	if err != nil {
 		t.Fatalf("Failed to set current word: %v", err)
 	}
@@ -74,6 +74,10 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 	if found.CurrentWordToken != "token123" {
 		t.Errorf("Expected token token123, got %s", found.CurrentWordToken)
 	}
+
+	if len(found.UsedWords) != 1 || found.UsedWords[0] != "test" {
+		t.Errorf("Expected used words [test], got %v", found.UsedWords)
+	}
 }
 
 func TestSessionService_UpdateScore(t *testing.T) {
@@ -82,14 +86,14 @@ func TestSessionService_UpdateScore(t *testing.T) {
 
 	session, _ := service.Create(false)
 
-	service.UpdateScore(session.ID, 10, []string{})
+	service.UpdateScore(session.ID, 10, [][]string{})
 	found, _ := service.FindByID(session.ID)
 
 	if found.Score != 10 {
 		t.Errorf("Expected score 10, got %d", found.Score)
 	}
 
-	service.UpdateScore(session.ID, 5, []string{})
+	service.UpdateScore(session.ID, 5, [][]string{})
 	found, _ = service.FindByID(session.ID)
 
 	if found.Score != 15 {
@@ -115,27 +119,6 @@ func TestSessionService_IncrementTotalAttempts(t *testing.T) {
 
 	if found.TotalAttempts != 2 {
 		t.Errorf("Expected total attempts 2, got %d", found.TotalAttempts)
-	}
-}
-
-func TestSessionService_AddUsedWord(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewSessionService(db)
-
-	session, _ := service.Create(false)
-
-	service.AddUsedWord(session.ID, "word1")
-	found, _ := service.FindByID(session.ID)
-
-	if len(found.UsedWords) != 1 || found.UsedWords[0] != "word1" {
-		t.Errorf("Expected used words [word1], got %v", found.UsedWords)
-	}
-
-	service.AddUsedWord(session.ID, "word2")
-	found, _ = service.FindByID(session.ID)
-
-	if len(found.UsedWords) != 2 {
-		t.Errorf("Expected 2 used words, got %d", len(found.UsedWords))
 	}
 }
 
