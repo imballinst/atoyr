@@ -29,9 +29,10 @@ export function GameScreen({
     window.speechSynthesis.cancel();
 
     const definitionUtterance = new SpeechSynthesisUtterance(definition);
+    definitionUtterance.rate = 0.75;
     window.speechSynthesis.speak(definitionUtterance);
 
-    letters.split('').forEach((letter, i) => {
+    letters.split('').forEach((letter) => {
       const utterance = new SpeechSynthesisUtterance(letter);
       window.speechSynthesis.speak(utterance);
     });

@@ -1,57 +1,39 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // SessionEntity represents an active game session
 type SessionEntity struct {
-	ID                       string      `gorm:"primaryKey;type:text"`
-	CreatedAt                time.Time   `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ExpiresAt                time.Time   `gorm:"type:datetime;index:idx_sessions_expires"`
-	Phase                    string      `gorm:"type:text;default:idle"`
-	Score                    int32       `gorm:"type:integer;default:0"`
-	TotalAttempts            int32       `gorm:"type:integer;default:0"`
-	RemainingSeconds         int32       `gorm:"type:integer"`
-	CorrectAttemptTimestamps StringArray `gorm:"type:text;default:'[]'"`
-	AutoVoice                bool        `gorm:"type:boolean;default:false"`
-	UsedWords                StringArray `gorm:"type:text;default:'[]'"`
-	WordDefinitions          StringArray `gorm:"type:text;default:'[]'"`
-	CurrentWord              string      `gorm:"type:text"`
-	CurrentWordDefinition    string      `gorm:"type:text"`
-	CurrentWordToken         string      `gorm:"type:text"`
+	ID                       string         `gorm:"primaryKey;type:text"`
+	CreatedAt                time.Time      `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	ExpiresAt                time.Time      `gorm:"type:datetime;index:idx_sessions_expires"`
+	Phase                    string         `gorm:"type:text;default:idle"`
+	Score                    int32          `gorm:"type:integer;default:0"`
+	TotalAttempts            int32          `gorm:"type:integer;default:0"`
+	RemainingSeconds         int32          `gorm:"type:integer"`
+	CorrectAttemptTimestamps pq.StringArray `gorm:"type:text;default:'[]'"`
+	AutoVoice                bool           `gorm:"type:boolean;default:false"`
+	UsedWords                pq.StringArray `gorm:"type:text;default:'[]'"`
+	WordDefinitions          pq.StringArray `gorm:"type:text;default:'[]'"`
+	CurrentWord              string         `gorm:"type:text"`
+	CurrentWordDefinition    string         `gorm:"type:text"`
+	CurrentWordToken         string         `gorm:"type:text"`
 }
 
 // ResultEntity represents a completed game result
 type ResultEntity struct {
-	ID            string      `gorm:"primaryKey;type:text"`
-	SessionID     string      `gorm:"type:text;index:idx_results_session"`
-	Timestamp     time.Time   `gorm:"type:datetime;default:CURRENT_TIMESTAMP;index:idx_results_timestamp"`
-	Score         int32       `gorm:"type:integer;index:idx_results_score"`
-	TotalAttempts int32       `gorm:"type:integer"`
-	RewardIDs     StringArray `gorm:"type:text;default:'[]'"`
-	Accuracy      float32     `gorm:"type:real"`
-	DurationMs    int32       `gorm:"type:integer"`
-}
-
-// StringArray is a custom type for JSON array serialization
-type StringArray []string
-
-func (sa StringArray) Value() (driver.Value, error) {
-	return json.Marshal(sa)
-}
-
-func (sa *StringArray) Scan(value interface{}) error {
-	fmt.Printf("Trying to scan value: %v\n", value)
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion failed")
-	}
-	return json.Unmarshal(bytes, &sa)
+	ID            string         `gorm:"primaryKey;type:text"`
+	SessionID     string         `gorm:"type:text;index:idx_results_session"`
+	Timestamp     time.Time      `gorm:"type:datetime;default:CURRENT_TIMESTAMP;index:idx_results_timestamp"`
+	Score         int32          `gorm:"type:integer;index:idx_results_score"`
+	TotalAttempts int32          `gorm:"type:integer"`
+	RewardIDs     pq.StringArray `gorm:"type:text;default:'[]'"`
+	Accuracy      float32        `gorm:"type:real"`
+	DurationMs    int32          `gorm:"type:integer"`
 }
 
 // GameSessionState represents the current state of a game
@@ -82,6 +64,6 @@ func (s *SessionEntity) SetState(state GameSessionState) {
 	s.Score = state.Score
 	s.TotalAttempts = state.TotalAttempts
 	s.RemainingSeconds = state.RemainingSeconds
-	s.UsedWords = StringArray(state.UsedWords)
+	s.UsedWords = pq.StringArray(state.UsedWords)
 	s.CurrentWordToken = state.CurrentWordToken
 }

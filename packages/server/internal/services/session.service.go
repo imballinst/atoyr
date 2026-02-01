@@ -8,6 +8,7 @@ import (
 	"atoyr/server/internal/models"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -27,9 +28,9 @@ func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 		TotalAttempts:            0,
 		RemainingSeconds:         30,
 		AutoVoice:                autoVoice,
-		UsedWords:                []string{},
-		WordDefinitions:          []string{},
-		CorrectAttemptTimestamps: []string{},
+		UsedWords:                pq.StringArray{},
+		WordDefinitions:          pq.StringArray{},
+		CorrectAttemptTimestamps: pq.StringArray{},
 		CurrentWordDefinition:    "",
 		CurrentWord:              "",
 		CurrentWordToken:         "",
@@ -103,12 +104,11 @@ func (s *SessionService) UpdatePhase(sessionID, phase string) error {
 }
 
 func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32, correctAttemptTimestamps []string) error {
-	fmt.Println(correctAttemptTimestamps)
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]interface{}{
 			"score":                      gorm.Expr("score + ?", scoreIncrement),
-			"correct_attempt_timestamps": []string{"hehe"},
+			"correct_attempt_timestamps": pq.StringArray(correctAttemptTimestamps),
 		}).Error; err != nil {
 		return fmt.Errorf("failed to update score: %w", err)
 	}

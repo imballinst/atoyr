@@ -115,7 +115,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 	} else {
 		result.Correct = true
-		result.CorrectAttemptTimestamps = append(result.CorrectAttemptTimestamps, time.Now().Format(time.RFC3339))
+		result.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, time.Now().Format(time.RFC3339))
 		scoreIncrement = 1
 
 		// Emit next word
@@ -132,7 +132,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		result.ScrambledWord = utils.ScrambleWord(session.CurrentWord)
 		result.ScrambledWordDefinition = session.CurrentWordDefinition
 		result.Token = g.generateToken(session.CurrentWord)
-		result.Score = session.Score
+		result.Score += scoreIncrement
 	}
 
 	if err := g.sessionService.UpdateScore(sessionID, scoreIncrement, result.CorrectAttemptTimestamps); err != nil {
