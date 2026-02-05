@@ -14,7 +14,7 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
       <div className="rounded-2xl p-10 text-center w-full max-w-[430px]">
         <h1 className="text-4xl font-bold mb-6 text-dark-text-primary">Game Over!</h1>
 
-        <div className="grid grid-cols-7 gap-3 mb-8">
+        <div className="grid grid-cols-8 gap-3 mb-8">
           <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-2">
             <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Score</div>
             <div className="text-3xl font-bold text-dark-text-primary">
@@ -25,8 +25,8 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
             <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Accuracy</div>
             <div className="text-3xl font-bold text-dark-interactive-success">{accuracy}%</div>
           </div>
-          <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-2">
-            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Longest streak</div>
+          <div className="bg-dark-bg-tertiary p-4 rounded-lg col-span-3">
+            <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Best streak</div>
             <div className="text-3xl font-bold text-dark-text-primary">{longestStreak}</div>
           </div>
         </div>

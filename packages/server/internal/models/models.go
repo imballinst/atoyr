@@ -49,6 +49,27 @@ type SessionEntity struct {
 	CurrentWord              string         `gorm:"type:text"`
 	CurrentWordDefinition    string         `gorm:"type:text"`
 	CurrentWordToken         string         `gorm:"type:text"`
+	// Belongs to user entity.
+	UserEntityID string `gorm:"type:text;index:idx_sessions_user"`
+	UserEntity   UserEntity
+}
+
+type UserEntity struct {
+	ID        string    `gorm:"primaryKey;type:text"`
+	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	Username  string    `gorm:"type:text;uniqueIndex:idx_profiles_username"`
+}
+
+type InventoryEntity struct {
+	ID        string    `gorm:"primaryKey;type:text"`
+	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	ItemID    string    `gorm:"type:text;default:'[]'"`
+	Quantity  int32     `gorm:"type:integer;default:0"`
+	// Belongs to user entity.
+	UserEntityID string `gorm:"type:text;index:idx_inventory_user"`
+	UserEntity   UserEntity
 }
 
 // ResultEntity represents a completed game result
@@ -61,6 +82,14 @@ type ResultEntity struct {
 	RewardIDs     pq.StringArray `gorm:"type:text;default:'[]'"`
 	Accuracy      float32        `gorm:"type:real"`
 	DurationMs    int32          `gorm:"type:integer"`
+	// Optionally Belongs to user entity.
+	UserEntityID *string `gorm:"type:text;index:idx_results_user"`
+	UserEntity   *UserEntity
+}
+
+type UserResultEntity struct {
+	UserID   string `gorm:"primaryKey;type:text;index:idx_user_results_user"`
+	ResultID string `gorm:"primaryKey;type:text;index:idx_user_results_result"`
 }
 
 // GameSessionState represents the current state of a game

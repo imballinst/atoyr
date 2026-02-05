@@ -10,6 +10,8 @@ import (
 
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/utils"
+
+	"github.com/google/uuid"
 )
 
 type GameService struct {
@@ -176,6 +178,7 @@ func (g *GameService) FinishGame(sessionID string) error {
 
 	// Save result to leaderboard
 	result := &models.ResultEntity{
+		ID:            uuid.New().String(),
 		SessionID:     sessionID,
 		Timestamp:     time.Now(),
 		Score:         session.Score,

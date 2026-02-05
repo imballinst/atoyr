@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"atoyr/server/internal/models"
+
 	"gorm.io/gorm"
 )
 
@@ -16,11 +17,17 @@ func NewLeaderboardService(db *gorm.DB) *LeaderboardService {
 }
 
 type LeaderboardEntry struct {
-	Rank          int32   `json:"rank"`
-	Score         int32   `json:"score"`
-	TotalAttempts int32   `json:"totalAttempts"`
-	Accuracy      float32 `json:"accuracy"`
-	Timestamp     int64   `json:"timestamp"`
+	Rank          int32      `json:"rank"`
+	Score         int32      `json:"score"`
+	TotalAttempts int32      `json:"totalAttempts"`
+	Accuracy      float32    `json:"accuracy"`
+	Timestamp     int64      `json:"timestamp"`
+	User          *UserEntry `json:"user,omitempty"`
+}
+
+type UserEntry struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
 }
 
 func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEntry, error) {
@@ -42,6 +49,14 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 			TotalAttempts: result.TotalAttempts,
 			Accuracy:      result.Accuracy,
 			Timestamp:     result.Timestamp.UnixMilli(),
+			User:          nil,
+		}
+
+		if result.UserEntity != nil {
+			entries[i].User = &UserEntry{
+				ID:       result.UserEntity.ID,
+				Username: result.UserEntity.Username,
+			}
 		}
 	}
 
