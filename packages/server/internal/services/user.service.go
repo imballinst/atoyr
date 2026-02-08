@@ -54,6 +54,13 @@ func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models
 	return user, nil
 }
 
+func (u *UserService) FindUserByID(id string) (*models.UserEntity, error) {
+	var user models.UserEntity
+	err := u.db.First(&user, "id = ?", id).Error
+
+	return &user, err
+}
+
 func (u *UserService) getOrCreateUser(username string) (*models.UserEntity, error) {
 	var user models.UserEntity
 	err := u.db.First(&user, "username = ?", username).Error

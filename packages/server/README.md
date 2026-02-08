@@ -131,7 +131,7 @@ Get leaderboard entries with pagination.
 - **ID** (PK): UUID string
 - **CreatedAt**: Timestamp
 - **ExpiresAt**: Timestamp (5 minutes from creation)
-- **Phase**: "waiting-for-opponent" | "playing" | "finished"
+- **Phase**: "idle" | "playing" | "finished"
 - **Score**: Accumulated points (sum of remaining seconds per correct answer)
 - **TotalAttempts**: Number of attempts made
 - **RemainingSeconds**: Countdown timer (30 seconds per word)

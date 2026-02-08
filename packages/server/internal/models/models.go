@@ -35,9 +35,10 @@ func (j JSON) Value() (driver.Value, error) {
 
 // SessionEntity represents an active game session
 type SessionEntity struct {
-	ID                       string         `gorm:"primaryKey;type:text"`
-	CreatedAt                time.Time      `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ExpiresAt                time.Time      `gorm:"type:datetime;index:idx_sessions_expires"`
+	ID        string    `gorm:"primaryKey;type:text"`
+	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	ExpiresAt time.Time `gorm:"type:datetime;index:idx_sessions_expires"`
+	// Available phases: idle, playing, finished.
 	Phase                    string         `gorm:"type:text;default:idle"`
 	Score                    int32          `gorm:"type:integer;default:0"`
 	TotalAttempts            int32          `gorm:"type:integer;default:0"`
@@ -65,11 +66,21 @@ type InventoryEntity struct {
 	ID        string    `gorm:"primaryKey;type:text"`
 	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ItemID    string    `gorm:"type:text;default:'[]'"`
-	Quantity  int32     `gorm:"type:integer;default:0"`
 	// Belongs to user entity.
 	UserEntityID string `gorm:"type:text;index:idx_inventory_user"`
 	UserEntity   UserEntity
+}
+
+type InventoryItemEntity struct {
+	ItemID    string    `gorm:"primaryKey;type:text"`
+	Quantity  int32     `gorm:"type:integer;default:0"`
+	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	// Belongs to inventory and user entity.
+	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
+	InventoryEntity   InventoryEntity
+	UserEntityID      string `gorm:"type:text;index:idx_inventory_user"`
+	UserEntity        UserEntity
 }
 
 // ResultEntity represents a completed game result

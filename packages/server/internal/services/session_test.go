@@ -17,8 +17,8 @@ func TestSessionService_Create(t *testing.T) {
 		t.Error("Session ID is empty")
 	}
 
-	if session.Phase != "waiting-for-opponent" {
-		t.Errorf("Expected phase waiting-for-opponent, got %s", session.Phase)
+	if session.Phase != "idle" {
+		t.Errorf("Expected phase idle, got %s", session.Phase)
 	}
 
 	if session.Score != 0 {

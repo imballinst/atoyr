@@ -24,7 +24,7 @@ func NewSessionService(db *gorm.DB) *SessionService {
 func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 	session := &models.SessionEntity{
 		ID:                       uuid.New().String(),
-		Phase:                    "waiting-for-opponent",
+		Phase:                    "idle",
 		Score:                    0,
 		TotalAttempts:            0,
 		RemainingSeconds:         30,
