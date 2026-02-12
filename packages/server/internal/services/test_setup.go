@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"atoyr/server/internal/models"
+	"atoyr/server/internal/database"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -15,7 +15,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("Failed to connect to test database: %v", err)
 	}
 
-	if err := db.AutoMigrate(&models.SessionEntity{}, &models.ResultEntity{}); err != nil {
+	if err := database.Automigrate(db); err != nil {
 		t.Fatalf("Failed to run migrations: %v", err)
 	}
 

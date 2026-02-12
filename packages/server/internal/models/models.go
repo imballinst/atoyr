@@ -79,7 +79,7 @@ type InventoryItemEntity struct {
 	// Belongs to inventory and user entity.
 	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
 	InventoryEntity   InventoryEntity
-	UserEntityID      string `gorm:"type:text;index:idx_inventory_user"`
+	UserEntityID      string `gorm:"type:text;index:idx_inventory_item_user"`
 	UserEntity        UserEntity
 }
 

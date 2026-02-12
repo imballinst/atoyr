@@ -61,22 +61,26 @@ func (u *UserService) FindUserByID(id string) (*models.UserEntity, error) {
 	return &user, err
 }
 
+func (u *UserService) CreateUser(username string) (*models.UserEntity, error) {
+	user := models.UserEntity{
+		ID:        uuid.New().String(),
+		Username:  username,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := u.db.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return &user, nil
+}
+
 func (u *UserService) getOrCreateUser(username string) (*models.UserEntity, error) {
 	var user models.UserEntity
 	err := u.db.First(&user, "username = ?", username).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// Create new user
-			user = models.UserEntity{
-				ID:        uuid.New().String(),
-				Username:  username,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
-			if err := u.db.Create(&user).Error; err != nil {
-				return nil, fmt.Errorf("failed to create user: %w", err)
-			}
-			return &user, nil
+			return u.CreateUser(username)
 		}
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}

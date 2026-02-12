@@ -11,6 +11,17 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var (
+	migratedModels = []any{
+		&models.SessionEntity{},
+		&models.UserEntity{},
+		&models.InventoryEntity{},
+		&models.InventoryItemEntity{},
+		&models.ResultEntity{},
+		&models.UserResultEntity{},
+	}
+)
+
 func Initialize() (*gorm.DB, error) {
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
@@ -32,9 +43,16 @@ func Initialize() (*gorm.DB, error) {
 	}
 
 	// Auto-migrate models
-	if err := db.AutoMigrate(&models.SessionEntity{}, &models.ResultEntity{}); err != nil {
+	if err := Automigrate(db); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return db, nil
+}
+
+func Automigrate(db *gorm.DB) error {
+	if err := db.AutoMigrate(migratedModels...); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+	return nil
 }
