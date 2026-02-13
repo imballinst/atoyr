@@ -30,6 +30,7 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 	api := r.Group("/api")
 	game := api.Group("/game")
 
+	// TODO: start should also be able to consume items if any
 	game.POST("/start", gr.StartGame)
 	game.POST("/answer", gr.SubmitAnswer)
 	game.GET("/sse/:sessionId", gr.SSE)
