@@ -17,7 +17,6 @@ var (
 		&models.UserEntity{},
 		&models.InventoryEntity{},
 		&models.InventoryItemEntity{},
-		&models.ResultEntity{},
 		&models.UserResultEntity{},
 	}
 )

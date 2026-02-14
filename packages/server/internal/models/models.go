@@ -37,11 +37,13 @@ func (j JSON) Value() (driver.Value, error) {
 type SessionEntity struct {
 	ID        string    `gorm:"primaryKey;type:text"`
 	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	ExpiresAt time.Time `gorm:"type:datetime;index:idx_sessions_expires"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	EndsAt    time.Time `gorm:"type:datetime"`
 	// Available phases: idle, playing, finished.
 	Phase                    string         `gorm:"type:text;default:idle"`
 	Score                    int32          `gorm:"type:integer;default:0"`
 	TotalAttempts            int32          `gorm:"type:integer;default:0"`
+	Accuracy                 float32        `gorm:"type:real;default:0"`
 	RemainingSeconds         int32          `gorm:"type:integer"`
 	CorrectAttemptTimestamps JSON           `gorm:"type:jsonb;default:'[]'"`
 	AutoVoice                bool           `gorm:"type:boolean;default:false"`
@@ -50,9 +52,10 @@ type SessionEntity struct {
 	CurrentWord              string         `gorm:"type:text"`
 	CurrentWordDefinition    string         `gorm:"type:text"`
 	CurrentWordToken         string         `gorm:"type:text"`
+	UsedItemIDs              pq.StringArray `gorm:"type:text;default:'[]'"`
 	// Belongs to user entity.
-	UserEntityID string `gorm:"type:text;index:idx_sessions_user"`
-	UserEntity   UserEntity
+	UserEntityID *string `gorm:"type:text;index:idx_sessions_user"`
+	UserEntity   *UserEntity
 }
 
 type UserEntity struct {
@@ -79,21 +82,6 @@ type InventoryItemEntity struct {
 	// Belongs to inventory and user entity.
 	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
 	InventoryEntity   InventoryEntity
-}
-
-// ResultEntity represents a completed game result
-type ResultEntity struct {
-	ID            string         `gorm:"primaryKey;type:text"`
-	SessionID     string         `gorm:"type:text;index:idx_results_session"`
-	Timestamp     time.Time      `gorm:"type:datetime;default:CURRENT_TIMESTAMP;index:idx_results_timestamp"`
-	Score         int32          `gorm:"type:integer;index:idx_results_score"`
-	TotalAttempts int32          `gorm:"type:integer"`
-	RewardIDs     pq.StringArray `gorm:"type:text;default:'[]'"`
-	Accuracy      float32        `gorm:"type:real"`
-	DurationMs    int32          `gorm:"type:integer"`
-	// Optionally Belongs to user entity.
-	UserEntityID *string `gorm:"type:text;index:idx_results_user"`
-	UserEntity   *UserEntity
 }
 
 type UserResultEntity struct {

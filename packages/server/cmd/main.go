@@ -43,7 +43,12 @@ func main() {
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService)
+	gameService, err := services.NewGameService(sessionService, wordService, leaderboardService)
+	inventoryService := services.NewInventoryService(db)
+
+	if err != nil {
+		log.Fatalf("Failed to initialize game service: %v", err)
+	}
 
 	// Initialize Gin
 	router := gin.Default()
@@ -52,7 +57,7 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	gameRoutes := routes.NewGameRoutes(gameService, sessionService)
+	gameRoutes := routes.NewGameRoutes(gameService, sessionService, inventoryService)
 	gameRoutes.Register(router)
 
 	leaderboardRoutes := routes.NewLeaderboardRoutes(leaderboardService)

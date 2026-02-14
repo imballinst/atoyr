@@ -2,9 +2,10 @@ package services
 
 import (
 	"testing"
-	"time"
 
 	"atoyr/server/internal/models"
+
+	"github.com/lib/pq"
 )
 
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
@@ -12,27 +13,39 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	service := NewLeaderboardService(db)
 
 	// Add some test results
-	results := []models.ResultEntity{
+	results := []models.SessionEntity{
 		{
-			SessionID:     "session1",
-			Score:         100,
-			TotalAttempts: 10,
-			Accuracy:      90,
-			Timestamp:     time.Now(),
+			ID:                       "session1",
+			Score:                    100,
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		},
 		{
-			SessionID:     "session2",
-			Score:         150,
-			TotalAttempts: 15,
-			Accuracy:      95,
-			Timestamp:     time.Now(),
+			ID:                       "session2",
+			Score:                    150,
+			TotalAttempts:            15,
+			Accuracy:                 95,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		},
 		{
-			SessionID:     "session3",
-			Score:         80,
-			TotalAttempts: 8,
-			Accuracy:      85,
-			Timestamp:     time.Now(),
+			ID:                       "session3",
+			Score:                    80,
+			TotalAttempts:            8,
+			Accuracy:                 85,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		},
 	}
 
@@ -70,12 +83,16 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 
 	// Add 25 results
 	for i := 0; i < 25; i++ {
-		result := models.ResultEntity{
-			SessionID:     "session" + string(rune(i)),
-			Score:         int32(100 + i),
-			TotalAttempts: int32(10),
-			Accuracy:      90,
-			Timestamp:     time.Now(),
+		result := models.SessionEntity{
+			ID:                       "session" + string(rune(i)),
+			Score:                    int32(100 + i),
+			TotalAttempts:            int32(10),
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		}
 		db.Create(&result)
 	}
@@ -110,12 +127,16 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 
 	// Add 5 results
 	for i := 0; i < 5; i++ {
-		result := models.ResultEntity{
-			SessionID:     "session" + string(rune(i)),
-			Score:         int32(100 + i),
-			TotalAttempts: 10,
-			Accuracy:      90,
-			Timestamp:     time.Now(),
+		result := models.SessionEntity{
+			ID:                       "session" + string(rune(i)),
+			Score:                    int32(100 + i),
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		}
 		db.Create(&result)
 	}
@@ -133,12 +154,16 @@ func TestLeaderboardService_GetTopScores(t *testing.T) {
 	// Add results
 	scores := []int32{50, 100, 150, 75, 200}
 	for i, score := range scores {
-		result := models.ResultEntity{
-			SessionID:     "session" + string(rune(i)),
-			Score:         score,
-			TotalAttempts: 10,
-			Accuracy:      90,
-			Timestamp:     time.Now(),
+		result := models.SessionEntity{
+			ID:                       "session" + string(rune(i)),
+			Score:                    score,
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    "finished",
 		}
 		db.Create(&result)
 	}

@@ -21,7 +21,7 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
+func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.SessionEntity, error) {
 	session := &models.SessionEntity{
 		ID:                       uuid.New().String(),
 		Phase:                    "idle",
@@ -35,8 +35,9 @@ func (s *SessionService) Create(autoVoice bool) (*models.SessionEntity, error) {
 		CurrentWordDefinition:    "",
 		CurrentWord:              "",
 		CurrentWordToken:         "",
+		UsedItemIDs:              pq.StringArray(itemsUsed),
 		CreatedAt:                time.Now(),
-		ExpiresAt:                time.Now().Add(5 * time.Minute),
+		UpdatedAt:                time.Now().Add(5 * time.Minute),
 	}
 
 	if err := s.db.Create(session).Error; err != nil {
@@ -58,6 +59,8 @@ func (s *SessionService) FindByID(id string) (*models.SessionEntity, error) {
 }
 
 func (s *SessionService) Update(session *models.SessionEntity) error {
+	session.UpdatedAt = time.Now()
+
 	if err := s.db.Save(session).Error; err != nil {
 		return fmt.Errorf("failed to update session: %w", err)
 	}
@@ -109,13 +112,6 @@ func (s *SessionService) IncrementTotalAttempts(sessionID string) error {
 		Where("id = ?", sessionID).
 		Update("total_attempts", gorm.Expr("total_attempts + 1")).Error; err != nil {
 		return fmt.Errorf("failed to increment total attempts: %w", err)
-	}
-	return nil
-}
-
-func (s *SessionService) SaveResult(result *models.ResultEntity) error {
-	if err := s.db.Create(result).Error; err != nil {
-		return fmt.Errorf("failed to save result: %w", err)
 	}
 	return nil
 }

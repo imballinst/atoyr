@@ -37,7 +37,7 @@ func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models
 		return nil, fmt.Errorf("failed to get or create user: %w", err)
 	}
 
-	session.UserEntity = *user
+	session.UserEntity = user
 
 	err = u.sessionService.Update(session)
 	if err != nil {

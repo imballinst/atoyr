@@ -62,21 +62,26 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 		return
 	}
 
+	userId, err := c.Cookie("user_id")
+	if err != nil {
+		log.Println("No user_id cookie found, starting game without user association")
+	}
+
+	if len(req.ItemsUsed) > 0 {
+		err := gr.inventoryService.UseItems(req.ItemsUsed, userId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
+			return
+		}
+	}
+
 	// Create session
-	session, err := gr.sessionService.Create(*req.AutoVoice)
+	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed)
 	if err != nil {
 		log.Println("Failed to create session:", err)
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session, " + err.Error()})
 		return
-	}
-
-	if len(req.ItemsUsed) > 0 {
-		err = gr.inventoryService.UseItems(req.ItemsUsed, session.UserEntityID)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
-			return
-		}
 	}
 
 	// Start game

@@ -6,18 +6,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/utils"
-
-	"github.com/google/uuid"
 )
+
+type item struct {
+	ID    string `json:"id"`
+	Kind  string `json:"kind"`
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
 
 type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
+
+	items map[string]item
 }
 
 type SubmitAnswerResult struct {
@@ -31,12 +39,22 @@ type SubmitAnswerResult struct {
 	RemainingSeconds         int32      `json:"remainingSeconds"`
 }
 
-func NewGameService(sessionService *SessionService, wordService *WordService, leaderboardService *LeaderboardService) *GameService {
+func NewGameService(
+	sessionService *SessionService,
+	wordService *WordService,
+	leaderboardService *LeaderboardService,
+) (*GameService, error) {
+	items, err := loadItems()
+	if err != nil {
+		return nil, err
+	}
+
 	return &GameService{
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
-	}
+		items:              items,
+	}, nil
 }
 
 func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error) {
@@ -171,23 +189,14 @@ func (g *GameService) FinishGame(sessionID string) error {
 	}
 
 	// Calculate accuracy
-	accuracy := 0.0
+	accuracy := float32(0)
 	if session.TotalAttempts > 0 {
-		accuracy = float64(session.Score/int32(session.TotalAttempts)) * 100
+		accuracy = float32(session.Score/int32(session.TotalAttempts)) * 100
 	}
+	session.Accuracy = accuracy
+	session.EndsAt = time.Now()
 
-	// Save result to leaderboard
-	result := &models.ResultEntity{
-		ID:            uuid.New().String(),
-		SessionID:     sessionID,
-		Timestamp:     time.Now(),
-		Score:         session.Score,
-		TotalAttempts: session.TotalAttempts,
-		Accuracy:      float32(accuracy),
-		DurationMs:    (30 - session.RemainingSeconds) * 1000,
-	}
-
-	if err := g.sessionService.SaveResult(result); err != nil {
+	if err := g.sessionService.Update(session); err != nil {
 		return err
 	}
 
@@ -223,8 +232,41 @@ func (g *GameService) generateToken(word string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+func (g *GameService) resolveItemEffects(session *models.SessionEntity, itemIDs []string) {
+	for _, itemID := range itemIDs {
+		if g.items[itemID].Kind == "timer" {
+			session.RemainingSeconds += int32(g.items[itemID].Value)
+		}
+	}
+}
+
 func convertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {
 	var result [][]string
 	err := json.Unmarshal([]byte(j), &result)
 	return result, err
+}
+
+func loadItems() (map[string]item, error) {
+	itemsPath := os.Getenv("ITEMS_PATH")
+	if itemsPath == "" {
+		return nil, fmt.Errorf("ITEMS_PATH environment variable is not set")
+	}
+
+	data, err := os.ReadFile(itemsPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read items file: %w", err)
+	}
+
+	var dbContent []item
+
+	if err := json.Unmarshal(data, &dbContent); err != nil {
+		return nil, fmt.Errorf("failed to parse items file: %w", err)
+	}
+
+	itemRecord := map[string]item{}
+	for _, item := range dbContent {
+		itemRecord[item.ID] = item
+	}
+
+	return itemRecord, nil
 }

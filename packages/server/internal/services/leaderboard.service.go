@@ -31,15 +31,18 @@ type UserEntry struct {
 }
 
 func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEntry, error) {
-	var results []models.ResultEntity
+	var results []models.SessionEntity
 
 	if err := l.db.
+		Where("phase = ?", "finished").
 		Order("score DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&results).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
+
+	fmt.Printf("%+v\n", results)
 
 	entries := make([]LeaderboardEntry, len(results))
 	for i, result := range results {
@@ -48,7 +51,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 			Score:         result.Score,
 			TotalAttempts: result.TotalAttempts,
 			Accuracy:      result.Accuracy,
-			Timestamp:     result.Timestamp.UnixMilli(),
+			Timestamp:     result.EndsAt.UnixMilli(),
 			User:          nil,
 		}
 
@@ -69,7 +72,7 @@ func (l *LeaderboardService) GetTopScores(limit int) ([]LeaderboardEntry, error)
 
 func (l *LeaderboardService) GetTotalEntries() (int64, error) {
 	var count int64
-	if err := l.db.Model(&models.ResultEntity{}).Count(&count).Error; err != nil {
+	if err := l.db.Model(&models.SessionEntity{}).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count results: %w", err)
 	}
 	return count, nil

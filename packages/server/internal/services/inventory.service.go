@@ -94,6 +94,11 @@ func (s *InventoryService) GetItems(userID string) ([]models.InventoryItemEntity
 }
 
 func (s *InventoryService) UseItems(itemIDs []string, userID string) error {
+	if userID == "" {
+		// Empty user ID means no user, so we can skip inventory operations.
+		return nil
+	}
+
 	var inventory *models.InventoryEntity
 
 	err := s.db.First(&inventory, "user_entity_id = ?", userID).Error

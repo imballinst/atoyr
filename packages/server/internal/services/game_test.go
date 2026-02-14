@@ -2,6 +2,8 @@ package services
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService_StartGame(t *testing.T) {
@@ -9,9 +11,11 @@ func TestGameService_StartGame(t *testing.T) {
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls)
+	gs, err := NewGameService(ss, ws, ls)
 
-	session, _ := ss.Create(false)
+	assert.NoError(t, err)
+
+	session, _ := ss.Create(false, []string{})
 	started, err := gs.StartGame(session.ID)
 
 	if err != nil {
@@ -36,9 +40,11 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls)
+	gs, err := NewGameService(ss, ws, ls)
 
-	session, _ := ss.Create(false)
+	assert.NoError(t, err)
+
+	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
 
 	session, _ = ss.FindByID(session.ID)
@@ -63,9 +69,11 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls)
+	gs, err := NewGameService(ss, ws, ls)
 
-	session, _ := ss.Create(false)
+	assert.NoError(t, err)
+
+	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
 
 	result, err := gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
@@ -83,7 +91,9 @@ func TestGameService_TokenGeneration(t *testing.T) {
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls)
+	gs, err := NewGameService(ss, ws, ls)
+
+	assert.NoError(t, err)
 
 	// Same word should generate same token
 	token1 := gs.generateToken("test")
@@ -105,9 +115,11 @@ func TestGameService_AttemptCounting(t *testing.T) {
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls)
+	gs, err := NewGameService(ss, ws, ls)
 
-	session, _ := ss.Create(false)
+	assert.NoError(t, err)
+
+	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
 
 	gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)

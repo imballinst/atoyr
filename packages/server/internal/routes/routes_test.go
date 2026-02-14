@@ -7,14 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	"atoyr/server/internal/models"
 )
 
 func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
@@ -27,7 +27,7 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 		t.Fatalf("Failed to connect to test database: %v", err)
 	}
 
-	if err := db.AutoMigrate(&models.SessionEntity{}, &models.ResultEntity{}); err != nil {
+	if err := database.Automigrate(db); err != nil {
 		t.Fatalf("Failed to run migrations: %v", err)
 	}
 
@@ -48,8 +48,10 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService)
+	gameService, err := services.NewGameService(sessionService, wordService, leaderboardService)
 	inventoryService := services.NewInventoryService(db)
+
+	assert.NoError(t, err)
 
 	// Create router
 	router := gin.New()

@@ -8,7 +8,7 @@ func TestSessionService_Create(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
-	session, err := service.Create(true)
+	session, err := service.Create(true, []string{"test-item-id"})
 	if err != nil {
 		t.Fatalf("Failed to create session: %v", err)
 	}
@@ -32,6 +32,10 @@ func TestSessionService_Create(t *testing.T) {
 	if session.AutoVoice != true {
 		t.Errorf("Expected autoVoice true, got %v", session.AutoVoice)
 	}
+
+	if session.UsedItemIDs[0] != "test-item-id" {
+		t.Errorf("Expected there is test-item-id in the usedItemIDs, got %v", session.UsedItemIDs)
+	}
 }
 
 func TestSessionService_FindByID(t *testing.T) {
@@ -39,7 +43,7 @@ func TestSessionService_FindByID(t *testing.T) {
 	service := NewSessionService(db)
 
 	// Create session
-	created, err := service.Create(false)
+	created, err := service.Create(false, []string{})
 	if err != nil {
 		t.Fatalf("Failed to create session: %v", err)
 	}
@@ -59,7 +63,7 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
-	session, _ := service.Create(false)
+	session, _ := service.Create(false, []string{})
 
 	err := service.SetCurrentWord(session.ID, "test", "definition", "token123", []string{"test"})
 	if err != nil {
@@ -84,7 +88,7 @@ func TestSessionService_UpdateScore(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
-	session, _ := service.Create(false)
+	session, _ := service.Create(false, []string{})
 
 	service.UpdateScore(session.ID, 10, [][]string{})
 	found, _ := service.FindByID(session.ID)
@@ -105,7 +109,7 @@ func TestSessionService_IncrementTotalAttempts(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
-	session, _ := service.Create(false)
+	session, _ := service.Create(false, []string{})
 
 	service.IncrementTotalAttempts(session.ID)
 	found, _ := service.FindByID(session.ID)
@@ -126,7 +130,7 @@ func TestSessionService_UpdatePhase(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
-	session, _ := service.Create(false)
+	session, _ := service.Create(false, []string{})
 
 	service.UpdatePhase(session.ID, "playing")
 	found, _ := service.FindByID(session.ID)
