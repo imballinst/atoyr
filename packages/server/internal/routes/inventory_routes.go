@@ -49,7 +49,7 @@ func (ir *InventoryRoutes) GetItems(c *gin.Context) {
 		return
 	}
 
-	items, err := ir.inventoryService.GetInventoryItems(userId)
+	items, err := ir.inventoryService.GetItems(userId)
 	if err != nil {
 		log.Println("Failed to get inventory items:", err)
 

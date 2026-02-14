@@ -19,7 +19,7 @@ func NewInventoryService(db *gorm.DB) *InventoryService {
 	}
 }
 
-func (s *InventoryService) AddItemsToInventory(itemIDs []string, userID string) error {
+func (s *InventoryService) AddItems(itemIDs []string, userID string) error {
 	var inventory *models.InventoryEntity
 
 	err := s.db.First(&inventory, "user_entity_id = ?", userID).Error
@@ -71,7 +71,7 @@ func (s *InventoryService) AddItemsToInventory(itemIDs []string, userID string) 
 	return nil
 }
 
-func (s *InventoryService) GetInventoryItems(userID string) ([]models.InventoryItemEntity, error) {
+func (s *InventoryService) GetItems(userID string) ([]models.InventoryItemEntity, error) {
 	var inventory *models.InventoryEntity
 
 	err := s.db.Find(&models.InventoryEntity{}, "user_entity_id = ?", userID).First(&inventory).Error
@@ -91,4 +91,33 @@ func (s *InventoryService) GetInventoryItems(userID string) ([]models.InventoryI
 	}
 
 	return inventoryItems, nil
+}
+
+func (s *InventoryService) UseItems(itemIDs []string, userID string) error {
+	var inventory *models.InventoryEntity
+
+	err := s.db.First(&inventory, "user_entity_id = ?", userID).Error
+	if err != nil {
+		return err
+	}
+
+	for _, itemID := range itemIDs {
+		var inventoryItem *models.InventoryItemEntity
+
+		err = s.db.First(&inventoryItem, "item_id = ? AND inventory_entity_id = ?", itemID, inventory.ID).Error
+		if err != nil {
+			return err
+		}
+
+		inventoryItem.UpdatedAt = time.Now()
+		inventoryItem.Quantity -= 1
+
+		if inventoryItem.Quantity > 0 {
+			err = s.db.Save(inventoryItem).Error
+		} else {
+			err = s.db.Delete(inventoryItem).Error
+		}
+	}
+
+	return err
 }

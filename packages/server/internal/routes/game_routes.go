@@ -15,14 +15,20 @@ import (
 )
 
 type GameRoutes struct {
-	gameService    *services.GameService
-	sessionService *services.SessionService
+	gameService      *services.GameService
+	sessionService   *services.SessionService
+	inventoryService *services.InventoryService
 }
 
-func NewGameRoutes(gameService *services.GameService, sessionService *services.SessionService) *GameRoutes {
+func NewGameRoutes(
+	gameService *services.GameService,
+	sessionService *services.SessionService,
+	inventoryService *services.InventoryService,
+) *GameRoutes {
 	return &GameRoutes{
-		gameService:    gameService,
-		sessionService: sessionService,
+		gameService:      gameService,
+		sessionService:   sessionService,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -37,7 +43,8 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 }
 
 type StartGameRequest struct {
-	AutoVoice *bool `json:"autoVoice" binding:"required"`
+	AutoVoice *bool    `json:"autoVoice" binding:"required"`
+	ItemsUsed []string `json:"itemsUsed" binding:"required"`
 }
 
 type StartGameResponse struct {
@@ -62,6 +69,14 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session, " + err.Error()})
 		return
+	}
+
+	if len(req.ItemsUsed) > 0 {
+		err = gr.inventoryService.UseItems(req.ItemsUsed, session.UserEntityID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
+			return
+		}
 	}
 
 	// Start game

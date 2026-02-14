@@ -34,28 +34,29 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	// Create services
 	wordService := &services.WordService{}
 	wordService.SetWords([]services.WordDefinition{
-		{Word: "hello"},
-		{Word: "world"},
-		{Word: "apple"},
-		{Word: "banana"},
-		{Word: "cherry"},
-		{Word: "dragon"},
-		{Word: "elephant"},
-		{Word: "forest"},
-		{Word: "guitar"},
-		{Word: "horizon"},
+		{Word: "hello", Definition: "test"},
+		{Word: "world", Definition: "test"},
+		{Word: "apple", Definition: "test"},
+		{Word: "banana", Definition: "test"},
+		{Word: "cherry", Definition: "test"},
+		{Word: "dragon", Definition: "test"},
+		{Word: "elephant", Definition: "test"},
+		{Word: "forest", Definition: "test"},
+		{Word: "guitar", Definition: "test"},
+		{Word: "horizon", Definition: "test"},
 	})
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService)
+	inventoryService := services.NewInventoryService(db)
 
 	// Create router
 	router := gin.New()
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	gameRoutes := NewGameRoutes(gameService, sessionService)
+	gameRoutes := NewGameRoutes(gameService, sessionService, inventoryService)
 	gameRoutes.Register(router)
 
 	leaderboardRoutes := NewLeaderboardRoutes(leaderboardService)
@@ -68,7 +69,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{AutoVoice: &autoVoice}
+	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/game/start", bytes.NewBuffer(body))

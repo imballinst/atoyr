@@ -60,10 +60,10 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 	// Find available words
 	available := []string{}
 	availableDefinitions := []string{}
-	for idx, word := range w.words {
+	for _, word := range w.words {
 		if !excluded[strings.ToLower(word.Word)] {
 			available = append(available, word.Word)
-			availableDefinitions = append(availableDefinitions, w.words[idx].Definition)
+			availableDefinitions = append(availableDefinitions, word.Definition)
 		}
 	}
 
@@ -72,6 +72,7 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 	}
 
 	idx := rand.Intn(len(available))
+	fmt.Println(available, availableDefinitions)
 	return available[idx], availableDefinitions[idx], nil
 }
 
