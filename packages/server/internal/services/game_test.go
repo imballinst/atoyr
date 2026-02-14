@@ -1,19 +1,18 @@
 package services
 
 import (
+	"atoyr/server/internal/testutils"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService_StartGame(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
 	db := setupTestDB(t)
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs, err := NewGameService(ss, ws, ls)
-
-	assert.NoError(t, err)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
 
 	session, _ := ss.Create(false, []string{})
 	started, err := gs.StartGame(session.ID)
@@ -36,13 +35,13 @@ func TestGameService_StartGame(t *testing.T) {
 }
 
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
 	db := setupTestDB(t)
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs, err := NewGameService(ss, ws, ls)
-
-	assert.NoError(t, err)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
 
 	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
@@ -55,7 +54,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
 
-	if result.Correct {
+	if !result.Correct {
 		t.Error("Expected correct answer to be true")
 	}
 
@@ -65,13 +64,13 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 }
 
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
 	db := setupTestDB(t)
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs, err := NewGameService(ss, ws, ls)
-
-	assert.NoError(t, err)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
 
 	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
@@ -81,19 +80,19 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 		t.Fatalf("Failed to submit answer: %v", err)
 	}
 
-	if !result.Correct {
+	if result.Correct {
 		t.Error("Expected correct answer to be false")
 	}
 }
 
 func TestGameService_TokenGeneration(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
 	db := setupTestDB(t)
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs, err := NewGameService(ss, ws, ls)
-
-	assert.NoError(t, err)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
 
 	// Same word should generate same token
 	token1 := gs.generateToken("test")
@@ -111,13 +110,13 @@ func TestGameService_TokenGeneration(t *testing.T) {
 }
 
 func TestGameService_AttemptCounting(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
 	db := setupTestDB(t)
 	ws := setupTestWordService(t)
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs, err := NewGameService(ss, ws, ls)
-
-	assert.NoError(t, err)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
 
 	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)

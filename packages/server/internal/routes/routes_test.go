@@ -10,6 +10,7 @@ import (
 	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
+	"atoyr/server/internal/testutils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -46,10 +47,12 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 		{Word: "horizon", Definition: "test"},
 	})
 
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"test"})
+
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService, err := services.NewGameService(sessionService, wordService, leaderboardService)
-	inventoryService := services.NewInventoryService(db)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
+	inventoryService := services.NewInventoryService(db, itemInfoMap)
 
 	assert.NoError(t, err)
 

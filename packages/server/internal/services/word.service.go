@@ -72,7 +72,6 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 	}
 
 	idx := rand.Intn(len(available))
-	fmt.Println(available, availableDefinitions)
 	return available[idx], availableDefinitions[idx], nil
 }
 

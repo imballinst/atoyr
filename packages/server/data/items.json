@@ -3,6 +3,7 @@
     "id": "938d5ff9fda94b8098b02cc891093d10",
     "kind": "timer",
     "name": "Bonus timer",
+    "description": "Gives 10 bonus seconds per stack used.",
     "value": 10
   }
 ]

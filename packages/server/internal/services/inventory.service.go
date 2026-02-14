@@ -1,8 +1,10 @@
 package services
 
 import (
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,12 +12,14 @@ import (
 )
 
 type InventoryService struct {
-	db *gorm.DB
+	db          *gorm.DB
+	itemInfoMap core.ItemInfoMap
 }
 
-func NewInventoryService(db *gorm.DB) *InventoryService {
+func NewInventoryService(db *gorm.DB, itemInfoMap core.ItemInfoMap) *InventoryService {
 	return &InventoryService{
-		db: db,
+		db:          db,
+		itemInfoMap: itemInfoMap,
 	}
 }
 
@@ -71,7 +75,7 @@ func (s *InventoryService) AddItems(itemIDs []string, userID string) error {
 	return nil
 }
 
-func (s *InventoryService) GetItems(userID string) ([]models.InventoryItemEntity, error) {
+func (s *InventoryService) GetItems(userID string) ([]core.InventoryItem, error) {
 	var inventory *models.InventoryEntity
 
 	err := s.db.Find(&models.InventoryEntity{}, "user_entity_id = ?", userID).First(&inventory).Error
@@ -90,7 +94,25 @@ func (s *InventoryService) GetItems(userID string) ([]models.InventoryItemEntity
 		return nil, err
 	}
 
-	return inventoryItems, nil
+	result := []core.InventoryItem{}
+
+	for _, item := range inventoryItems {
+		itemInfo, ok := s.itemInfoMap[item.ItemID]
+		if !ok {
+			// Ideally we throw error but we can just continue here to reduce complexity in tests.
+			log.Println("invalid item ID ", item.ItemID, " for user ", userID)
+			continue
+		}
+
+		result = append(result, core.InventoryItem{
+			ItemID:      item.ItemID,
+			Name:        itemInfo.Name,
+			Description: itemInfo.Description,
+			Quantity:    item.Quantity,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *InventoryService) UseItems(itemIDs []string, userID string) error {

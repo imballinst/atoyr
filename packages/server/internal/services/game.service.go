@@ -6,26 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/utils"
 )
-
-type item struct {
-	ID    string `json:"id"`
-	Kind  string `json:"kind"`
-	Name  string `json:"name"`
-	Value int    `json:"value"`
-}
 
 type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
 
-	items map[string]item
+	items core.ItemInfoMap
 }
 
 type SubmitAnswerResult struct {
@@ -43,18 +36,15 @@ func NewGameService(
 	sessionService *SessionService,
 	wordService *WordService,
 	leaderboardService *LeaderboardService,
-) (*GameService, error) {
-	items, err := loadItems()
-	if err != nil {
-		return nil, err
-	}
+	items core.ItemInfoMap,
+) *GameService {
 
 	return &GameService{
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
 		items:              items,
-	}, nil
+	}
 }
 
 func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error) {
@@ -232,6 +222,7 @@ func (g *GameService) generateToken(word string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+// TODO: use this
 func (g *GameService) resolveItemEffects(session *models.SessionEntity, itemIDs []string) {
 	for _, itemID := range itemIDs {
 		if g.items[itemID].Kind == "timer" {
@@ -244,29 +235,4 @@ func convertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {
 	var result [][]string
 	err := json.Unmarshal([]byte(j), &result)
 	return result, err
-}
-
-func loadItems() (map[string]item, error) {
-	itemsPath := os.Getenv("ITEMS_PATH")
-	if itemsPath == "" {
-		return nil, fmt.Errorf("ITEMS_PATH environment variable is not set")
-	}
-
-	data, err := os.ReadFile(itemsPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read items file: %w", err)
-	}
-
-	var dbContent []item
-
-	if err := json.Unmarshal(data, &dbContent); err != nil {
-		return nil, fmt.Errorf("failed to parse items file: %w", err)
-	}
-
-	itemRecord := map[string]item{}
-	for _, item := range dbContent {
-		itemRecord[item.ID] = item
-	}
-
-	return itemRecord, nil
 }

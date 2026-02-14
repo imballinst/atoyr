@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/routes"
@@ -41,14 +42,15 @@ func main() {
 		log.Fatalf("Failed to initialize word service: %v", err)
 	}
 
+	itemInfoMap, err := core.LoadItems()
+	if err != nil {
+		log.Fatalf("Failed to load items: %v", err)
+	}
+
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService, err := services.NewGameService(sessionService, wordService, leaderboardService)
-	inventoryService := services.NewInventoryService(db)
-
-	if err != nil {
-		log.Fatalf("Failed to initialize game service: %v", err)
-	}
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
+	inventoryService := services.NewInventoryService(db, itemInfoMap)
 
 	// Initialize Gin
 	router := gin.Default()
