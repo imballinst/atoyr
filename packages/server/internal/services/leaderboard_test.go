@@ -6,6 +6,7 @@ import (
 	"atoyr/server/internal/models"
 
 	"github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
@@ -55,26 +56,13 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 
 	// Get leaderboard
 	entries, err := service.GetLeaderboard(10, 0)
-	if err != nil {
-		t.Fatalf("Failed to get leaderboard: %v", err)
-	}
-
-	if len(entries) != 3 {
-		t.Errorf("Expected 3 entries, got %d", len(entries))
-	}
+	assert.NoError(t, err)
+	assert.Len(t, entries, 3)
 
 	// Verify sorting by score (descending)
-	if entries[0].Score != 150 {
-		t.Errorf("Expected highest score 150, got %d", entries[0].Score)
-	}
-
-	if entries[1].Score != 100 {
-		t.Errorf("Expected second score 100, got %d", entries[1].Score)
-	}
-
-	if entries[2].Score != 80 {
-		t.Errorf("Expected lowest score 80, got %d", entries[2].Score)
-	}
+	assert.Equal(t, int32(150), entries[0].Score)
+	assert.Equal(t, int32(100), entries[1].Score)
+	assert.Equal(t, int32(80), entries[2].Score)
 }
 
 func TestLeaderboardService_Pagination(t *testing.T) {
@@ -99,21 +87,15 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 
 	// Get first page (limit 10)
 	entries, _ := service.GetLeaderboard(10, 0)
-	if len(entries) != 10 {
-		t.Errorf("Expected 10 entries in first page, got %d", len(entries))
-	}
+	assert.Len(t, entries, 10)
 
 	// Get second page
 	entries, _ = service.GetLeaderboard(10, 10)
-	if len(entries) != 10 {
-		t.Errorf("Expected 10 entries in second page, got %d", len(entries))
-	}
+	assert.Len(t, entries, 10)
 
 	// Get third page (should have 5)
 	entries, _ = service.GetLeaderboard(10, 20)
-	if len(entries) != 5 {
-		t.Errorf("Expected 5 entries in third page, got %d", len(entries))
-	}
+	assert.Len(t, entries, 5)
 }
 
 func TestLeaderboardService_GetTotalEntries(t *testing.T) {
@@ -121,9 +103,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	service := NewLeaderboardService(db)
 
 	total, _ := service.GetTotalEntries()
-	if total != 0 {
-		t.Errorf("Expected 0 entries initially, got %d", total)
-	}
+	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
 	for i := 0; i < 5; i++ {
@@ -142,9 +122,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	}
 
 	total, _ = service.GetTotalEntries()
-	if total != 5 {
-		t.Errorf("Expected 5 entries, got %d", total)
-	}
+	assert.Equal(t, int64(5), total)
 }
 
 func TestLeaderboardService_GetTopScores(t *testing.T) {
@@ -170,20 +148,10 @@ func TestLeaderboardService_GetTopScores(t *testing.T) {
 
 	// Get top 3
 	entries, _ := service.GetTopScores(3)
-	if len(entries) != 3 {
-		t.Errorf("Expected 3 entries, got %d", len(entries))
-	}
+	assert.Len(t, entries, 3)
 
 	// Verify top scores
-	if entries[0].Score != 200 {
-		t.Errorf("Expected top score 200, got %d", entries[0].Score)
-	}
-
-	if entries[1].Score != 150 {
-		t.Errorf("Expected second score 150, got %d", entries[1].Score)
-	}
-
-	if entries[2].Score != 100 {
-		t.Errorf("Expected third score 100, got %d", entries[2].Score)
-	}
+	assert.Equal(t, int32(200), entries[0].Score)
+	assert.Equal(t, int32(150), entries[1].Score)
+	assert.Equal(t, int32(100), entries[2].Score)
 }

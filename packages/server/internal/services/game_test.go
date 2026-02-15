@@ -1,8 +1,12 @@
 package services
 
 import (
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/testutils"
 	"testing"
+
+	"github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService_StartGame(t *testing.T) {
@@ -17,21 +21,47 @@ func TestGameService_StartGame(t *testing.T) {
 	session, _ := ss.Create(false, []string{})
 	started, err := gs.StartGame(session.ID)
 
-	if err != nil {
-		t.Fatalf("Failed to start game: %v", err)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, sessionPhasePlaying, started.Phase)
+	assert.Equal(t, int32(30), session.RemainingSeconds)
+	assert.NotEqual(t, "", started.CurrentWord)
+	assert.NotEqual(t, "", started.CurrentWordToken)
+}
 
-	if started.Phase != "playing" {
-		t.Errorf("Expected phase playing, got %s", started.Phase)
-	}
+func TestGameService_StartGame_WithItems(t *testing.T) {
+	itemIDs, itemInfoMap := testutils.SetupItemInfoMapWithKind([]string{core.BonusTimerRewardItemID}, []core.ItemInfo{{Kind: core.ItemTimerKind, Value: 10}})
 
-	if started.CurrentWord == "" {
-		t.Error("Current word is empty after starting game")
-	}
+	db := setupTestDB(t)
+	ws := setupTestWordService(t)
+	ss := NewSessionService(db)
+	ls := NewLeaderboardService(db)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	is := NewInventoryService(db, itemInfoMap)
+	us := NewUserService(ss, is)
 
-	if started.CurrentWordToken == "" {
-		t.Error("Current word token is empty after starting game")
-	}
+	user, err := us.CreateUser("test")
+	assert.NoError(t, err)
+
+	err = is.AddItems(itemIDs, user.ID)
+	assert.NoError(t, err)
+
+	session, err := ss.Create(false, []string{})
+	assert.NoError(t, err)
+
+	session.UserEntityID = &user.ID
+	session.UsedItemIDs = itemIDs
+
+	err = ss.Update(session)
+	assert.NoError(t, err)
+
+	session, err = gs.StartGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, sessionPhasePlaying, session.Phase)
+	assert.Equal(t, int32(40), session.RemainingSeconds)
+	assert.NotEqual(t, "", session.CurrentWord)
+	assert.NotEqual(t, "", session.CurrentWordToken)
+	assert.Equal(t, pq.StringArray(itemIDs), session.UsedItemIDs)
 }
 
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
@@ -50,17 +80,13 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	word := session.CurrentWord
 
 	result, err := gs.SubmitAnswer(session.ID, word, session.CurrentWordToken)
-	if err != nil {
-		t.Fatalf("Failed to submit answer: %v", err)
-	}
 
-	if !result.Correct {
-		t.Error("Expected correct answer to be true")
-	}
-
-	if result.Score == 0 {
-		t.Error("Expected score to be greater than 0")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, true, result.Correct)
+	assert.NotEqual(t, int32(0), result.Score)
+	assert.Len(t, result.CorrectAttemptTimestamps, 1)
+	assert.Len(t, result.CorrectAttemptTimestamps[0], 1)
+	assert.Equal(t, int32(1), result.Attempts)
 }
 
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
@@ -76,13 +102,12 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	gs.StartGame(session.ID)
 
 	result, err := gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
-	if err != nil {
-		t.Fatalf("Failed to submit answer: %v", err)
-	}
 
-	if result.Correct {
-		t.Error("Expected correct answer to be false")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, true, result.Correct)
+	assert.Equal(t, int32(0), result.Score)
+	assert.Len(t, result.CorrectAttemptTimestamps, 0)
+	assert.Equal(t, int32(1), result.Attempts)
 }
 
 func TestGameService_TokenGeneration(t *testing.T) {
@@ -98,15 +123,12 @@ func TestGameService_TokenGeneration(t *testing.T) {
 	token1 := gs.generateToken("test")
 	token2 := gs.generateToken("test")
 
-	if token1 != token2 {
-		t.Error("Same word should generate same token")
-	}
+	assert.Equal(t, token1, token2)
 
 	// Different words should generate different tokens
 	token3 := gs.generateToken("test2")
-	if token1 == token3 {
-		t.Error("Different words should generate different tokens")
-	}
+
+	assert.NotEqual(t, token1, token3)
 }
 
 func TestGameService_AttemptCounting(t *testing.T) {
@@ -123,13 +145,11 @@ func TestGameService_AttemptCounting(t *testing.T) {
 
 	gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 	session, _ = ss.FindByID(session.ID)
-	if session.TotalAttempts != 1 {
-		t.Errorf("Expected total attempts 1, got %d", session.TotalAttempts)
-	}
+
+	assert.Equal(t, int32(1), session.TotalAttempts)
 
 	gs.SubmitAnswer(session.ID, "wronganswer2", session.CurrentWordToken)
 	session, _ = ss.FindByID(session.ID)
-	if session.TotalAttempts != 2 {
-		t.Errorf("Expected total attempts 2, got %d", session.TotalAttempts)
-	}
+
+	assert.Equal(t, int32(2), session.TotalAttempts)
 }

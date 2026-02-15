@@ -14,7 +14,7 @@ func TestUserService_AddItems(t *testing.T) {
 	db := setupTestDB(t)
 	is := NewInventoryService(db, itemInfoMap)
 	ss := NewSessionService(db)
-	u := NewUserService(ss)
+	u := NewUserService(ss, is)
 
 	user, err := u.CreateUser("test-username")
 	assert.NoError(t, err)
@@ -30,8 +30,8 @@ func TestUserService_GetItems(t *testing.T) {
 
 	db := setupTestDB(t)
 	ss := NewSessionService(db)
-	u := NewUserService(ss)
 	is := NewInventoryService(db, itemInfoMap)
+	u := NewUserService(ss, is)
 
 	user, err := u.CreateUser("test-username")
 	assert.NoError(t, err)
@@ -60,9 +60,8 @@ func TestUserService_UseItems(t *testing.T) {
 
 	db := setupTestDB(t)
 	ss := NewSessionService(db)
-	u := NewUserService(ss)
-
 	is := NewInventoryService(db, itemInfoMap)
+	u := NewUserService(ss, is)
 
 	user, err := u.CreateUser("test-username")
 	assert.NoError(t, err)

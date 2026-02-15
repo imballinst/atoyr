@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+const (
+	BonusTimerRewardItemID = "938d5ff9fda94b8098b02cc891093d10"
+	ItemTimerKind          = "timer"
+)
+
 type ItemInfoMap map[string]ItemInfo
 
 type ItemInfo struct {

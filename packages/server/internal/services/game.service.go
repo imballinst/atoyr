@@ -48,18 +48,23 @@ func NewGameService(
 }
 
 func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error) {
-	session, err := g.sessionService.FindByID(sessionID)
-	if err != nil {
-		return nil, err
-	}
-
 	// Start the game by emitting first word
 	if err := g.EmitWord(sessionID); err != nil {
 		return nil, err
 	}
 
+	session, err := g.sessionService.FindByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Update phase to playing
-	if err := g.sessionService.UpdatePhase(sessionID, "playing"); err != nil {
+	g.resolveItemEffects(session)
+	session.Phase = sessionPhasePlaying
+
+	fmt.Printf("%+v\n", session)
+
+	if err := g.sessionService.Update(session); err != nil {
 		return nil, err
 	}
 
@@ -222,13 +227,16 @@ func (g *GameService) generateToken(word string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// TODO: use this
-func (g *GameService) resolveItemEffects(session *models.SessionEntity, itemIDs []string) {
-	for _, itemID := range itemIDs {
-		if g.items[itemID].Kind == "timer" {
+func (g *GameService) resolveItemEffects(session *models.SessionEntity) {
+	// The assumption here is that the item IDs are already resolved in the inventory service.
+	fmt.Println("session.UsedItemIDs", session.UsedItemIDs, g.items)
+	for _, itemID := range session.UsedItemIDs {
+		if g.items[itemID].Kind == core.ItemTimerKind {
 			session.RemainingSeconds += int32(g.items[itemID].Value)
+			fmt.Println("session.RemainingSeconds1", session.RemainingSeconds, session.RemainingSeconds+int32(g.items[itemID].Value))
 		}
 	}
+	fmt.Println("session.RemainingSeconds2", session.RemainingSeconds)
 }
 
 func convertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {

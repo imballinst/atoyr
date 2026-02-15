@@ -4,25 +4,24 @@ import (
 	"fmt"
 	"time"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-const (
-	bonusTimerRewardItemID = "938d5ff9fda94b8098b02cc891093d10"
-)
-
 type UserService struct {
-	db             *gorm.DB
-	sessionService *SessionService
+	db               *gorm.DB
+	sessionService   *SessionService
+	inventoryService *InventoryService
 }
 
-func NewUserService(sessionService *SessionService) *UserService {
+func NewUserService(sessionService *SessionService, inventoryService *InventoryService) *UserService {
 	return &UserService{
-		db:             sessionService.db,
-		sessionService: sessionService,
+		db:               sessionService.db,
+		sessionService:   sessionService,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -47,8 +46,13 @@ func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models
 	rewardItemIDs := []string{}
 	for _, streak := range session.CorrectAttemptTimestamps {
 		if streak > 3 {
-			rewardItemIDs = append(rewardItemIDs, bonusTimerRewardItemID)
+			rewardItemIDs = append(rewardItemIDs, core.BonusTimerRewardItemID)
 		}
+	}
+
+	err = u.inventoryService.AddItems(rewardItemIDs, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to grant items from session reward: %w", err)
 	}
 
 	return user, nil

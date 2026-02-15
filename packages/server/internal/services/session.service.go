@@ -13,6 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	sessionPhasePlaying = "playing"
+)
+
 type SessionService struct {
 	db *gorm.DB
 }

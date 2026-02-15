@@ -2,6 +2,8 @@ package services
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSessionService_Create(t *testing.T) {
@@ -9,33 +11,13 @@ func TestSessionService_Create(t *testing.T) {
 	service := NewSessionService(db)
 
 	session, err := service.Create(true, []string{"test-item-id"})
-	if err != nil {
-		t.Fatalf("Failed to create session: %v", err)
-	}
-
-	if session.ID == "" {
-		t.Error("Session ID is empty")
-	}
-
-	if session.Phase != "idle" {
-		t.Errorf("Expected phase idle, got %s", session.Phase)
-	}
-
-	if session.Score != 0 {
-		t.Errorf("Expected score 0, got %d", session.Score)
-	}
-
-	if session.RemainingSeconds != 30 {
-		t.Errorf("Expected remaining seconds 30, got %d", session.RemainingSeconds)
-	}
-
-	if session.AutoVoice != true {
-		t.Errorf("Expected autoVoice true, got %v", session.AutoVoice)
-	}
-
-	if session.UsedItemIDs[0] != "test-item-id" {
-		t.Errorf("Expected there is test-item-id in the usedItemIDs, got %v", session.UsedItemIDs)
-	}
+	assert.NoError(t, err)
+	assert.NotEqual(t, "", session.ID)
+	assert.Equal(t, "idle", session.Phase)
+	assert.Equal(t, int32(0), session.Score)
+	assert.Equal(t, int32(30), session.RemainingSeconds)
+	assert.Equal(t, true, session.AutoVoice)
+	assert.Equal(t, "test-item-id", session.UsedItemIDs[0])
 }
 
 func TestSessionService_FindByID(t *testing.T) {
@@ -44,19 +26,12 @@ func TestSessionService_FindByID(t *testing.T) {
 
 	// Create session
 	created, err := service.Create(false, []string{})
-	if err != nil {
-		t.Fatalf("Failed to create session: %v", err)
-	}
+	assert.NoError(t, err)
 
 	// Find session
 	found, err := service.FindByID(created.ID)
-	if err != nil {
-		t.Fatalf("Failed to find session: %v", err)
-	}
-
-	if found.ID != created.ID {
-		t.Errorf("Expected ID %s, got %s", created.ID, found.ID)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, created.ID, found.ID)
 }
 
 func TestSessionService_SetCurrentWord(t *testing.T) {
@@ -66,22 +41,13 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 	session, _ := service.Create(false, []string{})
 
 	err := service.SetCurrentWord(session.ID, "test", "definition", "token123", []string{"test"})
-	if err != nil {
-		t.Fatalf("Failed to set current word: %v", err)
-	}
+	assert.NoError(t, err)
 
 	found, _ := service.FindByID(session.ID)
-	if found.CurrentWord != "test" {
-		t.Errorf("Expected current word test, got %s", found.CurrentWord)
-	}
-
-	if found.CurrentWordToken != "token123" {
-		t.Errorf("Expected token token123, got %s", found.CurrentWordToken)
-	}
-
-	if len(found.UsedWords) != 1 || found.UsedWords[0] != "test" {
-		t.Errorf("Expected used words [test], got %v", found.UsedWords)
-	}
+	assert.Equal(t, "test", found.CurrentWord)
+	assert.Equal(t, "token123", found.CurrentWordToken)
+	assert.Len(t, found.UsedWords, 1)
+	assert.Equal(t, "test", found.UsedWords[0])
 }
 
 func TestSessionService_UpdateScore(t *testing.T) {
@@ -92,17 +58,11 @@ func TestSessionService_UpdateScore(t *testing.T) {
 
 	service.UpdateScore(session.ID, 10, [][]string{})
 	found, _ := service.FindByID(session.ID)
-
-	if found.Score != 10 {
-		t.Errorf("Expected score 10, got %d", found.Score)
-	}
+	assert.Equal(t, int32(10), found.Score)
 
 	service.UpdateScore(session.ID, 5, [][]string{})
 	found, _ = service.FindByID(session.ID)
-
-	if found.Score != 15 {
-		t.Errorf("Expected score 15, got %d", found.Score)
-	}
+	assert.Equal(t, int32(15), found.Score)
 }
 
 func TestSessionService_IncrementTotalAttempts(t *testing.T) {
@@ -113,17 +73,11 @@ func TestSessionService_IncrementTotalAttempts(t *testing.T) {
 
 	service.IncrementTotalAttempts(session.ID)
 	found, _ := service.FindByID(session.ID)
-
-	if found.TotalAttempts != 1 {
-		t.Errorf("Expected total attempts 1, got %d", found.TotalAttempts)
-	}
+	assert.Equal(t, int32(1), found.TotalAttempts)
 
 	service.IncrementTotalAttempts(session.ID)
 	found, _ = service.FindByID(session.ID)
-
-	if found.TotalAttempts != 2 {
-		t.Errorf("Expected total attempts 2, got %d", found.TotalAttempts)
-	}
+	assert.Equal(t, int32(2), found.TotalAttempts)
 }
 
 func TestSessionService_UpdatePhase(t *testing.T) {
@@ -132,10 +86,7 @@ func TestSessionService_UpdatePhase(t *testing.T) {
 
 	session, _ := service.Create(false, []string{})
 
-	service.UpdatePhase(session.ID, "playing")
+	service.UpdatePhase(session.ID, sessionPhasePlaying)
 	found, _ := service.FindByID(session.ID)
-
-	if found.Phase != "playing" {
-		t.Errorf("Expected phase playing, got %s", found.Phase)
-	}
+	assert.Equal(t, sessionPhasePlaying, found.Phase)
 }

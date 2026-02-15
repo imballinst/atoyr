@@ -1,6 +1,7 @@
 package services
 
 import (
+	"atoyr/server/internal/core"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,8 @@ import (
 func TestUserService_UpsertUserFromSession(t *testing.T) {
 	db := setupTestDB(t)
 	ss := NewSessionService(db)
-	s := NewUserService(ss)
+	is := NewInventoryService(db, core.ItemInfoMap{})
+	s := NewUserService(ss, is)
 
 	session, _ := ss.Create(false, []string{})
 	session.Phase = "finished"
@@ -25,7 +27,8 @@ func TestUserService_UpsertUserFromSession(t *testing.T) {
 func TestUserService_FindUserByID(t *testing.T) {
 	db := setupTestDB(t)
 	ss := NewSessionService(db)
-	s := NewUserService(ss)
+	is := NewInventoryService(db, core.ItemInfoMap{})
+	s := NewUserService(ss, is)
 
 	user, err := s.CreateUser("testuser")
 	assert.NoError(t, err)
