@@ -36,8 +36,8 @@ func (j JSON) Value() (driver.Value, error) {
 // SessionEntity represents an active game session
 type SessionEntity struct {
 	ID        string    `gorm:"primaryKey;type:text"`
-	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	CreatedAt time.Time `gorm:"type:datetime"`
+	UpdatedAt time.Time `gorm:"type:datetime"`
 	EndsAt    time.Time `gorm:"type:datetime"`
 	// Available phases: idle, playing, finished.
 	Phase                    string         `gorm:"type:text;default:idle"`
@@ -82,11 +82,6 @@ type InventoryItemEntity struct {
 	// Belongs to inventory and user entity.
 	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
 	InventoryEntity   InventoryEntity
-}
-
-type UserResultEntity struct {
-	UserID   string `gorm:"primaryKey;type:text;index:idx_user_results_user"`
-	ResultID string `gorm:"primaryKey;type:text;index:idx_user_results_result"`
 }
 
 // GameSessionState represents the current state of a game

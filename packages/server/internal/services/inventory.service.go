@@ -116,6 +116,10 @@ func (s *InventoryService) GetItems(userID string) ([]core.InventoryItem, error)
 }
 
 func (s *InventoryService) UseItems(itemIDs []string, userID string) error {
+	if len(itemIDs) == 0 {
+		return nil
+	}
+
 	if userID == "" {
 		// Empty user ID means no user, so we can skip inventory operations.
 		return nil

@@ -63,7 +63,8 @@ export function useServerGame() {
     }));
 
     gameAPI
-      .startGame(autoVoice)
+      // TODO: show inventories, use items
+      .startGame(autoVoice, [])
       .then((response) => {
         sessionRef.current = {
           sessionId: response.sessionId,

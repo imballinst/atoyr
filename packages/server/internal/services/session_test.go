@@ -80,13 +80,15 @@ func TestSessionService_IncrementTotalAttempts(t *testing.T) {
 	assert.Equal(t, int32(2), found.TotalAttempts)
 }
 
-func TestSessionService_UpdatePhase(t *testing.T) {
+func TestSessionService_EndSession(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)
 
 	session, _ := service.Create(false, []string{})
 
-	service.UpdatePhase(session.ID, sessionPhasePlaying)
+	service.EndSession(session.ID)
 	found, _ := service.FindByID(session.ID)
-	assert.Equal(t, sessionPhasePlaying, found.Phase)
+
+	assert.Equal(t, "finished", found.Phase)
+	assert.Equal(t, int32(0), found.RemainingSeconds)
 }

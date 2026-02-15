@@ -43,11 +43,11 @@ export class GameAPI {
     this.baseUrl = baseUrl;
   }
 
-  async startGame(autoVoice: boolean): Promise<StartGameResponse> {
+  async startGame(autoVoice: boolean, itemsUsed: string[]): Promise<StartGameResponse> {
     const response = await fetch(`${this.baseUrl}/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ autoVoice }),
+      body: JSON.stringify({ autoVoice, itemsUsed }),
     });
 
     if (!response.ok) {

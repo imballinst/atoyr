@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	sessionPhasePlaying = "playing"
+	SessionPhasePlaying = "playing"
 )
 
 type SessionService struct {
@@ -26,6 +26,7 @@ func NewSessionService(db *gorm.DB) *SessionService {
 }
 
 func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.SessionEntity, error) {
+	fmt.Println("db", autoVoice, itemsUsed)
 	session := &models.SessionEntity{
 		ID:                       uuid.New().String(),
 		Phase:                    "idle",
@@ -85,10 +86,13 @@ func (s *SessionService) SetCurrentWord(sessionID, word, wordDefinition, token s
 	return nil
 }
 
-func (s *SessionService) UpdatePhase(sessionID, phase string) error {
+func (s *SessionService) EndSession(sessionID string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
-		Update("phase", phase).Error; err != nil {
+		Updates(map[string]any{
+			"phase":             "finished",
+			"remaining_seconds": 0,
+		}).Error; err != nil {
 		return fmt.Errorf("failed to update phase: %w", err)
 	}
 	return nil

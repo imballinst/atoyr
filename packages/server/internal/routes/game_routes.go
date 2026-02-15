@@ -67,12 +67,10 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 		log.Println("No user_id cookie found, starting game without user association")
 	}
 
-	if len(req.ItemsUsed) > 0 {
-		err := gr.inventoryService.UseItems(req.ItemsUsed, userId)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
-			return
-		}
+	err = gr.inventoryService.UseItems(req.ItemsUsed, userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
+		return
 	}
 
 	// Create session
@@ -153,7 +151,7 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 
 		fmt.Println(session.RemainingSeconds, session.Phase)
 
-		if session.Phase == "playing" {
+		if session.Phase == services.SessionPhasePlaying {
 			c.SSEvent("tick", gin.H{
 				"remainingSeconds": session.RemainingSeconds,
 				"phase":            session.Phase,

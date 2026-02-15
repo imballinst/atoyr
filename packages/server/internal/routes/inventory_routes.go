@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -27,13 +28,7 @@ func (ir *InventoryRoutes) Register(r *gin.Engine) {
 }
 
 type GetItemsResponse struct {
-	Data []InventoryItem `json:"data"`
-}
-
-type InventoryItem struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Quantity int32  `json:"quantity"`
+	Data []core.InventoryItem `json:"data"`
 }
 
 func (ir *InventoryRoutes) GetItems(c *gin.Context) {
@@ -57,18 +52,7 @@ func (ir *InventoryRoutes) GetItems(c *gin.Context) {
 		return
 	}
 
-	data := []InventoryItem{}
-
-	for _, item := range items {
-		data = append(data, InventoryItem{
-			ID: item.ItemID,
-			// TODO: create items service to get name.
-			Name:     "stub name",
-			Quantity: int32(item.Quantity),
-		})
-	}
-
 	c.JSON(http.StatusOK, GetItemsResponse{
-		Data: data,
+		Data: items,
 	})
 }

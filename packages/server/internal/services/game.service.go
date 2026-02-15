@@ -60,7 +60,7 @@ func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error)
 
 	// Update phase to playing
 	g.resolveItemEffects(session)
-	session.Phase = sessionPhasePlaying
+	session.Phase = SessionPhasePlaying
 
 	fmt.Printf("%+v\n", session)
 
@@ -103,7 +103,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		return nil, err
 	}
 
-	if session.Phase != "playing" {
+	if session.Phase != SessionPhasePlaying {
 		return nil, fmt.Errorf("game is not in playing state")
 	}
 
@@ -136,6 +136,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 
 		result.CorrectAttemptTimestamps = append(correctAttemptTimestamps, []string{})
+		result.RemainingSeconds = result.RemainingSeconds - 1
 	} else {
 		if len(result.CorrectAttemptTimestamps) == 0 {
 			result.CorrectAttemptTimestamps = append(result.CorrectAttemptTimestamps, []string{})
@@ -174,12 +175,12 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 }
 
 func (g *GameService) FinishGame(sessionID string) error {
-	session, err := g.sessionService.FindByID(sessionID)
-	if err != nil {
+	if err := g.sessionService.EndSession(sessionID); err != nil {
 		return err
 	}
 
-	if err := g.sessionService.UpdatePhase(sessionID, "finished"); err != nil {
+	session, err := g.sessionService.FindByID(sessionID)
+	if err != nil {
 		return err
 	}
 
@@ -208,13 +209,17 @@ func (g *GameService) startTimer(sessionID string) {
 			return
 		}
 
-		if session.Phase != "playing" {
+		if session.Phase != SessionPhasePlaying {
 			return
 		}
 
 		newRemaining := session.RemainingSeconds - 1
 		if newRemaining <= 0 {
-			g.FinishGame(sessionID)
+			err = g.FinishGame(sessionID)
+			if err != nil {
+				log.Println("error when finishing game due to time is 0, ", err.Error())
+			}
+
 			return
 		}
 
