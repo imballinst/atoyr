@@ -131,7 +131,10 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 	if token != expectedToken {
 		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, expectedToken)
 
-		result.CorrectAttemptTimestamps = append(correctAttemptTimestamps, []string{})
+		lastIdx := len(correctAttemptTimestamps) - 1
+		if lastIdx >= 0 {
+			result.CorrectAttemptTimestamps = append(correctAttemptTimestamps, []string{})
+		}
 	} else if answer != session.CurrentWord {
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 
