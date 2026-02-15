@@ -14,6 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	sessionIdCookie = "session_id"
+)
+
 type GameRoutes struct {
 	gameService      *services.GameService
 	sessionService   *services.SessionService
@@ -38,6 +42,7 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 
 	// TODO: start should also be able to consume items if any
 	game.POST("/start", gr.StartGame)
+	game.POST("/continue", gr.ContinueGame)
 	game.POST("/answer", gr.SubmitAnswer)
 	game.GET("/sse/:sessionId", gr.SSE)
 }
@@ -91,6 +96,41 @@ func (gr *GameRoutes) StartGame(c *gin.Context) {
 		return
 	}
 
+	c.SetCookie(sessionIdCookie, session.ID, int(session.RemainingSeconds), "/", "", false, true)
+	c.JSON(http.StatusCreated, StartGameResponse{
+		SessionID:               session.ID,
+		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
+		ScrambledWordDefinition: session.CurrentWordDefinition,
+		Token:                   session.CurrentWordToken,
+		RemainingSeconds:        session.RemainingSeconds,
+	})
+}
+
+func (gr *GameRoutes) ContinueGame(c *gin.Context) {
+	sessionId, err := c.Cookie(sessionIdCookie)
+	if err != nil {
+		log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
+	}
+
+	session, err := gr.gameService.ContinueGame(sessionId)
+	if err != nil {
+		log.Println("Failed to continue game:", err)
+
+		status := http.StatusInternalServerError
+		if err == services.ErrSessionNotPlayingYet {
+			status = http.StatusBadRequest
+		}
+
+		c.JSON(status, gin.H{"error": "failed to continue game, " + err.Error()})
+		return
+	}
+	if session == nil {
+		log.Println("Failed to continue game because session does not exist")
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to continue game, session does not exist"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, StartGameResponse{
 		SessionID:               session.ID,
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
@@ -124,14 +164,6 @@ func (gr *GameRoutes) SubmitAnswer(c *gin.Context) {
 
 func (gr *GameRoutes) SSE(c *gin.Context) {
 	sessionID := c.Param("sessionId")
-
-	_, err := gr.sessionService.FindByID(sessionID)
-	if err != nil {
-		log.Println("Failed to find session for SSE:", err)
-
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
-		return
-	}
 
 	// Set SSE headers
 	c.Header("Content-Type", "text/event-stream")

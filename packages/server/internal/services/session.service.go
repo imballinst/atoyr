@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	SessionPhasePlaying = "playing"
+	SessionPhasePlaying  = "playing"
+	SessionPhaseFinished = "finished"
 )
 
 type SessionService struct {
@@ -26,7 +27,6 @@ func NewSessionService(db *gorm.DB) *SessionService {
 }
 
 func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.SessionEntity, error) {
-	fmt.Println("db", autoVoice, itemsUsed)
 	session := &models.SessionEntity{
 		ID:                       uuid.New().String(),
 		Phase:                    "idle",
@@ -42,6 +42,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.Ses
 		CurrentWordToken:         "",
 		UsedItemIDs:              pq.StringArray(itemsUsed),
 		CreatedAt:                time.Now(),
+		EndsAt:                   time.Now().Add(30 * time.Second),
 		UpdatedAt:                time.Now().Add(5 * time.Minute),
 	}
 

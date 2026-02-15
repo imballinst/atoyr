@@ -64,6 +64,32 @@ func TestGameService_StartGame_WithItems(t *testing.T) {
 	assert.Equal(t, pq.StringArray(itemIDs), session.UsedItemIDs)
 }
 
+func TestGameService_ContinueGame(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
+	db := setupTestDB(t)
+	ws := setupTestWordService(t)
+	ss := NewSessionService(db)
+	ls := NewLeaderboardService(db)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
+
+	session, _ := ss.Create(false, []string{})
+	started, err := gs.StartGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, SessionPhasePlaying, started.Phase)
+	assert.Equal(t, int32(30), session.RemainingSeconds)
+	assert.NotEqual(t, "", started.CurrentWord)
+	assert.NotEqual(t, "", started.CurrentWordToken)
+
+	started, err = gs.ContinueGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, SessionPhasePlaying, started.Phase)
+	assert.NotEqual(t, "", started.CurrentWord)
+	assert.NotEqual(t, "", started.CurrentWordToken)
+}
+
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 

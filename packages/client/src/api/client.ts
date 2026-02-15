@@ -43,6 +43,26 @@ export class GameAPI {
     this.baseUrl = baseUrl;
   }
 
+  async resumeGame(): Promise<StartGameResponse> {
+    const response = await fetch(`${this.baseUrl}/game/continue`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      let json: any = response.statusText;
+
+      try {
+        json += `, ${await response.json()}`;
+      } catch {
+        // No-op.
+      }
+
+      throw new Error(`Failed to resume game: ${json}`);
+    }
+
+    return response.json();
+  }
+
   async startGame(autoVoice: boolean, itemsUsed: string[]): Promise<StartGameResponse> {
     const response = await fetch(`${this.baseUrl}/game/start`, {
       method: 'POST',

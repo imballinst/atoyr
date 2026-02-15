@@ -42,8 +42,6 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 		return nil, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 
-	fmt.Printf("%+v\n", results)
-
 	entries := make([]LeaderboardEntry, len(results))
 	for i, result := range results {
 		entries[i] = LeaderboardEntry{

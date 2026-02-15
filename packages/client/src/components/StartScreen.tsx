@@ -60,7 +60,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
         <button
           onClick={handleStart}
-          className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
+          className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
         >
           Start Game
         </button>

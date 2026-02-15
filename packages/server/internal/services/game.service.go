@@ -13,6 +13,10 @@ import (
 	"atoyr/server/internal/utils"
 )
 
+var (
+	ErrSessionNotPlayingYet = fmt.Errorf("session is not in %s phase yet", SessionPhasePlaying)
+)
+
 type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
@@ -61,8 +65,7 @@ func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error)
 	// Update phase to playing
 	g.resolveItemEffects(session)
 	session.Phase = SessionPhasePlaying
-
-	fmt.Printf("%+v\n", session)
+	session.EndsAt = time.Now().Add(time.Second * time.Duration(session.RemainingSeconds))
 
 	if err := g.sessionService.Update(session); err != nil {
 		return nil, err
@@ -72,6 +75,39 @@ func (g *GameService) StartGame(sessionID string) (*models.SessionEntity, error)
 	go g.startTimer(sessionID)
 
 	session, err = g.sessionService.FindByID(sessionID)
+	return session, err
+}
+
+func (g *GameService) ContinueGame(sessionID string) (*models.SessionEntity, error) {
+	session, err := g.sessionService.FindByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if session.Phase != SessionPhasePlaying {
+		return nil, ErrSessionNotPlayingYet
+	}
+
+	// Update seconds, because the second is paused prior to resume.
+	if time.Now().Equal(session.EndsAt) || time.Now().After(session.EndsAt) {
+		session.RemainingSeconds = 0
+		session.Phase = SessionPhaseFinished
+	} else {
+		fmt.Println(session.EndsAt, time.Until(session.EndsAt).Seconds())
+		session.RemainingSeconds = int32(time.Until(session.EndsAt).Seconds())
+	}
+
+	err = g.sessionService.Update(session)
+	if err != nil {
+		return nil, fmt.Errorf("error when updating session, %+v", err.Error())
+	}
+
+	if session.Phase == SessionPhaseFinished {
+		return nil, nil
+	}
+
+	// It would seem we can re-use the timer from the start game function.
+
 	return session, err
 }
 
@@ -237,14 +273,11 @@ func (g *GameService) generateToken(word string) string {
 
 func (g *GameService) resolveItemEffects(session *models.SessionEntity) {
 	// The assumption here is that the item IDs are already resolved in the inventory service.
-	fmt.Println("session.UsedItemIDs", session.UsedItemIDs, g.items)
 	for _, itemID := range session.UsedItemIDs {
 		if g.items[itemID].Kind == core.ItemTimerKind {
 			session.RemainingSeconds += int32(g.items[itemID].Value)
-			fmt.Println("session.RemainingSeconds1", session.RemainingSeconds, session.RemainingSeconds+int32(g.items[itemID].Value))
 		}
 	}
-	fmt.Println("session.RemainingSeconds2", session.RemainingSeconds)
 }
 
 func convertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {

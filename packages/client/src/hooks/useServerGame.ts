@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { gameAPI, SubmitAnswerResponse } from '../api/client';
+import { gameAPI } from '../api/client';
 import { GAME_DURATION_SECONDS, GameResult, GameState, LEADERBOARD_COOKIE_NAME } from '../types/game';
 
 interface ServerGameSession {
@@ -51,10 +51,9 @@ export function useServerGame() {
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<any | null>(null);
 
-  const startGame = useCallback((autoVoice: boolean = false) => {
+  const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
     setState((prev) => ({
       ...prev,
-      phase: 'playing',
       score: 0,
       totalAttempts: 0,
       remainingSeconds: autoVoice ? GAME_DURATION_SECONDS + 5 : GAME_DURATION_SECONDS,
@@ -62,116 +61,111 @@ export function useServerGame() {
       autoVoice,
     }));
 
-    gameAPI
-      // TODO: show inventories, use items
-      .startGame(autoVoice, [])
-      .then((response) => {
-        sessionRef.current = {
-          sessionId: response.sessionId,
-          autoVoice,
-        };
-        setState((prev) => ({
-          ...prev,
-          remainingSeconds: response.remainingSeconds,
-          currentWord: {
-            scrambled: response.scrambledWord,
-            definition: response.scrambledWordDefinition,
-          },
-          currentWordToken: response.token,
-        }));
+    try {
+      const response = action === 'start' ? await gameAPI.startGame(autoVoice, []) : await gameAPI.resumeGame();
+      sessionRef.current = {
+        sessionId: response.sessionId,
+        autoVoice,
+      };
+      setState((prev) => ({
+        ...prev,
+        phase: 'playing',
+        remainingSeconds: response.remainingSeconds,
+        currentWord: {
+          scrambled: response.scrambledWord,
+          definition: response.scrambledWordDefinition,
+        },
+        currentWordToken: response.token,
+      }));
 
-        // Subscribe to SSE events
-        sseUnsubscribeRef.current = gameAPI.subscribeToSSE(
-          response.sessionId,
-          (event) => {
-            const eventType = (event.type as string) || '';
+      // Subscribe to SSE events
+      sseUnsubscribeRef.current = gameAPI.subscribeToSSE(
+        response.sessionId,
+        (event) => {
+          const eventType = (event.type as string) || '';
 
-            if (eventType === 'tick') {
-              setState((prev) => ({
-                ...prev,
-                remainingSeconds: event.remainingSeconds as number,
-              }));
-            } else if (eventType === 'finish') {
-              const accuracy = (event.totalAttempts as number) > 0 ? (event.score as number) / (event.totalAttempts as number) : 0;
+          if (eventType === 'tick') {
+            setState((prev) => ({
+              ...prev,
+              remainingSeconds: event.remainingSeconds as number,
+            }));
+          } else if (eventType === 'finish') {
+            const accuracy = (event.totalAttempts as number) > 0 ? (event.score as number) / (event.totalAttempts as number) : 0;
 
-              const result: GameResult = {
-                id: event.resultId as string,
-                timestamp: Date.now(),
-                score: event.score as number,
-                totalAttempts: event.totalAttempts as number,
-                accuracy,
-              };
+            const result: GameResult = {
+              id: event.resultId as string,
+              timestamp: Date.now(),
+              score: event.score as number,
+              totalAttempts: event.totalAttempts as number,
+              accuracy,
+            };
 
-              const existingLeaderboard = getCookie(LEADERBOARD_COOKIE_NAME);
-              const leaderboard: GameResult[] = existingLeaderboard ? JSON.parse(existingLeaderboard) : [];
-              leaderboard.push(result);
-              setCookie(LEADERBOARD_COOKIE_NAME, JSON.stringify(leaderboard), 7);
+            const existingLeaderboard = getCookie(LEADERBOARD_COOKIE_NAME);
+            const leaderboard: GameResult[] = existingLeaderboard ? JSON.parse(existingLeaderboard) : [];
+            leaderboard.push(result);
+            setCookie(LEADERBOARD_COOKIE_NAME, JSON.stringify(leaderboard), 7);
 
-              setState((prev) => ({
-                ...prev,
-                phase: 'finished',
-                score: event.score as number,
-                totalAttempts: event.totalAttempts as number,
-                gameResults: leaderboard,
-              }));
-            }
-          },
-          (error) => {
-            console.error('SSE error:', error);
             setState((prev) => ({
               ...prev,
               phase: 'finished',
+              score: event.score as number,
+              totalAttempts: event.totalAttempts as number,
+              gameResults: leaderboard,
             }));
-          },
-        );
-      })
-      .catch((err) => {
-        console.error('Failed to start game:', err);
-        alert('Failed to start game. Please try again.');
-        setState((prev) => ({
-          ...prev,
-          phase: 'idle',
-        }));
-      });
+          }
+        },
+        (error) => {
+          console.error('SSE error:', error);
+          setState((prev) => ({
+            ...prev,
+            phase: 'finished',
+          }));
+        },
+      );
+    } catch (err) {
+      console.error(`Failed to ${action} game:`, err);
+
+      if (action === 'start') {
+        alert(`Failed to ${action} game. Please try again.`);
+      }
+    }
   }, []);
 
   const submitAnswer = useCallback(
-    (answer: string, token: string, { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void }) => {
+    async (answer: string, token: string, opts: { onSuccess?: () => void; onError?: () => void }) => {
       if (state.phase !== 'playing' || !sessionRef.current) return;
 
       const session = sessionRef.current;
+      const { onSuccess, onError } = opts;
 
-      gameAPI
-        .submitAnswer(session.sessionId, token, answer)
-        .then((response: SubmitAnswerResponse) => {
+      try {
+        const response = await gameAPI.submitAnswer(session.sessionId, token, answer);
+        setState((prev) => ({
+          ...prev,
+          score: response.score,
+          correctAttemptTimestamps: response.correctAttemptTimestamps,
+          totalAttempts: response.attempts,
+          remainingSeconds: response.remainingSeconds,
+        }));
+
+        const { scrambledWord: nextScrambledWord, scrambledWordDefinition: nextDefinition, token: nextToken } = response;
+
+        if (response.correct && nextScrambledWord && nextDefinition && nextToken) {
           setState((prev) => ({
             ...prev,
-            score: response.score,
-            correctAttemptTimestamps: response.correctAttemptTimestamps,
-            totalAttempts: response.attempts,
-            remainingSeconds: response.remainingSeconds,
+            currentWord: {
+              scrambled: nextScrambledWord,
+              definition: nextDefinition,
+            },
+            currentWordToken: nextToken,
           }));
-
-          const { scrambledWord, scrambledWordDefinition, token } = response;
-
-          if (response.correct && scrambledWord && scrambledWordDefinition && token) {
-            setState((prev) => ({
-              ...prev,
-              currentWord: {
-                scrambled: scrambledWord,
-                definition: scrambledWordDefinition,
-              },
-              currentWordToken: token,
-            }));
-            onSuccess?.();
-          } else {
-            onError?.();
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to submit answer:', err);
-          // Allow user to retry
-        });
+          onSuccess?.();
+        } else {
+          onError?.();
+        }
+      } catch (err) {
+        console.error('Failed to submit answer:', err);
+      }
     },
     [state.phase],
   );
@@ -192,6 +186,10 @@ export function useServerGame() {
       gameResults: prev.gameResults,
     }));
   }, []);
+
+  useEffect(() => {
+    startGame(undefined, 'resume');
+  }, [startGame]);
 
   // Cleanup on unmount
   useEffect(() => {

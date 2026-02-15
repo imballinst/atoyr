@@ -24,13 +24,10 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 
 	// Create test database
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
-	}
+	assert.NoError(t, err)
 
-	if err := database.Automigrate(db); err != nil {
-		t.Fatalf("Failed to run migrations: %v", err)
-	}
+	err = database.Automigrate(db)
+	assert.NoError(t, err)
 
 	// Create services
 	wordService := &services.WordService{}
@@ -53,8 +50,6 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
-
-	assert.NoError(t, err)
 
 	// Create router
 	router := gin.New()
@@ -83,32 +78,21 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Errorf("Expected status 201, got %d", w.Code)
-	}
+	assert.Equal(t, http.StatusCreated, w.Code)
 
 	var response StartGameResponse
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	if response.SessionID == "" {
-		t.Error("Session ID is empty")
-	}
+	assert.NotEqual(t, "", response.SessionID)
+	assert.NotEqual(t, "", response.ScrambledWord)
+	assert.NotEqual(t, "", response.ScrambledWordDefinition)
+	assert.NotEqual(t, "", response.Token)
+	assert.NotEqual(t, int32(0), response.RemainingSeconds)
 
-	if response.ScrambledWord == "" {
-		t.Error("Current word is empty")
-	}
+	cookie, err := http.ParseSetCookie(w.Header().Get("set-cookie"))
+	assert.NoError(t, err)
 
-	if response.ScrambledWordDefinition == "" {
-		t.Error("Current word definition is empty")
-	}
-
-	if response.Token == "" {
-		t.Error("Token is empty")
-	}
-
-	if response.RemainingSeconds == 0 {
-		t.Error("Remaining seconds is empty")
-	}
+	assert.NotEmpty(t, cookie)
 }
 
 func TestGameRoutes_SubmitAnswer(t *testing.T) {
@@ -143,20 +127,13 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response services.SubmitAnswerResult
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	if response["correct"] != true {
-		t.Error("Expected correct answer")
-	}
-
-	if response["score"].(float64) == 0 {
-		t.Error("Expected score greater than 0")
-	}
+	assert.Equal(t, true, response.Correct)
+	assert.Equal(t, int32(1), response.Score)
 }
 
 func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
@@ -166,20 +143,13 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	if response["total"] == nil {
-		t.Error("Total field is missing")
-	}
-
-	if response["entries"] == nil {
-		t.Error("Entries field is missing")
-	}
+	assert.NotNil(t, response["total"])
+	assert.NotNil(t, response["entries"])
 }
 
 func TestLeaderboardRoutes_Pagination(t *testing.T) {
@@ -189,7 +159,5 @@ func TestLeaderboardRoutes_Pagination(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 }
