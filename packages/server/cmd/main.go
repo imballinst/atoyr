@@ -51,6 +51,7 @@ func main() {
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
+	userService := services.NewUserService(sessionService, inventoryService)
 
 	// Initialize Gin
 	router := gin.Default()
@@ -59,7 +60,7 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	gameRoutes := routes.NewGameRoutes(gameService, sessionService, inventoryService)
+	gameRoutes := routes.NewGameRoutes(gameService, sessionService, inventoryService, userService)
 	gameRoutes.Register(router)
 
 	leaderboardRoutes := routes.NewLeaderboardRoutes(leaderboardService)

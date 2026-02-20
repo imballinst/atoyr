@@ -50,13 +50,14 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
+	userService := services.NewUserService(sessionService, inventoryService)
 
 	// Create router
 	router := gin.New()
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	gameRoutes := NewGameRoutes(gameService, sessionService, inventoryService)
+	gameRoutes := NewGameRoutes(gameService, sessionService, inventoryService, userService)
 	gameRoutes.Register(router)
 
 	leaderboardRoutes := NewLeaderboardRoutes(leaderboardService)

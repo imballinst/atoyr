@@ -22,17 +22,20 @@ type GameRoutes struct {
 	gameService      *services.GameService
 	sessionService   *services.SessionService
 	inventoryService *services.InventoryService
+	userService      *services.UserService
 }
 
 func NewGameRoutes(
 	gameService *services.GameService,
 	sessionService *services.SessionService,
 	inventoryService *services.InventoryService,
+	userService *services.UserService,
 ) *GameRoutes {
 	return &GameRoutes{
 		gameService:      gameService,
 		sessionService:   sessionService,
 		inventoryService: inventoryService,
+		userService:      userService,
 	}
 }
 
@@ -44,6 +47,7 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 	game.POST("/start", gr.StartGame)
 	game.POST("/continue", gr.ContinueGame)
 	game.POST("/answer", gr.SubmitAnswer)
+	game.POST("/register", gr.RegisterUser)
 	game.GET("/sse/:sessionId", gr.SSE)
 }
 
@@ -154,6 +158,44 @@ func (gr *GameRoutes) SubmitAnswer(c *gin.Context) {
 	}
 
 	result, err := gr.gameService.SubmitAnswer(req.SessionID, strings.ToLower(req.Answer), req.Token)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+type RegisterUserRequest struct {
+	Username string `json:"username" binding:"required"`
+}
+
+func (gr *GameRoutes) RegisterUser(c *gin.Context) {
+	var req RegisterUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	sessionId, err := c.Cookie(sessionIdCookie)
+	if err != nil {
+		if err == http.ErrNoCookie {
+			log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
+			c.JSON(http.StatusOK, gin.H{"message": "user registered without session association"})
+			return
+		}
+
+		log.Printf("Error retrieving %s from cookie, %s\n", sessionIdCookie, err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve session cookie"})
+		return
+	}
+
+	if req.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username cannot be empty"})
+		return
+	}
+
+	result, err := gr.userService.UpsertUserFromSession(req.Username, sessionId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
