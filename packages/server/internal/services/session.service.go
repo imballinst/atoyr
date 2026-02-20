@@ -1,8 +1,6 @@
 package services
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -56,10 +54,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.Ses
 func (s *SessionService) FindByID(id string) (*models.SessionEntity, error) {
 	var session models.SessionEntity
 	if err := s.db.First(&session, "id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("session not found: %s", id)
-		}
-		return nil, fmt.Errorf("failed to find session: %w", err)
+		return nil, err
 	}
 	return &session, nil
 }
@@ -95,41 +90,6 @@ func (s *SessionService) EndSession(sessionID string) error {
 			"remaining_seconds": 0,
 		}).Error; err != nil {
 		return fmt.Errorf("failed to update phase: %w", err)
-	}
-	return nil
-}
-
-func (s *SessionService) UpdateScore(sessionID string, scoreIncrement int32, correctAttemptTimestamps [][]string) error {
-	correctAttemptTimestampsJson, err := json.Marshal(correctAttemptTimestamps)
-	if err != nil {
-		return fmt.Errorf("failed to marshal correct attempt timestamps: %w", err)
-	}
-
-	if err := s.db.Model(&models.SessionEntity{}).
-		Where("id = ?", sessionID).
-		Updates(map[string]interface{}{
-			"score":                      gorm.Expr("score + ?", scoreIncrement),
-			"correct_attempt_timestamps": correctAttemptTimestampsJson,
-		}).Error; err != nil {
-		return fmt.Errorf("failed to update score: %w", err)
-	}
-	return nil
-}
-
-func (s *SessionService) IncrementTotalAttempts(sessionID string) error {
-	if err := s.db.Model(&models.SessionEntity{}).
-		Where("id = ?", sessionID).
-		Update("total_attempts", gorm.Expr("total_attempts + 1")).Error; err != nil {
-		return fmt.Errorf("failed to increment total attempts: %w", err)
-	}
-	return nil
-}
-
-func (s *SessionService) UpdateRemainingSeconds(sessionID string, seconds int32) error {
-	if err := s.db.Model(&models.SessionEntity{}).
-		Where("id = ?", sessionID).
-		Update("remaining_seconds", seconds).Error; err != nil {
-		return fmt.Errorf("failed to update remaining seconds: %w", err)
 	}
 	return nil
 }

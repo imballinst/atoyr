@@ -55,7 +55,7 @@ export interface GameState {
   correctAttemptTimestamps: string[][];
   remainingSeconds: number;
   usedWords: Set<string>;
-  gameResults: GameResult[];
+  gameResults: LeaderboardEntry[];
   autoVoice: boolean;
 }
 
@@ -138,20 +138,6 @@ export interface SSEErrorEvent extends SSEBaseEvent {
 }
 
 export type SSEEvent = SessionStartedEvent | WordNewEvent | TimerTickEvent | TimerPenaltyEvent | GameFinishedEvent | SSEErrorEvent;
-
-// ============================================
-// Game Result Types
-// ============================================
-
-export interface GameResult {
-  id: string;
-  sessionId?: string; // Optional for backward compatibility with MVP
-  timestamp: number;
-  score: number;
-  totalAttempts: number;
-  accuracy: number;
-  durationMs?: number; // Optional for backward compatibility with MVP
-}
 
 export interface LeaderboardEntry {
   id: string;

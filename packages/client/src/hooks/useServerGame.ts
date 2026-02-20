@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gameAPI } from '../api/client';
-import { GAME_DURATION_SECONDS, GameResult, GameState, LEADERBOARD_COOKIE_NAME } from '../types/game';
+import { GAME_DURATION_SECONDS, GameState } from '../types/game';
 
 interface ServerGameSession {
   sessionId: string;
@@ -81,7 +81,7 @@ export function useServerGame() {
       // Subscribe to SSE events
       sseUnsubscribeRef.current = gameAPI.subscribeToSSE(
         response.sessionId,
-        (event) => {
+        async (event) => {
           const eventType = (event.type as string) || '';
 
           if (eventType === 'tick') {
@@ -90,27 +90,15 @@ export function useServerGame() {
               remainingSeconds: event.remainingSeconds as number,
             }));
           } else if (eventType === 'finish') {
-            const accuracy = (event.totalAttempts as number) > 0 ? (event.score as number) / (event.totalAttempts as number) : 0;
-
-            const result: GameResult = {
-              id: event.resultId as string,
-              timestamp: Date.now(),
-              score: event.score as number,
-              totalAttempts: event.totalAttempts as number,
-              accuracy,
-            };
-
-            const existingLeaderboard = getCookie(LEADERBOARD_COOKIE_NAME);
-            const leaderboard: GameResult[] = existingLeaderboard ? JSON.parse(existingLeaderboard) : [];
-            leaderboard.push(result);
-            setCookie(LEADERBOARD_COOKIE_NAME, JSON.stringify(leaderboard), 7);
+            const leaderboardResponse = await gameAPI.getLeaderboard();
 
             setState((prev) => ({
               ...prev,
               phase: 'finished',
+              correctAttemptTimestamps: event.correctAttemptTimestamps as string[][],
               score: event.score as number,
               totalAttempts: event.totalAttempts as number,
-              gameResults: leaderboard,
+              gameResults: leaderboardResponse.entries,
             }));
           }
         },

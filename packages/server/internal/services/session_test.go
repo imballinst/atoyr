@@ -50,36 +50,6 @@ func TestSessionService_SetCurrentWord(t *testing.T) {
 	assert.Equal(t, "test", found.UsedWords[0])
 }
 
-func TestSessionService_UpdateScore(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewSessionService(db)
-
-	session, _ := service.Create(false, []string{})
-
-	service.UpdateScore(session.ID, 10, [][]string{})
-	found, _ := service.FindByID(session.ID)
-	assert.Equal(t, int32(10), found.Score)
-
-	service.UpdateScore(session.ID, 5, [][]string{})
-	found, _ = service.FindByID(session.ID)
-	assert.Equal(t, int32(15), found.Score)
-}
-
-func TestSessionService_IncrementTotalAttempts(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewSessionService(db)
-
-	session, _ := service.Create(false, []string{})
-
-	service.IncrementTotalAttempts(session.ID)
-	found, _ := service.FindByID(session.ID)
-	assert.Equal(t, int32(1), found.TotalAttempts)
-
-	service.IncrementTotalAttempts(session.ID)
-	found, _ = service.FindByID(session.ID)
-	assert.Equal(t, int32(2), found.TotalAttempts)
-}
-
 func TestSessionService_EndSession(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)

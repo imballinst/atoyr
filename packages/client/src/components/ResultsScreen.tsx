@@ -6,7 +6,7 @@ interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' |
 }
 
 export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, leaderboard, onPlayAgain }: ResultsScreenProps) {
-  const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(0) : '0.0';
+  const accuracy = totalAttempts > 0 ? (score / totalAttempts) * 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
   return (
@@ -52,6 +52,7 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
                 .map((result, i) => (
                   <div key={result.id} className="flex justify-between gap-3 p-3 bg-dark-bg-tertiary rounded text-xs">
                     <div className="font-semibold text-dark-text-primary min-w-8">#{i + 1}</div>
+                    <div className="font-semibold text-dark-text-primary">{result.id}</div>
                     <div className="flex gap-x-1 font-mono">
                       <div className="flex-1 text-center font-semibold text-dark-text-primary">
                         {result.score}/{result.totalAttempts}

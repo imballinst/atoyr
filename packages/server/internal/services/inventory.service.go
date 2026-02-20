@@ -3,7 +3,6 @@ package services
 import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
-	"fmt"
 	"log"
 	"time"
 
@@ -84,7 +83,7 @@ func (s *InventoryService) GetItems(userID string) ([]core.InventoryItem, error)
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		return nil, fmt.Errorf("inventory not found for user %s", userID)
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	var inventoryItems []models.InventoryItemEntity

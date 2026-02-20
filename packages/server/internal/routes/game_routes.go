@@ -12,6 +12,7 @@ import (
 	"atoyr/server/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 const (
@@ -117,6 +118,11 @@ func (gr *GameRoutes) ContinueGame(c *gin.Context) {
 	}
 
 	session, err := gr.gameService.ContinueGame(sessionId)
+	if err == gorm.ErrRecordNotFound {
+		log.Printf("Session with ID %s not found\n", sessionId)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session not found"})
+		return
+	}
 	if err != nil {
 		log.Println("Failed to continue game:", err)
 
@@ -236,9 +242,9 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 
 		if session.Phase == "finished" {
 			c.SSEvent("finish", gin.H{
-				"score":         session.Score,
-				"totalAttempts": session.TotalAttempts,
-				"accuracy":      float32(session.Score) / float32(session.TotalAttempts) * 100,
+				"score":                    session.Score,
+				"totalAttempts":            session.TotalAttempts,
+				"correctAttemptTimestamps": session.CorrectAttemptTimestamps,
 			})
 
 			time.Sleep(time.Second)
