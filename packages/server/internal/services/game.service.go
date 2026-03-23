@@ -131,7 +131,13 @@ func (g *GameService) EmitWord(sessionID string) error {
 	token := g.generateToken(word)
 	newUsedWords := append(session.UsedWords, word)
 
-	if err := g.sessionService.SetCurrentWord(sessionID, word, definition, token, newUsedWords); err != nil {
+	session.CurrentWordToken = word
+	session.UsedWords = newUsedWords
+	session.CurrentWordToken = token
+	session.CurrentWordDefinition = definition
+	session.CurrentWord = word
+
+	if err := g.sessionService.Update(session); err != nil {
 		return err
 	}
 
@@ -160,6 +166,8 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		Attempts:                 session.TotalAttempts + 1,
 		RemainingSeconds:         session.RemainingSeconds,
 		CorrectAttemptTimestamps: session.CorrectAttemptTimestamps,
+		Token:                    session.CurrentWordToken,
+		ScrambledWordDefinition:  session.CurrentWordDefinition,
 	}
 
 	scoreIncrement := int32(0)
@@ -168,13 +176,16 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, session.CurrentWordToken)
 
 		lastIdx := len(session.CorrectAttemptTimestamps) - 1
-		if lastIdx >= 0 {
+		if lastIdx >= 0 && len(session.CorrectAttemptTimestamps[lastIdx]) > 0 {
 			session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
 		}
 	} else if answer != session.CurrentWord {
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 
-		session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
+		lastIdx := len(session.CorrectAttemptTimestamps) - 1
+		if lastIdx >= 0 && len(session.CorrectAttemptTimestamps[lastIdx]) > 0 {
+			session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
+		}
 		session.RemainingSeconds = session.RemainingSeconds - 1
 	} else {
 		if len(session.CorrectAttemptTimestamps) == 0 {
@@ -186,7 +197,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		currentStreakTimestamps = append(currentStreakTimestamps, time.Now().Format(time.RFC3339))
 
 		result.Correct = true
-		session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps[:lastIdx], currentStreakTimestamps)
+		session.CorrectAttemptTimestamps[lastIdx] = currentStreakTimestamps
 		scoreIncrement = 1
 
 		// Emit next word
@@ -204,18 +215,27 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 			return nil, err
 		}
 
-		session, err := domainmodels.ConvertSessionDBToDomain(sessionEntity)
+		fmt.Printf("sessionEntity %v\n", sessionEntity)
+
+		session, err = domainmodels.ConvertSessionDBToDomain(sessionEntity)
 		if err != nil {
 			return nil, err
 		}
 
 		result.ScrambledWord = utils.ScrambleWord(session.CurrentWord)
 		result.ScrambledWordDefinition = session.CurrentWordDefinition
-		result.Token = g.generateToken(session.CurrentWord)
+		result.Token = session.CurrentWordToken
 		result.Score += scoreIncrement
 	}
 
-	if err := g.sessionService.Update(result); err != nil {
+	fmt.Printf("result1, %v %v\n", result, session)
+
+	sessionDB, err := domainmodels.ConvertSessionDomainToDB(session)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := g.sessionService.Update(sessionDB); err != nil {
 		return nil, err
 	}
 
@@ -271,7 +291,8 @@ func (g *GameService) startTimer(sessionID string) {
 			return
 		}
 
-		g.sessionService.UpdateRemainingSeconds(sessionID, newRemaining)
+		session.RemainingSeconds = newRemaining
+		g.sessionService.Update(session)
 	}
 }
 

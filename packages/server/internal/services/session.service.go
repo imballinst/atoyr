@@ -68,20 +68,6 @@ func (s *SessionService) Update(session *models.SessionEntity) error {
 	return nil
 }
 
-func (s *SessionService) SetCurrentWord(sessionID, word, wordDefinition, token string, usedWords []string) error {
-	if err := s.db.Model(&models.SessionEntity{}).
-		Where("id = ?", sessionID).
-		Updates(map[string]interface{}{
-			"current_word":            word,
-			"current_word_definition": wordDefinition,
-			"current_word_token":      token,
-			"used_words":              pq.StringArray(usedWords),
-		}).Error; err != nil {
-		return fmt.Errorf("failed to set current word: %w", err)
-	}
-	return nil
-}
-
 func (s *SessionService) EndSession(sessionID string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).

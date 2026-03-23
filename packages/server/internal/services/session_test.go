@@ -34,22 +34,6 @@ func TestSessionService_FindByID(t *testing.T) {
 	assert.Equal(t, created.ID, found.ID)
 }
 
-func TestSessionService_SetCurrentWord(t *testing.T) {
-	db := setupTestDB(t)
-	service := NewSessionService(db)
-
-	session, _ := service.Create(false, []string{})
-
-	err := service.SetCurrentWord(session.ID, "test", "definition", "token123", []string{"test"})
-	assert.NoError(t, err)
-
-	found, _ := service.FindByID(session.ID)
-	assert.Equal(t, "test", found.CurrentWord)
-	assert.Equal(t, "token123", found.CurrentWordToken)
-	assert.Len(t, found.UsedWords, 1)
-	assert.Equal(t, "test", found.UsedWords[0])
-}
-
 func TestSessionService_EndSession(t *testing.T) {
 	db := setupTestDB(t)
 	service := NewSessionService(db)

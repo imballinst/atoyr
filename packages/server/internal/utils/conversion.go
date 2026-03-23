@@ -13,3 +13,11 @@ func ConvertTimestampJSONToStringArray(j models.JSON) ([][]string, error) {
 	}
 	return result, nil
 }
+
+func ConvertStringArrayToTimestampJSON(arr [][]string) (models.JSON, error) {
+	data, err := json.Marshal(arr)
+	if err != nil {
+		return nil, err
+	}
+	return models.JSON(data), nil
+}

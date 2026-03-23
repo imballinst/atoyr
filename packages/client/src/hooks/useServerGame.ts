@@ -91,6 +91,7 @@ export function useServerGame() {
             }));
           } else if (eventType === 'finish') {
             const leaderboardResponse = await gameAPI.getLeaderboard();
+            console.info(leaderboardResponse);
 
             setState((prev) => ({
               ...prev,
