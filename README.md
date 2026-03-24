@@ -7,3 +7,4 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - Node.js 24 or above
 - Go 1.25 or above
 - [Air](https://github.com/air-verse/air) installed with `go install github.com/air-verse/air@latest`
+- [gotestsum](https://github.com/gotestyourself/gotestsum) installed with `go install gotest.tools/gotestsum@latest`

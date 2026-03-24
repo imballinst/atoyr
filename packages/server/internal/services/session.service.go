@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/services/domainmodels"
+	"atoyr/server/internal/utils"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -24,9 +25,9 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.SessionEntity, error) {
+func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*domainmodels.SessionDomain, error) {
 	session := &models.SessionEntity{
-		ID:                       uuid.New().String(),
+		ID:                       utils.GenerateUUID(),
 		Phase:                    "idle",
 		Score:                    0,
 		TotalAttempts:            0,
@@ -38,7 +39,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.Ses
 		CurrentWordDefinition:    "",
 		CurrentWord:              "",
 		CurrentWordToken:         "",
-		UsedItemIDs:              pq.StringArray(itemsUsed),
+		UsedItemIDs:              itemsUsed,
 		CreatedAt:                time.Now(),
 		EndsAt:                   time.Now().Add(30 * time.Second),
 		UpdatedAt:                time.Now().Add(5 * time.Minute),
@@ -48,21 +49,27 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*models.Ses
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	return session, nil
+	return domainmodels.ConvertSessionDBToDomain(session)
 }
 
-func (s *SessionService) FindByID(id string) (*models.SessionEntity, error) {
+func (s *SessionService) FindByID(id string) (*domainmodels.SessionDomain, error) {
 	var session models.SessionEntity
 	if err := s.db.First(&session, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
-	return &session, nil
+
+	return domainmodels.ConvertSessionDBToDomain(&session)
 }
 
-func (s *SessionService) Update(session *models.SessionEntity) error {
-	session.UpdatedAt = time.Now()
+func (s *SessionService) Update(session *domainmodels.SessionDomain) error {
+	dbModel, err := domainmodels.ConvertSessionDomainToDB(session)
+	if err != nil {
+		return fmt.Errorf("failed to convert session to db model: %w", err)
+	}
 
-	if err := s.db.Save(session).Error; err != nil {
+	dbModel.UpdatedAt = time.Now()
+
+	if err := s.db.Save(dbModel).Error; err != nil {
 		return fmt.Errorf("failed to update session: %w", err)
 	}
 	return nil

@@ -3,6 +3,7 @@
  * Uses SSE for real-time updates and HTTP for answer submissions
  */
 
+import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gameAPI } from '../api/client';
 import { GAME_DURATION_SECONDS, GameState } from '../types/game';
@@ -83,6 +84,7 @@ export function useServerGame() {
         response.sessionId,
         async (event) => {
           const eventType = (event.type as string) || '';
+          console.info(event);
 
           if (eventType === 'tick') {
             setState((prev) => ({
@@ -91,7 +93,6 @@ export function useServerGame() {
             }));
           } else if (eventType === 'finish') {
             const leaderboardResponse = await gameAPI.getLeaderboard();
-            console.info(leaderboardResponse);
 
             setState((prev) => ({
               ...prev,
@@ -112,6 +113,10 @@ export function useServerGame() {
         },
       );
     } catch (err) {
+      if (isAxiosError(err) && err.response && err.response.status >= 400 && err.response.status < 500) {
+        return;
+      }
+
       console.error(`Failed to ${action} game:`, err);
 
       if (action === 'start') {

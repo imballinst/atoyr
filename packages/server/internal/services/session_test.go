@@ -1,13 +1,14 @@
 package services
 
 import (
+	"atoyr/server/internal/testutils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSessionService_Create(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewSessionService(db)
 
 	session, err := service.Create(true, []string{"test-item-id"})
@@ -21,7 +22,7 @@ func TestSessionService_Create(t *testing.T) {
 }
 
 func TestSessionService_FindByID(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewSessionService(db)
 
 	// Create session
@@ -35,7 +36,7 @@ func TestSessionService_FindByID(t *testing.T) {
 }
 
 func TestSessionService_EndSession(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewSessionService(db)
 
 	session, _ := service.Create(false, []string{})

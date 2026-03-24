@@ -6,7 +6,7 @@
     "postinstall": "go mod tidy",
     "dev": "air -c .air.toml",
     "build": "go build -o bin/server ./cmd/main.go",
-    "test": "go test -v ./..."
+    "test": "gotestsum -- -short ./..."
   },
   "description": "Atoyr backend server written in Go with Gin and GORM"
 }

@@ -21,6 +21,7 @@ type SessionDomain struct {
 	UsedWords                []string
 	WordDefinitions          []string
 	CurrentWord              string
+	CurrentScrambledWord     string
 	CurrentWordDefinition    string
 	CurrentWordToken         string
 	UsedItemIDs              []string
@@ -32,7 +33,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		return nil, nil
 	}
 
-	correctAttemptTimestamps, err := utils.ConvertTimestampJSONToStringArray(session.CorrectAttemptTimestamps)
+	correctAttemptTimestamps, err := utils.ConvertDbJsonToNestedStringArray(session.CorrectAttemptTimestamps)
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +50,13 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		RemainingSeconds:         session.RemainingSeconds,
 		CorrectAttemptTimestamps: correctAttemptTimestamps,
 		AutoVoice:                session.AutoVoice,
-		UsedWords:                session.UsedWords,
-		WordDefinitions:          session.WordDefinitions,
+		UsedItemIDs:              []string(session.UsedItemIDs),
+		UsedWords:                []string(session.UsedWords),
+		WordDefinitions:          []string(session.WordDefinitions),
 		CurrentWord:              session.CurrentWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentWordToken:         session.CurrentWordToken,
-		UserEntity:               convertUserDBToDomain(session.UserEntity),
+		UserEntity:               ConvertUserDBToDomain(session.UserEntity),
 	}, nil
 }
 
@@ -63,7 +65,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		return nil, nil
 	}
 
-	correctAttemptTimestamps, err := utils.ConvertStringArrayToTimestampJSON(session.CorrectAttemptTimestamps)
+	correctAttemptTimestamps, err := utils.ConvertNestedStringArrayToDbJson(session.CorrectAttemptTimestamps)
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +86,10 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		UsedItemIDs:              session.UsedItemIDs,
 		WordDefinitions:          session.WordDefinitions,
 		CurrentWord:              session.CurrentWord,
+		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentWordToken:         session.CurrentWordToken,
-		UserEntity:               convertUserDomainToDB(session.UserEntity),
+		UserEntity:               ConvertUserDomainToDB(session.UserEntity),
 	}, nil
 }
 
@@ -97,7 +100,7 @@ type UserDomain struct {
 	Username  string
 }
 
-func convertUserDBToDomain(user *models.UserEntity) *UserDomain {
+func ConvertUserDBToDomain(user *models.UserEntity) *UserDomain {
 	if user == nil {
 		return nil
 	}
@@ -109,7 +112,7 @@ func convertUserDBToDomain(user *models.UserEntity) *UserDomain {
 	}
 }
 
-func convertUserDomainToDB(user *UserDomain) *models.UserEntity {
+func ConvertUserDomainToDB(user *UserDomain) *models.UserEntity {
 	if user == nil {
 		return nil
 	}

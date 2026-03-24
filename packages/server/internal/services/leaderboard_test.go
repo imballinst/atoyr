@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/testutils"
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
 	// Add some test results
@@ -66,7 +67,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 }
 
 func TestLeaderboardService_Pagination(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
 	// Add 25 results
@@ -99,7 +100,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 }
 
 func TestLeaderboardService_GetTotalEntries(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
 	total, _ := service.GetTotalEntries()
@@ -126,7 +127,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 }
 
 func TestLeaderboardService_GetTopScores(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
 	// Add results

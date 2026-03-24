@@ -6,8 +6,9 @@ import (
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/services/domainmodels"
+	"atoyr/server/internal/utils"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +26,7 @@ func NewUserService(sessionService *SessionService, inventoryService *InventoryS
 	}
 }
 
-func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models.UserEntity, error) {
+func (u *UserService) UpsertUserFromSession(username, sessionID string) (*domainmodels.UserDomain, error) {
 	session, err := u.sessionService.FindByID(sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find session: %w", err)
@@ -45,7 +46,7 @@ func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models
 
 	rewardItemIDs := []string{}
 	for _, streak := range session.CorrectAttemptTimestamps {
-		if streak > 3 {
+		if len(streak) > 3 {
 			rewardItemIDs = append(rewardItemIDs, core.BonusTimerRewardItemID)
 		}
 	}
@@ -58,16 +59,18 @@ func (u *UserService) UpsertUserFromSession(username, sessionID string) (*models
 	return user, nil
 }
 
-func (u *UserService) FindUserByID(id string) (*models.UserEntity, error) {
+func (u *UserService) FindUserByID(id string) (*domainmodels.UserDomain, error) {
 	var user models.UserEntity
-	err := u.db.First(&user, "id = ?", id).Error
+	if err := u.db.First(&user, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
 
-	return &user, err
+	return domainmodels.ConvertUserDBToDomain(&user), nil
 }
 
-func (u *UserService) CreateUser(username string) (*models.UserEntity, error) {
+func (u *UserService) CreateUser(username string) (*domainmodels.UserDomain, error) {
 	user := models.UserEntity{
-		ID:        uuid.New().String(),
+		ID:        utils.GenerateUUID(),
 		Username:  username,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -76,10 +79,10 @@ func (u *UserService) CreateUser(username string) (*models.UserEntity, error) {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return &user, nil
+	return domainmodels.ConvertUserDBToDomain(&user), nil
 }
 
-func (u *UserService) getOrCreateUser(username string) (*models.UserEntity, error) {
+func (u *UserService) getOrCreateUser(username string) (*domainmodels.UserDomain, error) {
 	var user models.UserEntity
 	err := u.db.First(&user, "username = ?", username).Error
 	if err != nil {
@@ -89,5 +92,5 @@ func (u *UserService) getOrCreateUser(username string) (*models.UserEntity, erro
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	return &user, nil
+	return domainmodels.ConvertUserDBToDomain(&user), nil
 }

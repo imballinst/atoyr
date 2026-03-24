@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@atoyr/shared": "workspace:",
+    "axios": "1.13.6",
     "nanoid": "5.1.6",
     "react": "19.1.1",
     "react-dom": "19.1.1",

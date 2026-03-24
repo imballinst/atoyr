@@ -2,18 +2,18 @@ package services
 
 import (
 	"atoyr/server/internal/core"
+	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
 	"testing"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService_StartGame(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -31,8 +31,8 @@ func TestGameService_StartGame(t *testing.T) {
 func TestGameService_StartGame_WithItems(t *testing.T) {
 	itemIDs, itemInfoMap := testutils.SetupItemInfoMapWithKind([]string{core.BonusTimerRewardItemID}, []core.ItemInfo{{Kind: core.ItemTimerKind, Value: 10}})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -48,7 +48,9 @@ func TestGameService_StartGame_WithItems(t *testing.T) {
 	session, err := ss.Create(false, []string{})
 	assert.NoError(t, err)
 
-	session.UserEntityID = &user.ID
+	session.UserEntity = &domainmodels.UserDomain{
+		ID: user.ID,
+	}
 	session.UsedItemIDs = itemIDs
 
 	err = ss.Update(session)
@@ -61,14 +63,14 @@ func TestGameService_StartGame_WithItems(t *testing.T) {
 	assert.Equal(t, int32(40), session.RemainingSeconds)
 	assert.NotEqual(t, "", session.CurrentWord)
 	assert.NotEqual(t, "", session.CurrentWordToken)
-	assert.Equal(t, pq.StringArray(itemIDs), session.UsedItemIDs)
+	assert.Equal(t, itemIDs, session.UsedItemIDs)
 }
 
 func TestGameService_ContinueGame(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -93,8 +95,8 @@ func TestGameService_ContinueGame(t *testing.T) {
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -118,8 +120,8 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -127,6 +129,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	session, _ := ss.Create(false, []string{})
 	gs.StartGame(session.ID)
 
+	session, _ = ss.FindByID(session.ID)
 	result, err := gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 
 	assert.NoError(t, err)
@@ -139,8 +142,8 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -177,8 +180,8 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -215,8 +218,8 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_TokenGeneration(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)
@@ -236,8 +239,8 @@ func TestGameService_TokenGeneration(t *testing.T) {
 func TestGameService_AttemptCounting(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
-	ws := setupTestWordService(t)
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, itemInfoMap)

@@ -3,10 +3,10 @@ package services
 import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/utils"
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +32,7 @@ func (s *InventoryService) AddItems(itemIDs []string, userID string) error {
 
 	if err == gorm.ErrRecordNotFound {
 		inventory = &models.InventoryEntity{
-			ID:           uuid.New().String(),
+			ID:           utils.GenerateUUID(),
 			UserEntityID: userID,
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),

@@ -47,12 +47,13 @@ type SessionEntity struct {
 	RemainingSeconds         int32          `gorm:"type:integer"`
 	CorrectAttemptTimestamps JSON           `gorm:"type:jsonb;default:'[]'"`
 	AutoVoice                bool           `gorm:"type:boolean;default:false"`
-	UsedWords                pq.StringArray `gorm:"type:text;default:'[]'"`
-	WordDefinitions          pq.StringArray `gorm:"type:text;default:'[]'"`
+	UsedWords                pq.StringArray `gorm:"type:text"`
+	WordDefinitions          pq.StringArray `gorm:"type:text"`
 	CurrentWord              string         `gorm:"type:text"`
+	CurrentScrambledWord     string         `gorm:"type:text"`
 	CurrentWordDefinition    string         `gorm:"type:text"`
 	CurrentWordToken         string         `gorm:"type:text"`
-	UsedItemIDs              pq.StringArray `gorm:"type:text;default:'[]'"`
+	UsedItemIDs              pq.StringArray `gorm:"type:text"`
 	// Belongs to user entity.
 	UserEntityID *string `gorm:"type:text;index:idx_sessions_user"`
 	UserEntity   *UserEntity
@@ -112,6 +113,6 @@ func (s *SessionEntity) SetState(state GameSessionState) {
 	s.Score = state.Score
 	s.TotalAttempts = state.TotalAttempts
 	s.RemainingSeconds = state.RemainingSeconds
-	s.UsedWords = pq.StringArray(state.UsedWords)
+	s.UsedWords = state.UsedWords
 	s.CurrentWordToken = state.CurrentWordToken
 }

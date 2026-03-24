@@ -54,7 +54,7 @@ func (gr *GameRoutes) Register(r *gin.Engine) {
 
 type StartGameRequest struct {
 	AutoVoice *bool    `json:"autoVoice" binding:"required"`
-	ItemsUsed []string `json:"itemsUsed" binding:"required"`
+	ItemsUsed []string `json:"itemsUsed"`
 }
 
 type StartGameResponse struct {
@@ -228,8 +228,6 @@ func (gr *GameRoutes) SSE(c *gin.Context) {
 			fmt.Println("Cannot get session by ID: " + err.Error())
 			return false
 		}
-
-		fmt.Println(session.RemainingSeconds, session.Phase)
 
 		if session.Phase == services.SessionPhasePlaying {
 			c.SSEvent("tick", gin.H{

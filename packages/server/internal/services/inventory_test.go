@@ -11,7 +11,7 @@ import (
 func TestUserService_AddItems(t *testing.T) {
 	itemIDs, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	is := NewInventoryService(db, itemInfoMap)
 	ss := NewSessionService(db)
 	u := NewUserService(ss, is)
@@ -28,7 +28,7 @@ func TestUserService_AddItems(t *testing.T) {
 func TestUserService_GetItems(t *testing.T) {
 	itemIDs, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2", "item3", "item1"})
 
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	ss := NewSessionService(db)
 	is := NewInventoryService(db, itemInfoMap)
 	u := NewUserService(ss, is)
@@ -58,7 +58,7 @@ func TestUserService_GetItems(t *testing.T) {
 func TestUserService_UseItems(t *testing.T) {
 	itemIDs, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2", "item3", "item1"})
 
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	ss := NewSessionService(db)
 	is := NewInventoryService(db, itemInfoMap)
 	u := NewUserService(ss, is)

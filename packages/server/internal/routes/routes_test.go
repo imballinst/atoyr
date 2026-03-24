@@ -7,27 +7,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
 	"atoyr/server/internal/testutils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	// Set Gin to release mode for tests
 	gin.SetMode(gin.TestMode)
 
-	// Create test database
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	assert.NoError(t, err)
-
-	err = database.Automigrate(db)
-	assert.NoError(t, err)
+	db := testutils.SetupTestDB(t)
 
 	// Create services
 	wordService := &services.WordService{}
@@ -111,6 +103,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	var startResponse StartGameResponse
+	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
 	json.Unmarshal(w.Body.Bytes(), &startResponse)
 
 	session, _ := sessionService.FindByID(startResponse.SessionID)
@@ -119,6 +112,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	answerPayload := SubmitAnswerRequest{
 		SessionID: startResponse.SessionID,
 		Answer:    session.CurrentWord,
+		Token:     session.CurrentWordToken,
 	}
 	answerBody, _ := json.Marshal(answerPayload)
 

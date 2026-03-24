@@ -48,7 +48,12 @@ func Initialize() (*gorm.DB, error) {
 }
 
 func Automigrate(db *gorm.DB) error {
-	if err := db.Debug().AutoMigrate(migratedModels...); err != nil {
+	dbSetup := db
+	if os.Getenv("GORM_DEBUG") == "true" {
+		dbSetup = dbSetup.Debug()
+	}
+
+	if err := dbSetup.AutoMigrate(migratedModels...); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 	return nil
