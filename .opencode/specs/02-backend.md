@@ -13,7 +13,7 @@ This specification covers the full backend implementation for "A Test of Your Re
 │                              Client                                     │
 │  ┌─────────────┐  ┌──────────────────────┐  ┌──────────────────────┐    │
 │  │  React UI   │  │   Game Hooks         │  │   API Client         │    │
-│  │             │◄─┤   - useServerGame    │◄─┤   - SSE Handler      │    │
+│  │             │◄─┤   - useGame    │◄─┤   - SSE Handler      │    │
 │  │  - Display  │  │   - Timer Sync       │  │   - HTTP Requests    │    │
 │  │  - Input    │  │   - State Management │  │   - Token Storage    │    │
 │  │  - Results  │  └──────────────────────┘  └──────────────────────┘    │
@@ -1613,7 +1613,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
 
 ### Phase 4: Client Integration
 
-1. Create `useServerGame` hook that uses SSE
+1. Create `useGame` hook that uses SSE
 2. Add API client for HTTP endpoints
 3. Update UI components to use server-backed state
 4. Maintain fallback to local mode if server unavailable

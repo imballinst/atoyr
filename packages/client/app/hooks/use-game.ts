@@ -3,6 +3,7 @@
  * Uses SSE for real-time updates and HTTP for answer submissions
  */
 
+import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gameAPI } from '../api/client';
@@ -11,25 +12,6 @@ import { GAME_DURATION_SECONDS, GameState } from '../types/game';
 interface ServerGameSession {
   sessionId: string;
   autoVoice: boolean;
-}
-
-function setCookie(name: string, value: string, days: number): void {
-  const date = new Date();
-  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-  const expires = `expires=${date.toUTCString()}`;
-  document.cookie = `${name}=${value};${expires};path=/`;
-}
-
-function getCookie(name: string): string | null {
-  const nameEQ = `${name}=`;
-  const cookies = document.cookie.split(';');
-  for (const cookie of cookies) {
-    const trimmed = cookie.trim();
-    if (trimmed.startsWith(nameEQ)) {
-      return trimmed.substring(nameEQ.length);
-    }
-  }
-  return null;
 }
 
 const INITIAL_STATE: GameState = {
@@ -45,7 +27,7 @@ const INITIAL_STATE: GameState = {
   autoVoice: false,
 };
 
-export function useServerGame() {
+export function useGame() {
   const [state, setState] = useState(INITIAL_STATE);
 
   const sessionRef = useRef<ServerGameSession | null>(null);
@@ -154,6 +136,8 @@ export function useServerGame() {
             currentWordToken: nextToken,
           }));
           onSuccess?.();
+        } else if (response.correct) {
+          console.error('Received correct response but missing next word data:', response);
         } else {
           onError?.();
         }
@@ -181,9 +165,19 @@ export function useServerGame() {
     }));
   }, []);
 
-  useEffect(() => {
-    startGame(undefined, 'resume');
-  }, [startGame]);
+  useQuery({
+    queryKey: ['resumeGame'],
+    queryFn: async () => {
+      try {
+        const response = await gameAPI.resumeGame();
+        startGame(response.autoVoice, 'resume');
+        return response;
+      } catch (err) {
+        console.warn('No active session to resume');
+        throw err;
+      }
+    },
+  });
 
   // Cleanup on unmount
   useEffect(() => {
@@ -203,4 +197,13 @@ export function useServerGame() {
     submitAnswer,
     resetGame,
   };
+}
+
+export function useLeaderboard(page = 0, limit = 10) {
+  return useQuery({
+    queryKey: ['leaderboard', page, limit],
+    queryFn: async () => {
+      return gameAPI.getLeaderboard(limit, page);
+    },
+  });
 }

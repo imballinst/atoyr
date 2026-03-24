@@ -6,6 +6,8 @@ interface StartScreenProps {
 
 export function StartScreen({ onStart }: StartScreenProps) {
   const [autoVoice, setAutoVoice] = useState(() => {
+    if (typeof window === 'undefined') return false;
+
     const stored = localStorage.getItem('atoyr_auto_voice');
     if (stored === null) return false;
 

@@ -1,6 +1,4 @@
-/**
- * API Client for communicating with the Atoyr backend server
- */
+import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -10,6 +8,7 @@ export interface StartGameResponse {
   scrambledWordDefinition: string;
   token: string;
   remainingSeconds: number;
+  autoVoice: boolean;
 }
 
 export interface SubmitAnswerResponse {
@@ -29,6 +28,10 @@ export interface LeaderboardEntry {
   score: number;
   accuracy: number;
   timestamp: number;
+  user?: {
+    id: string;
+    username: string;
+  };
 }
 
 export interface LeaderboardResponse {
@@ -44,56 +47,25 @@ export class GameAPI {
   }
 
   async resumeGame(): Promise<StartGameResponse> {
-    const response = await fetch(`${this.baseUrl}/game/continue`, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      let json: any = response.statusText;
-
-      try {
-        json += `, ${await response.json()}`;
-      } catch {
-        // No-op.
-      }
-
-      throw new Error(`Failed to resume game: ${json}`);
-    }
-
-    return response.json();
+    const response = await axios.post<StartGameResponse>(`${this.baseUrl}/game/continue`);
+    return response.data;
   }
 
   async startGame(autoVoice: boolean, itemsUsed: string[]): Promise<StartGameResponse> {
-    const response = await fetch(`${this.baseUrl}/game/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ autoVoice, itemsUsed }),
+    const response = await axios.post<StartGameResponse>(`${this.baseUrl}/game/start`, {
+      autoVoice,
+      itemsUsed,
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to start game: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
   }
 
   async submitAnswer(sessionId: string, token: string, answer: string): Promise<SubmitAnswerResponse> {
-    const response = await fetch(`${this.baseUrl}/game/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId,
-        token,
-        answer,
-      }),
+    const response = await axios.post<SubmitAnswerResponse>(`${this.baseUrl}/game/answer`, {
+      sessionId,
+      token,
+      answer,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || `Failed to submit answer: ${response.statusText}`);
-    }
-
-    return response.json();
+    return response.data;
   }
 
   subscribeToSSE(sessionId: string, onEvent: (data: Record<string, unknown>) => void, onError: (error: Error) => void): () => void {
@@ -130,13 +102,8 @@ export class GameAPI {
     params.append('limit', limit.toString());
     params.append('page', page.toString());
 
-    const response = await fetch(`${this.baseUrl}/leaderboard?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch leaderboard: ${response.statusText}`);
-    }
-
-    return response.json();
+    const response = await axios.get<LeaderboardResponse>(`${this.baseUrl}/leaderboard`, { params });
+    return response.data;
   }
 }
 

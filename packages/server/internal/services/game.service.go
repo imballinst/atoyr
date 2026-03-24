@@ -9,6 +9,7 @@ import (
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/services/domainmodels"
+	"atoyr/server/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -145,6 +146,7 @@ func (g *GameService) UpdateSessionBasedOnAnswerResult(sessionID string, isCorre
 	session.CurrentWordToken = token
 	session.CurrentWordDefinition = definition
 	session.CurrentWord = word
+	session.CurrentScrambledWord = utils.ScrambleWord(word)
 	session.Score += 1
 
 	if len(session.CorrectAttemptTimestamps) == 0 {
@@ -188,9 +190,9 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		ScrambledWordDefinition:  session.CurrentWordDefinition,
 	}
 
-	if token != session.CurrentWordToken {
+	if !isTokenCorrect {
 		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, session.CurrentWordToken)
-	} else if answer != session.CurrentWord {
+	} else if !isAnswerCorrect {
 		log.Printf("invalid answer, submitted answer: %s, expected %s\n", answer, session.CurrentWord)
 	} else {
 		// No-op.

@@ -1,12 +1,15 @@
-import { GameScreen } from './components/GameScreen';
-import { ResultsScreen } from './components/ResultsScreen';
-import { StartScreen } from './components/StartScreen';
-import { useServerGame } from './hooks/useServerGame';
-import './styles.css';
+import { GameScreen } from '~/components/GameScreen';
+import { ResultsScreen } from '~/components/ResultsScreen';
+import { StartScreen } from '~/components/StartScreen';
+import { useGame } from '~/hooks/use-game';
+import type { Route } from './+types/home';
 
-export default function App() {
-  const gameHook = useServerGame();
-  const { state, startGame, submitAnswer, resetGame } = gameHook;
+export function meta({}: Route.MetaArgs) {
+  return [{ title: 'Game | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
+}
+
+export default function Home() {
+  const { state, startGame, submitAnswer, resetGame } = useGame();
 
   if (state.phase === 'idle') {
     return <StartScreen onStart={startGame} />;

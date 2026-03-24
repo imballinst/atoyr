@@ -63,6 +63,7 @@ type StartGameResponse struct {
 	ScrambledWordDefinition string `json:"scrambledWordDefinition"`
 	Token                   string `json:"token"`
 	RemainingSeconds        int32  `json:"remainingSeconds"`
+	AutoVoice               bool   `json:"autoVoice"`
 }
 
 func (gr *GameRoutes) StartGame(c *gin.Context) {
@@ -147,6 +148,7 @@ func (gr *GameRoutes) ContinueGame(c *gin.Context) {
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		Token:                   session.CurrentWordToken,
 		RemainingSeconds:        session.RemainingSeconds,
+		AutoVoice:               session.AutoVoice,
 	})
 }
 

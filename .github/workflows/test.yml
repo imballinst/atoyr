@@ -22,24 +22,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Setup deps
+        working-directory: packages/server
+        run: ./ci/setup.sh
+
       - name: Run Go unit tests
         working-directory: packages/server
-        run: go test -v -race -coverprofile=coverage.out ./...
-
-      - name: Build Go server
-        working-directory: packages/server
-        run: go build -o bin/server ./cmd
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Install JavaScript dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Build client
-        run: yarn --cwd packages/client build
+        run: yarn test
 
   build:
     runs-on: ubuntu-latest
@@ -51,7 +40,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25'
 
       - name: Build Go server
         working-directory: packages/server
@@ -60,7 +49,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
