@@ -6,7 +6,6 @@ export {
   LEADERBOARD_COOKIE_NAME,
   WRONG_ANSWER_PENALTY_SECONDS,
   type GamePhase,
-  type GameResult,
   type GameState,
   type WordEntry,
 } from '@atoyr/shared';

@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gameAPI } from '../api/client';
-import { GAME_DURATION_SECONDS, GameState } from '../types/game';
+import { GAME_DURATION_SECONDS, type GameState } from '../types/game';
 
 interface ServerGameSession {
   sessionId: string;
