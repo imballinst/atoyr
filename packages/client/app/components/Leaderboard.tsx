@@ -4,7 +4,7 @@ export function Leaderboard() {
   const leaderboardQuery = useLeaderboard();
 
   return (
-    <div>
+    <div className="text-dark-text-tertiary">
       <h2>Leaderboard</h2>
 
       {leaderboardQuery.isLoading ? (

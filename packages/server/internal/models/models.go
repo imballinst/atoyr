@@ -84,35 +84,3 @@ type InventoryItemEntity struct {
 	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
 	InventoryEntity   InventoryEntity
 }
-
-// GameSessionState represents the current state of a game
-type GameSessionState struct {
-	Phase            string   `json:"phase"`
-	Score            int32    `json:"score"`
-	TotalAttempts    int32    `json:"totalAttempts"`
-	RemainingSeconds int32    `json:"remainingSeconds"`
-	UsedWords        []string `json:"usedWords"`
-	CurrentWordToken string   `json:"currentWordToken"`
-}
-
-func (s *SessionEntity) GetState() GameSessionState {
-	usedWords := []string(s.UsedWords)
-
-	return GameSessionState{
-		Phase:            s.Phase,
-		Score:            s.Score,
-		TotalAttempts:    s.TotalAttempts,
-		RemainingSeconds: s.RemainingSeconds,
-		UsedWords:        usedWords,
-		CurrentWordToken: s.CurrentWordToken,
-	}
-}
-
-func (s *SessionEntity) SetState(state GameSessionState) {
-	s.Phase = state.Phase
-	s.Score = state.Score
-	s.TotalAttempts = state.TotalAttempts
-	s.RemainingSeconds = state.RemainingSeconds
-	s.UsedWords = state.UsedWords
-	s.CurrentWordToken = state.CurrentWordToken
-}

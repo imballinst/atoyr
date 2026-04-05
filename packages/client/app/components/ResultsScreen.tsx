@@ -1,7 +1,7 @@
-import { GameResult, GameState } from '../types/game';
+import type { GameState, LeaderboardResponse } from '../types/game';
 
 interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' | 'correctAttemptTimestamps'> {
-  leaderboard: GameResult[];
+  leaderboard: LeaderboardResponse['entries'];
   onPlayAgain: () => void;
 }
 

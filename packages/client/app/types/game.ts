@@ -7,5 +7,6 @@ export {
   WRONG_ANSWER_PENALTY_SECONDS,
   type GamePhase,
   type GameState,
+  type LeaderboardResponse,
   type WordEntry,
 } from '@atoyr/shared';

@@ -1,8 +1,7 @@
-import { GameState } from '@atoyr/shared';
+import { type GameSessionState } from '@atoyr/shared';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-interface GameScreenProps
-  extends Pick<GameState, 'score' | 'totalAttempts' | 'remainingSeconds' | 'autoVoice' | 'correctAttemptTimestamps'> {
+interface GameScreenProps extends GameSessionState {
   scrambled: string;
   definition: string;
   token: string;

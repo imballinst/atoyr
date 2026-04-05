@@ -40,6 +40,8 @@ export interface GameSessionState {
   remainingSeconds: number;
   usedWords: string[]; // Array for JSON serialization
   currentWordToken: string | null; // Token for current word validation
+  correctAttemptTimestamps: string[][];
+  autoVoice: boolean;
 }
 
 // ============================================
