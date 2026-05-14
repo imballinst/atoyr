@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
+	api "atoyr/server/internal/api"
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
-	"atoyr/server/internal/routes"
 	"atoyr/server/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -59,12 +59,8 @@ func main() {
 	// Apply middleware
 	router.Use(middleware.CORSMiddleware())
 
-	// Register routes
-	gameRoutes := routes.NewGameRoutes(gameService, sessionService, inventoryService, userService)
-	gameRoutes.Register(router)
-
-	leaderboardRoutes := routes.NewLeaderboardRoutes(leaderboardService)
-	leaderboardRoutes.Register(router)
+	server := api.NewServer(gameService, sessionService, inventoryService, leaderboardService, userService)
+	api.RegisterHandlers(router, server)
 
 	// Start server
 	port := os.Getenv("PORT")

@@ -1,4 +1,4 @@
-package routes
+package api
 
 import (
 	"bytes"
@@ -49,11 +49,8 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	gameRoutes := NewGameRoutes(gameService, sessionService, inventoryService, userService)
-	gameRoutes.Register(router)
-
-	leaderboardRoutes := NewLeaderboardRoutes(leaderboardService)
-	leaderboardRoutes.Register(router)
+	server := NewServer(gameService, sessionService, inventoryService, leaderboardService, userService)
+	RegisterHandlers(router, server)
 
 	return router, sessionService
 }
@@ -65,7 +62,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequest("POST", "/api/game/start", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -76,7 +73,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	var response StartGameResponse
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	assert.NotEqual(t, "", response.SessionID)
+	assert.NotEqual(t, "", response.SessionId)
 	assert.NotEqual(t, "", response.ScrambledWord)
 	assert.NotEqual(t, "", response.ScrambledWordDefinition)
 	assert.NotEqual(t, "", response.Token)
@@ -96,7 +93,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	startPayload := StartGameRequest{AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
-	req, _ := http.NewRequest("POST", "/api/game/start", bytes.NewBuffer(startBody))
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(startBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -106,17 +103,17 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
 	json.Unmarshal(w.Body.Bytes(), &startResponse)
 
-	session, _ := sessionService.FindByID(startResponse.SessionID)
+	session, _ := sessionService.FindByID(startResponse.SessionId)
 
 	// Submit answer
 	answerPayload := SubmitAnswerRequest{
-		SessionID: startResponse.SessionID,
+		SessionId: startResponse.SessionId,
 		Answer:    session.CurrentWord,
 		Token:     session.CurrentWordToken,
 	}
 	answerBody, _ := json.Marshal(answerPayload)
 
-	req, _ = http.NewRequest("POST", "/api/game/answer", bytes.NewBuffer(answerBody))
+	req, _ = http.NewRequest("POST", "/api/v1/game/submit", bytes.NewBuffer(answerBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	w = httptest.NewRecorder()
@@ -134,7 +131,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
-	req, _ := http.NewRequest("GET", "/api/leaderboard", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/leaderboard", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -150,7 +147,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 func TestLeaderboardRoutes_Pagination(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
-	req, _ := http.NewRequest("GET", "/api/leaderboard?page=0&limit=5", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/leaderboard?page=1&limit=5", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 

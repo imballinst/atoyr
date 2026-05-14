@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 )
 
 const (
@@ -51,4 +52,6 @@ type InventoryItem struct {
 	Name        string
 	Description string
 	Quantity    int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

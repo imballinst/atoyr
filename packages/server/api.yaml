@@ -3,7 +3,7 @@ info:
   version: 1.0.0
   title: Minimal ping API server
 paths:
-  /api/game/start:
+  /api/v1/game/start:
     post:
       requestBody:
         required: true
@@ -18,7 +18,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StartGameResponse'
-  /api/game/continue:
+  /api/v1/game/continue:
     post:
       responses:
         '200':
@@ -29,7 +29,7 @@ paths:
                 $ref: '#/components/schemas/StartGameResponse'
         '404':
           description: Game session not found
-  /api/game/submit:
+  /api/v1/game/submit:
     post:
       requestBody:
         required: true
@@ -46,7 +46,7 @@ paths:
                 $ref: '#/components/schemas/SubmitAnswerResponse'
         '404':
           description: Game session not found
-  /api/game/register:
+  /api/v1/game/register:
     post:
       requestBody:
         required: true
@@ -61,7 +61,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserDomain'
-  /api/game/sse:
+  /api/v1/game/sse:
     get:
       responses:
         '200':
@@ -70,6 +70,35 @@ paths:
             text/event-stream:
               schema:
                 type: string
+  /api/v1/items/me:
+    get:
+      responses:
+        '200':
+          description: List of items in the user's inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetItemsResponse'
+  /api/v1/leaderboard:
+    get:
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Leaderboard data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLeaderboardResponse'
 components:
   schemas:
     StartGameRequest:
@@ -186,22 +215,115 @@ components:
           example: "john_doe"
     UserDomain:
       type: object
+      allOf:
+        - $ref: '#/components/schemas/UserCompact'
       required:
-        - id
         - createdAt
         - updatedAt
-        - username
       properties:
-        id:
-          type: string
-          format: uuid
-          x-go-type: string
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+    UserCompact:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
         username:
           type: string
           example: "john_doe"
+    GetItemsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            $ref: '#/components/schemas/InventoryItem'
+    InventoryItem:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - quantity
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        name:
+          type: string
+          example: "Magic Wand"
+        description:
+          type: string
+          example: "A wand that grants magical powers."
+        quantity:
+          type: integer
+          format: int32
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    GetLeaderboardResponse:
+      type: object
+      required:
+        - entries
+        - total
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            $ref: '#/components/schemas/LeaderboardEntry'
+        total:
+          type: integer
+          format: int64
+    LeaderboardEntry:
+      type: object
+      required:
+        - rank
+        - score
+        - totalAttempts
+        - accuracy
+        - timestamp
+      properties:
+        rank:
+          type: integer
+          format: int32
+          example: 1
+        score:
+          type: integer
+          format: int32
+          example: 100
+        totalAttempts:
+          type: integer
+          format: int32
+          example: 5
+        accuracy:
+          type: number
+          format: float
+          example: 0.8
+        timestamp:
+          type: integer
+          format: int64
+          example: 1627847284
+        user:
+          type: object
+          $ref: '#/components/schemas/UserDomain'
+

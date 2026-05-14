@@ -3,4 +3,4 @@ package: api
 generate:
   gin-server: true
   models: true
-output: internal/gen/gen.go
+output: internal/api/gen.go

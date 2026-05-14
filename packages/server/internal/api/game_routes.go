@@ -18,7 +18,7 @@ const (
 	sessionIdCookie = "session_id"
 )
 
-func (gr *Server) PostApiGameStart(c *gin.Context) {
+func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 	var req StartGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, " + err.Error()})
@@ -64,7 +64,7 @@ func (gr *Server) PostApiGameStart(c *gin.Context) {
 	})
 }
 
-func (gr *Server) ContinueGame(c *gin.Context) {
+func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 	sessionId, err := c.Cookie(sessionIdCookie)
 	if err != nil {
 		log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
@@ -104,7 +104,7 @@ func (gr *Server) ContinueGame(c *gin.Context) {
 	})
 }
 
-func (gr *Server) SubmitAnswer(c *gin.Context) {
+func (gr *Server) PostApiV1GameSubmit(c *gin.Context) {
 	var req SubmitAnswerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
@@ -120,7 +120,7 @@ func (gr *Server) SubmitAnswer(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (gr *Server) RegisterUser(c *gin.Context) {
+func (gr *Server) PostApiV1GameRegister(c *gin.Context) {
 	var req RegisterUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
@@ -154,7 +154,7 @@ func (gr *Server) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (gr *Server) SSE(c *gin.Context) {
+func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
 	// Set SSE headers
