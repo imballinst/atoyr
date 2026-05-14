@@ -8,7 +8,7 @@ interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' |
 export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, leaderboard, onPlayAgain }: ResultsScreenProps) {
   const accuracy = totalAttempts > 0 ? (score / totalAttempts) * 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
-  console.info(leaderboard);
+
   return (
     <div className="w-screen h-screen flex items-center justify-center p-5 bg-dark-bg-primary">
       <div className="rounded-2xl p-10 text-center w-full max-w-[430px]">

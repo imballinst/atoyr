@@ -207,3 +207,12 @@ export function useLeaderboard(page = 0, limit = 10) {
     },
   });
 }
+
+export function useInventory(page = 0, limit = 10) {
+  return useQuery({
+    queryKey: ['inventory', page, limit],
+    queryFn: async () => {
+      return gameAPI.getInventory(limit, page);
+    },
+  });
+}

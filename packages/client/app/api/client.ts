@@ -105,6 +105,21 @@ export class GameAPI {
     const response = await axios.get<LeaderboardResponse>(`${this.baseUrl}/leaderboard`, { params });
     return response.data;
   }
+
+  async getInventory(
+    limit: number = 10,
+    page: number = 0,
+  ): Promise<{ items: { id: string; name: string; description: string }[]; total: number }> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    params.append('page', page.toString());
+
+    const response = await axios.get<{ items: { id: string; name: string; description: string }[]; total: number }>(
+      `${this.baseUrl}/inventory`,
+      { params },
+    );
+    return response.data;
+  }
 }
 
 export const gameAPI = new GameAPI();

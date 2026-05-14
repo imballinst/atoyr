@@ -1,0 +1,207 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Minimal ping API server
+paths:
+  /api/game/start:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartGameRequest'
+      responses:
+        '200':
+          description: Game started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartGameResponse'
+  /api/game/continue:
+    post:
+      responses:
+        '200':
+          description: Game continued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartGameResponse'
+        '404':
+          description: Game session not found
+  /api/game/submit:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswerRequest'
+      responses:
+        '200':
+          description: Answer submitted successfully, response contains the next question and updated game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitAnswerResponse'
+        '404':
+          description: Game session not found
+  /api/game/register:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDomain'
+  /api/game/sse:
+    get:
+      responses:
+        '200':
+          description: SSE stream for real-time game updates
+          content:
+            text/event-stream:
+              schema:
+                type: string
+components:
+  schemas:
+    StartGameRequest:
+      type: object
+      required:
+        - itemsUsed
+      properties:
+        autoVoice:
+          type: boolean
+        itemsUsed:
+          type: array
+          items:
+            type: string
+            format: uuid
+            x-go-type: string
+    StartGameResponse:
+      type: object
+      required:
+        - sessionId
+        - scrambledWord
+        - scrambledWordDefinition
+        - token
+        - remainingSeconds
+        - autoVoice
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          x-go-type: string
+        scrambledWord:
+          type: string
+          example: "lpeap"
+        scrambledWordDefinition:
+          type: string
+          example: "A fruit that is often red or green."
+        token:
+          type: string
+          format: uuid
+          x-go-type: string
+        remainingSeconds:
+          type: integer
+          format: int32
+          example: 60
+        autoVoice:
+          type: boolean
+    SubmitAnswerRequest:
+      type: object
+      required:
+        - sessionId
+        - answer
+        - token
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          x-go-type: string
+        answer:
+          type: string
+          example: "apple"
+        token:
+          type: string
+          format: uuid
+          x-go-type: string
+    SubmitAnswerResponse:
+      type: object
+      required:
+        - correct
+        - scrambledWord
+        - scrambledWordDefinition
+        - correctAttemptTimestamps
+        - token
+        - score
+        - attempts
+        - remainingSeconds
+      properties:
+        correct:
+          type: boolean
+        scrambledWord:  
+          type: string
+          example: "lpeap"
+        scrambledWordDefinition:
+          type: string
+          example: "A fruit that is often red or green."
+        correctAttemptTimestamps:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              format: date-time
+        token:
+          type: string
+          format: uuid
+          x-go-type: string
+        score:
+          type: integer
+          format: int32
+          example: 10
+        attempts:
+          type: integer
+          format: int32
+          example: 2
+        remainingSeconds:
+          type: integer
+          format: int32
+          example: 45
+    RegisterUserRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          example: "john_doe"
+    UserDomain:
+      type: object
+      required:
+        - id
+        - createdAt
+        - updatedAt
+        - username
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        username:
+          type: string
+          example: "john_doe"
