@@ -8,16 +8,8 @@
     "tsBuildInfoFile": null,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "composite": true,
-    "paths": {
-      "@atoyr/shared": ["packages/shared/src/index.ts"]
-    }
-  },
-  "references": [
-    { "path": "packages/shared" }
-  ]
+  }
 }

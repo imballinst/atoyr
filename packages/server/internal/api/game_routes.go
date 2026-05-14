@@ -154,7 +154,7 @@ func (gr *Server) PostApiV1GameRegister(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (gr *Server) GetApiV1GameSse(c *gin.Context) {
+func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 	sessionID := c.Param("sessionId")
 
 	// Set SSE headers

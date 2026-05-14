@@ -9,7 +9,8 @@
     "bootstrap": "yarn install",
     "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/server dev\"",
     "build": "yarn --cwd packages/client build && cd packages/server && go build -o bin/server ./cmd",
-    "test": "yarn --cwd packages/client test && cd packages/server && go test -v ./..."
+    "test": "yarn --cwd packages/client test && cd packages/server && go test -v ./...",
+    "codegen": "yarn --cwd packages/server codegen && yarn --cwd packages/client codegen"
   },
   "devDependencies": {
     "concurrently": "9.2.1",

@@ -2,6 +2,8 @@
 // Word Types
 // ============================================
 
+import type { LeaderboardEntry } from '~/api/gen';
+
 export interface WordEntry {
   scrambled: string;
   definition: string;
@@ -62,33 +64,6 @@ export interface GameState {
 }
 
 // ============================================
-// API Request/Response Types
-// ============================================
-
-export interface StartGameRequest {
-  autoVoice?: boolean;
-}
-
-export interface StartGameResponse {
-  sessionId: string;
-  expiresAt: number;
-}
-
-export interface SubmitAnswerRequest {
-  sessionId: string;
-  token: string; // Word-specific token
-  answer: string;
-}
-
-export interface SubmitAnswerResponse {
-  correct: boolean;
-  score: number;
-  totalAttempts: number;
-  remainingSeconds: number;
-  gameOver: boolean;
-}
-
-// ============================================
 // SSE Event Types
 // ============================================
 
@@ -140,21 +115,6 @@ export interface SSEErrorEvent extends SSEBaseEvent {
 }
 
 export type SSEEvent = SessionStartedEvent | WordNewEvent | TimerTickEvent | TimerPenaltyEvent | GameFinishedEvent | SSEErrorEvent;
-
-export interface LeaderboardEntry {
-  id: string;
-  rank: number;
-  score: number;
-  accuracy: number;
-  timestamp: number;
-  playerName?: string; // Optional, for future enhancement
-}
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  totalGames: number;
-  lastUpdated: number;
-}
 
 // ============================================
 // Error Types

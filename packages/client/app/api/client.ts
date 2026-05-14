@@ -1,75 +1,57 @@
-import axios from 'axios';
+import createFetchClient from 'openapi-fetch';
+import createClient from 'openapi-react-query';
+import type { paths } from './gen';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const CLIENT = createFetchClient<paths>({
+  baseUrl: API_BASE_URL,
+});
 
-export interface StartGameResponse {
-  sessionId: string;
-  scrambledWord: string;
-  scrambledWordDefinition: string;
-  token: string;
-  remainingSeconds: number;
-  autoVoice: boolean;
-}
-
-export interface SubmitAnswerResponse {
-  correct: boolean;
-  score: number;
-  attempts: number;
-  remainingSeconds: number;
-  correctAttemptTimestamps: string[][];
-  scrambledWord?: string;
-  scrambledWordDefinition?: string;
-  token?: string;
-}
-
-export interface LeaderboardEntry {
-  id: string;
-  rank: number;
-  score: number;
-  accuracy: number;
-  timestamp: number;
-  user?: {
-    id: string;
-    username: string;
-  };
-}
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  total: number;
-}
+export const client = CLIENT;
+export const query = createClient(CLIENT);
 
 export class GameAPI {
-  private baseUrl: string;
+  async resumeGame() {
+    const response = await CLIENT.POST('/api/v1/game/continue');
+    if (!response.data) {
+      throw new Error(response.error);
+    }
 
-  constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
-  }
-
-  async resumeGame(): Promise<StartGameResponse> {
-    const response = await axios.post<StartGameResponse>(`${this.baseUrl}/game/continue`);
     return response.data;
   }
 
-  async startGame(autoVoice: boolean, itemsUsed: string[]): Promise<StartGameResponse> {
-    const response = await axios.post<StartGameResponse>(`${this.baseUrl}/game/start`, {
-      autoVoice,
-      itemsUsed,
+  async startGame(autoVoice: boolean, itemsUsed: string[]) {
+    const response = await CLIENT.POST('/api/v1/game/start', {
+      body: {
+        autoVoice,
+        itemsUsed,
+      },
     });
+    if (!response.data) {
+      throw new Error(response.error);
+    }
+
     return response.data;
   }
 
-  async submitAnswer(sessionId: string, token: string, answer: string): Promise<SubmitAnswerResponse> {
-    const response = await axios.post<SubmitAnswerResponse>(`${this.baseUrl}/game/answer`, {
-      sessionId,
-      token,
-      answer,
+  async submitAnswer(sessionId: string, token: string, answer: string) {
+    const response = await CLIENT.POST('/api/v1/game/submit', {
+      body: {
+        sessionId,
+        token,
+        answer,
+      },
     });
+    if (!response.data) {
+      throw new Error(response.error);
+    }
+
     return response.data;
   }
 
   subscribeToSSE(sessionId: string, onEvent: (data: Record<string, unknown>) => void, onError: (error: Error) => void): () => void {
-    const eventSource = new EventSource(`${this.baseUrl}/game/sse/${sessionId}`);
+    const eventSourceURL: keyof paths = '/api/v1/game/sse/{sessionId}';
+    const eventSource = new EventSource(eventSourceURL.replace('{sessionId}', sessionId));
 
     const handleEvent = (event: MessageEvent) => {
       console.info('SSE message received:', event.type, event.data);
@@ -97,27 +79,28 @@ export class GameAPI {
     return () => eventSource.close();
   }
 
-  async getLeaderboard(limit: number = 10, page: number = 0): Promise<LeaderboardResponse> {
-    const params = new URLSearchParams();
-    params.append('limit', limit.toString());
-    params.append('page', page.toString());
+  async getLeaderboard(limit: number = 10, page: number = 0) {
+    const response = await CLIENT.GET('/api/v1/leaderboard', {
+      params: {
+        query: {
+          page,
+          limit,
+        },
+      },
+    });
+    if (!response.data) {
+      throw new Error(response.error);
+    }
 
-    const response = await axios.get<LeaderboardResponse>(`${this.baseUrl}/leaderboard`, { params });
     return response.data;
   }
 
-  async getInventory(
-    limit: number = 10,
-    page: number = 0,
-  ): Promise<{ items: { id: string; name: string; description: string }[]; total: number }> {
-    const params = new URLSearchParams();
-    params.append('limit', limit.toString());
-    params.append('page', page.toString());
+  async getInventory() {
+    const response = await CLIENT.GET('/api/v1/items/me');
+    if (!response.data) {
+      throw new Error(response.error);
+    }
 
-    const response = await axios.get<{ items: { id: string; name: string; description: string }[]; total: number }>(
-      `${this.baseUrl}/inventory`,
-      { params },
-    );
     return response.data;
   }
 }

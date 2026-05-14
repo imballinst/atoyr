@@ -1,4 +1,4 @@
-import type { GameState, LeaderboardResponse } from '../types/game';
+import type { GameState, LeaderboardResponse } from '../lib/game';
 
 interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' | 'correctAttemptTimestamps'> {
   leaderboard: LeaderboardResponse['entries'];

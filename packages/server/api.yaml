@@ -2,9 +2,18 @@ openapi: "3.0.0"
 info:
   version: 1.0.0
   title: Minimal ping API server
+tags:
+  - name: game
+    description: Endpoints related to game sessions, including starting a new game, submitting answers, and real-time updates.
+  - name: inventory
+    description: Endpoints for managing user inventory items, including retrieving the list of items.
+  - name: leaderboard
+    description: Endpoints for retrieving leaderboard data, including pagination support.
 paths:
   /api/v1/game/start:
     post:
+      tags:
+        - game
       requestBody:
         required: true
         content:
@@ -20,6 +29,8 @@ paths:
                 $ref: '#/components/schemas/StartGameResponse'
   /api/v1/game/continue:
     post:
+      tags:
+        - game
       responses:
         '200':
           description: Game continued successfully
@@ -31,6 +42,8 @@ paths:
           description: Game session not found
   /api/v1/game/submit:
     post:
+      tags:
+        - game
       requestBody:
         required: true
         content:
@@ -48,6 +61,8 @@ paths:
           description: Game session not found
   /api/v1/game/register:
     post:
+      tags:
+        - game
       requestBody:
         required: true
         content:
@@ -61,8 +76,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserDomain'
-  /api/v1/game/sse:
+  /api/v1/game/sse/{sessionId}:
     get:
+      tags:
+        - game
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: string
       responses:
         '200':
           description: SSE stream for real-time game updates
@@ -72,6 +97,8 @@ paths:
                 type: string
   /api/v1/items/me:
     get:
+      tags:
+        - inventory
       responses:
         '200':
           description: List of items in the user's inventory
@@ -81,6 +108,8 @@ paths:
                 $ref: '#/components/schemas/GetItemsResponse'
   /api/v1/leaderboard:
     get:
+      tags:
+        - leaderboard
       parameters:
         - in: query
           name: page
