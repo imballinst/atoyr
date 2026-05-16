@@ -6,11 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "bootstrap": "yarn install",
-    "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/server dev\"",
-    "build": "yarn --cwd packages/client build && cd packages/server && go build -o bin/server ./cmd",
-    "test": "yarn --cwd packages/client test && cd packages/server && go test -v ./...",
-    "codegen": "yarn --cwd packages/server codegen && yarn --cwd packages/client codegen"
+    "dev": "concurrently \"yarn workspaces client dev\" \"yarn --cwd packages/server dev\"",
+    "build": "yarn workspaces client build && yarn workspaces server build",
+    "test": "yarn workspaces client test && yarn workspaces server test",
+    "codegen": "yarn workspaces client codegen && yarn workspaces server codegen"
   },
   "devDependencies": {
     "concurrently": "9.2.1",

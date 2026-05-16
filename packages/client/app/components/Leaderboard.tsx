@@ -1,4 +1,4 @@
-import { useLeaderboard } from '../hooks/use-game';
+import { useLeaderboard } from '../api/hooks';
 
 export function Leaderboard() {
   const leaderboardQuery = useLeaderboard();

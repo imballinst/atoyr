@@ -1,10 +1,10 @@
 import { GameScreen } from '~/components/GameScreen';
 import { ResultsScreen } from '~/components/ResultsScreen';
 import { StartScreen } from '~/components/StartScreen';
-import { useGame } from '~/hooks/use-game';
+import { useGame } from '~/api/hooks';
 import type { Route } from './+types/home';
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [{ title: 'Game | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
 }
 

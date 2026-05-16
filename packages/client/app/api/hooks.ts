@@ -6,8 +6,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { gameAPI } from '../api/client';
 import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
+import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
 
 interface ServerGameSession {
   sessionId: string;
@@ -23,7 +23,6 @@ const INITIAL_STATE: GameState = {
   correctAttemptTimestamps: [],
   remainingSeconds: GAME_DURATION_SECONDS,
   usedWords: new Set(),
-  gameResults: [],
   autoVoice: false,
 };
 
@@ -45,7 +44,7 @@ export function useGame() {
     }));
 
     try {
-      const response = action === 'start' ? await gameAPI.startGame(autoVoice, []) : await gameAPI.resumeGame();
+      const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
       sessionRef.current = {
         sessionId: response.sessionId,
         autoVoice,
@@ -62,11 +61,10 @@ export function useGame() {
       }));
 
       // Subscribe to SSE events
-      sseUnsubscribeRef.current = gameAPI.subscribeToSSE(
+      sseUnsubscribeRef.current = apiSubscribeToSSE(
         response.sessionId,
         async (event) => {
           const eventType = (event.type as string) || '';
-          console.info(event);
 
           if (eventType === 'tick') {
             setState((prev) => ({
@@ -74,15 +72,12 @@ export function useGame() {
               remainingSeconds: event.remainingSeconds as number,
             }));
           } else if (eventType === 'finish') {
-            const leaderboardResponse = await gameAPI.getLeaderboard();
-
             setState((prev) => ({
               ...prev,
               phase: 'finished',
               correctAttemptTimestamps: event.correctAttemptTimestamps as string[][],
               score: event.score as number,
               totalAttempts: event.totalAttempts as number,
-              gameResults: leaderboardResponse.entries,
             }));
           }
         },
@@ -115,7 +110,7 @@ export function useGame() {
       const { onSuccess, onError } = opts;
 
       try {
-        const response = await gameAPI.submitAnswer(session.sessionId, token, answer);
+        const response = await apiSubmitAnswer(session.sessionId, token, answer);
         setState((prev) => ({
           ...prev,
           score: response.score,
@@ -159,17 +154,14 @@ export function useGame() {
     }
     sessionRef.current = null;
 
-    setState((prev) => ({
-      ...INITIAL_STATE,
-      gameResults: prev.gameResults,
-    }));
+    setState(INITIAL_STATE);
   }, []);
 
   useQuery({
     queryKey: ['resumeGame'],
     queryFn: async () => {
       try {
-        const response = await gameAPI.resumeGame();
+        const response = await apiResumeGame();
         startGame(response.autoVoice, 'resume');
         return response;
       } catch (err) {
@@ -200,19 +192,16 @@ export function useGame() {
 }
 
 export function useLeaderboard(page = 0, limit = 10) {
-  return useQuery({
-    queryKey: ['leaderboard', page, limit],
-    queryFn: async () => {
-      return gameAPI.getLeaderboard(limit, page);
+  return apiQuery.useQuery('get', '/api/v1/leaderboard', {
+    params: {
+      query: {
+        page,
+        limit,
+      },
     },
   });
 }
 
-export function useInventory(page = 0, limit = 10) {
-  return useQuery({
-    queryKey: ['inventory', page, limit],
-    queryFn: async () => {
-      return gameAPI.getInventory(limit, page);
-    },
-  });
+export function useInventory() {
+  return apiQuery.useQuery('get', '/api/v1/items/me');
 }
