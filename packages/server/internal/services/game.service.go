@@ -232,12 +232,7 @@ func (g *GameService) FinishGame(sessionID string) error {
 		return err
 	}
 
-	// Calculate accuracy
-	accuracy := float32(0)
-	if session.TotalAttempts > 0 {
-		accuracy = float32(session.Score) / float32(session.TotalAttempts) * 100
-	}
-	session.Accuracy = accuracy
+	session.Accuracy = utils.CalculateAccuracy(session.Score, session.TotalAttempts)
 	session.EndsAt = time.Now()
 
 	if err := g.sessionService.Update(session); err != nil {

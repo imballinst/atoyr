@@ -40,7 +40,7 @@ export interface GameState {
   totalAttempts: number;
   correctAttemptTimestamps: string[][];
   remainingSeconds: number;
-  usedWords: Set<string>;
+  usedWords: string[];
   autoVoice: boolean;
 }
 
@@ -66,3 +66,13 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   GAME_ALREADY_FINISHED: 'Game has already finished',
   INVALID_REQUEST: 'Invalid request format',
 };
+
+export function getFinalScore(score: number, totalAttempts: number): string {
+  let finalScore = `${score}`;
+
+  if (totalAttempts > 0) {
+    finalScore += `/${totalAttempts}`;
+  }
+
+  return finalScore;
+}

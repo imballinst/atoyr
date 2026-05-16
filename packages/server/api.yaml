@@ -337,6 +337,9 @@ components:
           type: string
           format: uuid
           x-go-type: string
+        isSessionSameAsCurrentUser:
+          type: boolean
+          example: false
         rank:
           type: integer
           format: int32

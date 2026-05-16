@@ -381,6 +381,8 @@ export interface components {
         LeaderboardEntry: {
             /** Format: uuid */
             id: string;
+            /** @example false */
+            isSessionSameAsCurrentUser?: boolean;
             /**
              * Format: int32
              * @example 1

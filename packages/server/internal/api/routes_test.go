@@ -11,6 +11,7 @@ import (
 	"atoyr/server/internal/services"
 	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
+	"atoyr/server/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -140,10 +141,10 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	getSessionDomainPatchInfo := func(sessionID string, score, totalAttempts int32) domainmodels.SessionDomain {
 		return domainmodels.SessionDomain{
-			ID:            sessionIDs[0],
+			ID:            sessionID,
 			Score:         score,
 			TotalAttempts: totalAttempts,
-			Accuracy:      float32(score) / float32(totalAttempts),
+			Accuracy:      utils.CalculateAccuracy(score, totalAttempts),
 		}
 	}
 
@@ -185,6 +186,9 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 		assert.Equal(t, expectedLeaderboardOrder[i].Score, session.Score)
 		assert.Equal(t, expectedLeaderboardOrder[i].TotalAttempts, session.TotalAttempts)
 		assert.Equal(t, expectedLeaderboardOrder[i].Accuracy, session.Accuracy)
+
+		// Ensure the IDs are all masked.
+		assert.Equal(t, utils.MaskSessionID(expectedLeaderboardOrder[i].ID), session.Id)
 	}
 }
 

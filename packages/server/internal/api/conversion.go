@@ -3,6 +3,7 @@ package api
 import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/services"
+	"atoyr/server/internal/utils"
 )
 
 func toApiInventoryItem(domainItem core.InventoryItem) InventoryItem {
@@ -30,8 +31,8 @@ func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, userId, sessio
 	}
 
 	return LeaderboardEntry{
-		Id:                         maskString(domainEntry.ID),
-		IsSessionSameAsCurrentUser: isSessionSameAsCurrentUser,
+		Id:                         utils.MaskSessionID(domainEntry.ID),
+		IsSessionSameAsCurrentUser: &isSessionSameAsCurrentUser,
 		Rank:                       domainEntry.Rank,
 		Score:                      domainEntry.Score,
 		TotalAttempts:              domainEntry.TotalAttempts,
@@ -39,13 +40,4 @@ func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, userId, sessio
 		Timestamp:                  domainEntry.Timestamp,
 		User:                       user,
 	}
-}
-
-func maskString(s string) string {
-	rs := []rune(s)
-	// Leave the last 4 characters unmasked
-	for i := 0; i < len(rs)-4; i++ {
-		rs[i] = '*'
-	}
-	return string(rs)
 }

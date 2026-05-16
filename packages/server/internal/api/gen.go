@@ -37,7 +37,7 @@ type InventoryItem struct {
 type LeaderboardEntry struct {
 	Accuracy                   float32     `json:"accuracy"`
 	Id                         string      `json:"id"`
-	IsSessionSameAsCurrentUser bool        `json:"isSessionSameAsCurrentUser"`
+	IsSessionSameAsCurrentUser *bool       `json:"isSessionSameAsCurrentUser,omitempty"`
 	Rank                       int32       `json:"rank"`
 	Score                      int32       `json:"score"`
 	Timestamp                  int64       `json:"timestamp"`

@@ -22,7 +22,7 @@ const INITIAL_STATE: GameState = {
   totalAttempts: 0,
   correctAttemptTimestamps: [],
   remainingSeconds: GAME_DURATION_SECONDS,
-  usedWords: new Set(),
+  usedWords: [],
   autoVoice: false,
 };
 
@@ -39,7 +39,7 @@ export function useGame() {
       score: 0,
       totalAttempts: 0,
       remainingSeconds: autoVoice ? GAME_DURATION_SECONDS + 5 : GAME_DURATION_SECONDS,
-      usedWords: new Set(),
+      usedWords: [],
       autoVoice,
     }));
 

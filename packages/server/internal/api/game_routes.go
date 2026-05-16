@@ -55,7 +55,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(sessionIdCookie, session.ID, int(session.RemainingSeconds*2), "/", "", false, true)
+	c.SetCookie(sessionIdCookie, session.ID, 3600, "/", "", false, true)
 	c.JSON(http.StatusCreated, StartGameResponse{
 		SessionId:               session.ID,
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),

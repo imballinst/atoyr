@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,11 +18,11 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	}
 
 	if page < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "page parameter should be more than 1"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page parameter should be more than 0"})
 		return
 	}
-	if limit < 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "limit parameter should be more than 0"})
+	if limit < 1 || limit > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit parameter should be between 1 and 10"})
 		return
 	}
 
@@ -48,8 +47,6 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	for i, entry := range entries {
 		apiEntries[i] = ToApiLeaderboardEntry(entry, userId, sessionId)
 	}
-
-	fmt.Println(entries, apiEntries, err)
 
 	c.JSON(http.StatusOK, GetLeaderboardResponse{
 		Entries: apiEntries,
