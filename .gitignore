@@ -1,5 +1,5 @@
 node_modules
-.yarn
+.yarn/install-state.gz
 dist
 packages/*/dist
 /*.log

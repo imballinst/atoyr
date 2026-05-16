@@ -1,7 +1,6 @@
 import { Leaderboard } from '~/components/Leaderboard';
-import type { Route } from './+types/leaderboard';
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: 'Leaderboard | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
 }
 

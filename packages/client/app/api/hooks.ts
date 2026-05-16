@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
 

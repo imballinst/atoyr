@@ -33,26 +33,26 @@ export function StartScreen({ onStart }: StartScreenProps) {
       <div className="text-left mb-10">
         <p className="text-sm text-dark-text-secondary mb-6">Unscramble 5-letter words as fast as you can!</p>
         <ul className="text-xs text-dark-text-tertiary space-y-2">
-          <li className="flex gap-3">
+          <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>You have 30 seconds</span>
           </li>
-          <li className="flex gap-3">
+          <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>Wrong answers cost 1 second</span>
           </li>
-          <li className="flex gap-3">
+          <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>Type using the keyboard or click the on-screen buttons</span>
           </li>
-          <li className="flex gap-3">
+          <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>Press Enter or click Submit to guess</span>
           </li>
         </ul>
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-2 mb-4">
         <input type="checkbox" id="auto-voice" checked={autoVoice} onChange={handleAutoVoiceChange} className="w-4 h-4 cursor-pointer" />
         <label htmlFor="auto-voice" className="text-sm text-left text-dark-text-secondary cursor-pointer flex-1">
           Enable automatic text-to-speech*

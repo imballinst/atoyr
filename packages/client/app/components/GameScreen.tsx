@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import type { GameSessionState } from '~/lib/game';
 
 interface GameScreenProps extends GameSessionState {
@@ -99,9 +100,8 @@ export function GameScreen({
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
 
   return (
-    <div className='w-full flex flex-col items-center gap-y-4'>
-      <div className='w-full flex flex-col gap-y-2'>
-
+    <div className="w-full flex flex-col items-center gap-4">
+      <div className="w-full flex flex-col gap-2">
         <div
           className={`text-4xl font-mono font-bold bg-dark-bg-tertiary p-3 rounded-lg text-center ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'} w-full`}
         >
@@ -179,8 +179,8 @@ export function GameScreen({
         aria-label="Answer input"
       />
 
-      <div className="w-full max-w-[430px] mx-auto flex flex-col gap-3">
-        <div className="grid grid-cols-10 gap-1.5 w-full">
+      <div className="w-full max-w-[430px] mx-auto flex flex-col gap-2">
+        <div className="grid grid-cols-10 gap-1 w-full">
           {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((key) => (
             <button
               key={key}
@@ -192,7 +192,7 @@ export function GameScreen({
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-9 gap-1.5 w-full">
+        <div className="grid grid-cols-9 gap-1 w-full">
           {['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].map((key) => (
             <button
               key={key}
@@ -204,7 +204,7 @@ export function GameScreen({
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1.5 w-full">
+        <div className="grid grid-cols-7 gap-1 w-full">
           {['Z', 'X', 'C', 'V', 'B', 'N', 'M'].map((key) => (
             <button
               key={key}
@@ -218,7 +218,7 @@ export function GameScreen({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-1.5 w-full">
+      <div className="grid grid-cols-5 gap-1 w-full">
         <button
           onClick={handleBackspace}
           className="col-span-2 py-3 bg-dark-interactive-error text-white font-semibold text-sm rounded transition duration-200 hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
@@ -238,8 +238,9 @@ export function GameScreen({
 
       {feedback && (
         <div
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${feedback === 'correct' ? 'text-green-500' : 'text-red-500'
-            }`}
+          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${
+            feedback === 'correct' ? 'text-green-500' : 'text-red-500'
+          }`}
         >
           {feedback === 'correct' ? '✓' : '✗'}
         </div>

@@ -4,418 +4,418 @@
  */
 
 export interface paths {
-    "/api/v1/game/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["StartGameRequest"];
-                };
-            };
-            responses: {
-                /** @description Game started successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["StartGameResponse"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  '/api/v1/game/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/game/continue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['StartGameRequest'];
         };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Game continued successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["StartGameResponse"];
-                    };
-                };
-                /** @description Game session not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+      };
+      responses: {
+        /** @description Game started successfully */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['StartGameResponse'];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/api/v1/game/submit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SubmitAnswerRequest"];
-                };
-            };
-            responses: {
-                /** @description Answer submitted successfully, response contains the next question and updated game state */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SubmitAnswerResponse"];
-                    };
-                };
-                /** @description Game session not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/game/continue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/game/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Game continued successfully */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['StartGameResponse'];
+          };
         };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RegisterUserRequest"];
-                };
-            };
-            responses: {
-                /** @description User registered successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserDomain"];
-                    };
-                };
-            };
+        /** @description Game session not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+      };
     };
-    "/api/v1/game/sse/{sessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    sessionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description SSE stream for real-time game updates */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/event-stream": string;
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/game/submit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/items/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SubmitAnswerRequest'];
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description List of items in the user's inventory */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GetItemsResponse"];
-                    };
-                };
-            };
+      };
+      responses: {
+        /** @description Answer submitted successfully, response contains the next question and updated game state */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SubmitAnswerResponse'];
+          };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        /** @description Game session not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
     };
-    "/api/v1/leaderboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    page?: number;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Leaderboard data retrieved successfully */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GetLeaderboardResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/game/register': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['RegisterUserRequest'];
+        };
+      };
+      responses: {
+        /** @description User registered successfully */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['UserDomain'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/game/sse/{sessionId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          sessionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description SSE stream for real-time game updates */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'text/event-stream': string;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/items/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description List of items in the user's inventory */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['GetItemsResponse'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/leaderboard': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          page?: number;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Leaderboard data retrieved successfully */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['GetLeaderboardResponse'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        StartGameRequest: {
-            autoVoice?: boolean;
-            itemsUsed: string[];
-        };
-        StartGameResponse: {
-            /** Format: uuid */
-            sessionId: string;
-            /** @example lpeap */
-            scrambledWord: string;
-            /** @example A fruit that is often red or green. */
-            scrambledWordDefinition: string;
-            /** Format: uuid */
-            token: string;
-            /**
-             * Format: int32
-             * @example 60
-             */
-            remainingSeconds: number;
-            autoVoice: boolean;
-        };
-        SubmitAnswerRequest: {
-            /** Format: uuid */
-            sessionId: string;
-            /** @example apple */
-            answer: string;
-            /** Format: uuid */
-            token: string;
-        };
-        SubmitAnswerResponse: {
-            correct: boolean;
-            /** @example lpeap */
-            scrambledWord: string;
-            /** @example A fruit that is often red or green. */
-            scrambledWordDefinition: string;
-            correctAttemptTimestamps: string[][];
-            /** Format: uuid */
-            token: string;
-            /**
-             * Format: int32
-             * @example 10
-             */
-            score: number;
-            /**
-             * Format: int32
-             * @example 2
-             */
-            attempts: number;
-            /**
-             * Format: int32
-             * @example 45
-             */
-            remainingSeconds: number;
-        };
-        RegisterUserRequest: {
-            /** @example john_doe */
-            username: string;
-        };
-        UserDomain: {
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        } & components["schemas"]["UserCompact"];
-        UserCompact: {
-            /** Format: uuid */
-            id: string;
-            /** @example john_doe */
-            username: string;
-        };
-        GetItemsResponse: {
-            data: components["schemas"]["InventoryItem"][];
-        };
-        InventoryItem: {
-            /** Format: uuid */
-            id: string;
-            /** @example Magic Wand */
-            name: string;
-            /** @example A wand that grants magical powers. */
-            description: string;
-            /**
-             * Format: int32
-             * @example 1
-             */
-            quantity: number;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        GetLeaderboardResponse: {
-            entries: components["schemas"]["LeaderboardEntry"][];
-            /** Format: int64 */
-            total: number;
-        };
-        LeaderboardEntry: {
-            /** Format: uuid */
-            id: string;
-            /** @example false */
-            isSessionSameAsCurrentUser?: boolean;
-            /**
-             * Format: int32
-             * @example 1
-             */
-            rank: number;
-            /**
-             * Format: int32
-             * @example 100
-             */
-            score: number;
-            /**
-             * Format: int32
-             * @example 5
-             */
-            totalAttempts: number;
-            /**
-             * Format: float
-             * @example 0.8
-             */
-            accuracy: number;
-            /**
-             * Format: int64
-             * @example 1627847284
-             */
-            timestamp: number;
-            user?: components["schemas"]["UserDomain"];
-        };
+  schemas: {
+    StartGameRequest: {
+      autoVoice?: boolean;
+      itemsUsed: string[];
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    StartGameResponse: {
+      /** Format: uuid */
+      sessionId: string;
+      /** @example lpeap */
+      scrambledWord: string;
+      /** @example A fruit that is often red or green. */
+      scrambledWordDefinition: string;
+      /** Format: uuid */
+      token: string;
+      /**
+       * Format: int32
+       * @example 60
+       */
+      remainingSeconds: number;
+      autoVoice: boolean;
+    };
+    SubmitAnswerRequest: {
+      /** Format: uuid */
+      sessionId: string;
+      /** @example apple */
+      answer: string;
+      /** Format: uuid */
+      token: string;
+    };
+    SubmitAnswerResponse: {
+      correct: boolean;
+      /** @example lpeap */
+      scrambledWord: string;
+      /** @example A fruit that is often red or green. */
+      scrambledWordDefinition: string;
+      correctAttemptTimestamps: string[][];
+      /** Format: uuid */
+      token: string;
+      /**
+       * Format: int32
+       * @example 10
+       */
+      score: number;
+      /**
+       * Format: int32
+       * @example 2
+       */
+      attempts: number;
+      /**
+       * Format: int32
+       * @example 45
+       */
+      remainingSeconds: number;
+    };
+    RegisterUserRequest: {
+      /** @example john_doe */
+      username: string;
+    };
+    UserDomain: {
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    } & components['schemas']['UserCompact'];
+    UserCompact: {
+      /** Format: uuid */
+      id: string;
+      /** @example john_doe */
+      username: string;
+    };
+    GetItemsResponse: {
+      data: components['schemas']['InventoryItem'][];
+    };
+    InventoryItem: {
+      /** Format: uuid */
+      id: string;
+      /** @example Magic Wand */
+      name: string;
+      /** @example A wand that grants magical powers. */
+      description: string;
+      /**
+       * Format: int32
+       * @example 1
+       */
+      quantity: number;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    GetLeaderboardResponse: {
+      entries: components['schemas']['LeaderboardEntry'][];
+      /** Format: int64 */
+      total: number;
+    };
+    LeaderboardEntry: {
+      /** Format: uuid */
+      id: string;
+      /** @example false */
+      isSessionSameAsCurrentUser?: boolean;
+      /**
+       * Format: int32
+       * @example 1
+       */
+      rank: number;
+      /**
+       * Format: int32
+       * @example 100
+       */
+      score: number;
+      /**
+       * Format: int32
+       * @example 5
+       */
+      totalAttempts: number;
+      /**
+       * Format: float
+       * @example 0.8
+       */
+      accuracy: number;
+      /**
+       * Format: int64
+       * @example 1627847284
+       */
+      timestamp: number;
+      user?: components['schemas']['UserDomain'];
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type StartGameRequest = components['schemas']['StartGameRequest'];
 export type StartGameResponse = components['schemas']['StartGameResponse'];

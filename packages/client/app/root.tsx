@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+
 import type { Route } from './+types/root';
+
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
@@ -45,10 +47,10 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className='flex flex-col w-full h-full'>
-        <div className='bg-dark-bg-secondary text-dark-text-primary text-sm'>
-          <nav className='max-w-screen sm:max-w-[430px] mx-auto px-4 py-2'>
-            <ul className='flex gap-4'>
+      <div className="flex flex-col w-full h-full">
+        <div className="bg-dark-bg-secondary text-dark-text-primary text-sm">
+          <nav className="max-w-screen sm:max-w-[430px] mx-auto px-4 py-2">
+            <ul className="flex gap-4">
               <li>
                 <a href="/">Play</a>
               </li>

@@ -1,5 +1,6 @@
 import createFetchClient from 'openapi-fetch';
 import createClient from 'openapi-react-query';
+
 import type { paths } from './gen';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';

@@ -10,10 +10,15 @@
     "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
     "build": "yarn workspace client build && yarn workspace server build",
     "test": "yarn workspace client test && yarn workspace server test",
-    "codegen": "yarn workspace client codegen && yarn workspace server codegen"
+    "codegen": "yarn workspace client codegen && yarn workspace server codegen",
+    "prepare": "husky"
   },
   "devDependencies": {
     "concurrently": "9.2.1",
+    "husky": "9.1.7",
+    "lint-staged": "17.0.4",
+    "oxfmt": "0.50.0",
+    "oxlint": "1.65.0",
     "prettier": "3.6.2",
     "prettier-plugin-organize-imports": "4.3.0",
     "typescript": "5.9.2"
