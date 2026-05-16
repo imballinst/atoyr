@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,10 +41,15 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 		return
 	}
 
+	sessionId, err := c.Cookie(sessionIdCookie)
+	userId, err := c.Cookie(sessionIdCookie)
+
 	apiEntries := make([]LeaderboardEntry, len(entries))
 	for i, entry := range entries {
-		apiEntries[i] = ToApiLeaderboardEntry(entry)
+		apiEntries[i] = ToApiLeaderboardEntry(entry, userId, sessionId)
 	}
+
+	fmt.Println(entries, apiEntries, err)
 
 	c.JSON(http.StatusOK, GetLeaderboardResponse{
 		Entries: apiEntries,

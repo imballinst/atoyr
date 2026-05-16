@@ -35,12 +35,14 @@ type InventoryItem struct {
 
 // LeaderboardEntry defines model for LeaderboardEntry.
 type LeaderboardEntry struct {
-	Accuracy      float32     `json:"accuracy"`
-	Rank          int32       `json:"rank"`
-	Score         int32       `json:"score"`
-	Timestamp     int64       `json:"timestamp"`
-	TotalAttempts int32       `json:"totalAttempts"`
-	User          *UserDomain `json:"user,omitempty"`
+	Accuracy                   float32     `json:"accuracy"`
+	Id                         string      `json:"id"`
+	IsSessionSameAsCurrentUser bool        `json:"isSessionSameAsCurrentUser"`
+	Rank                       int32       `json:"rank"`
+	Score                      int32       `json:"score"`
+	Timestamp                  int64       `json:"timestamp"`
+	TotalAttempts              int32       `json:"totalAttempts"`
+	User                       *UserDomain `json:"user,omitempty"`
 }
 
 // RegisterUserRequest defines model for RegisterUserRequest.

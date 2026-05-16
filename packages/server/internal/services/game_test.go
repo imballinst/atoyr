@@ -215,6 +215,40 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	assert.Equal(t, int32(2), result.Attempts)
 }
 
+func TestGameService_FinishGame(t *testing.T) {
+	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
+
+	db := testutils.SetupTestDB(t)
+	ws := setupTestWordService()
+	ss := NewSessionService(db)
+	ls := NewLeaderboardService(db)
+	gs := NewGameService(ss, ws, ls, itemInfoMap)
+
+	session, _ := ss.Create(false, []string{})
+	_, err := gs.StartGame(session.ID)
+	assert.NoError(t, err)
+
+	session.Score = 7
+	session.TotalAttempts = 8
+	session.CorrectAttemptTimestamps = [][]string{{"ts1"}, {"ts2", "ts3"}}
+
+	err = ss.Update(session)
+	assert.NoError(t, err)
+
+	err = gs.FinishGame(session.ID)
+
+	// Check session again to get the latest word.
+	session, err = ss.FindByID(session.ID)
+
+	assert.NoError(t, err)
+	assert.Len(t, session.CorrectAttemptTimestamps, 2)
+	assert.Len(t, session.CorrectAttemptTimestamps[0], 1)
+	assert.Len(t, session.CorrectAttemptTimestamps[1], 2)
+	assert.Equal(t, int32(7), session.Score)
+	assert.Equal(t, int32(8), session.TotalAttempts)
+	assert.Equal(t, float32(87.5), session.Accuracy)
+}
+
 func TestGameService_TokenGeneration(t *testing.T) {
 	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
 

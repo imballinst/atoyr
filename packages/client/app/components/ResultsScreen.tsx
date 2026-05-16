@@ -1,11 +1,14 @@
-import type { GameState, LeaderboardResponse } from '../lib/game';
+import { useLeaderboard } from '~/api/hooks';
+import type { GameState } from '../lib/game';
 
 interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' | 'correctAttemptTimestamps'> {
-  leaderboard: LeaderboardResponse['entries'];
   onPlayAgain: () => void;
 }
 
-export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, leaderboard, onPlayAgain }: ResultsScreenProps) {
+export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, onPlayAgain }: ResultsScreenProps) {
+  const leaderboardQuery = useLeaderboard()
+  const leaderboardEntries = leaderboardQuery.data?.entries
+
   const accuracy = totalAttempts > 0 ? (score / totalAttempts) * 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
@@ -42,17 +45,17 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
           Play Again
         </button>
 
-        {leaderboard.length > 0 && (
+        {leaderboardEntries && (
           <div className="mt-6 pt-6 border-t border-dark-border-secondary">
             <h2 className="text-lg font-semibold mb-4 text-dark-text-primary">Leaderboard</h2>
             <div className="flex flex-col gap-2 max-h-52 overflow-y-auto">
-              {leaderboard
+              {leaderboardEntries
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 10)
                 .map((result, i) => (
                   <div key={result.id} className="flex justify-between gap-3 p-3 bg-dark-bg-tertiary rounded text-xs">
                     <div className="font-semibold text-dark-text-primary min-w-8">#{i + 1}</div>
-                    <div className="font-semibold text-dark-text-primary">{result.id}</div>
+                    <div className="font-semibold text-dark-text-primary font-mono">{result.id}</div>
                     <div className="flex gap-x-1 font-mono">
                       <div className="flex-1 text-center font-semibold text-dark-text-primary">
                         {result.score}/{result.totalAttempts}

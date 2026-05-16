@@ -9,6 +9,7 @@ import (
 
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
+	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
 
 	"github.com/gin-gonic/gin"
@@ -129,7 +130,43 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 }
 
 func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
-	router, _ := setupTestRouter(t)
+	router, sessionService := setupTestRouter(t)
+
+	sessionIDs := []string{}
+	for range 5 {
+		session, _ := sessionService.Create(false, []string{})
+		sessionIDs = append(sessionIDs, session.ID)
+	}
+
+	getSessionDomainPatchInfo := func(sessionID string, score, totalAttempts int32) domainmodels.SessionDomain {
+		return domainmodels.SessionDomain{
+			ID:            sessionIDs[0],
+			Score:         score,
+			TotalAttempts: totalAttempts,
+			Accuracy:      float32(score) / float32(totalAttempts),
+		}
+	}
+
+	patchedSessionsInfo := []domainmodels.SessionDomain{
+		getSessionDomainPatchInfo(sessionIDs[0], 10, 15),
+		getSessionDomainPatchInfo(sessionIDs[1], 10, 12),
+		getSessionDomainPatchInfo(sessionIDs[2], 10, 10),
+		getSessionDomainPatchInfo(sessionIDs[3], 10, 20),
+		getSessionDomainPatchInfo(sessionIDs[4], 10, 30),
+	}
+
+	for _, sessionInfo := range patchedSessionsInfo {
+		session, err := sessionService.FindByID(sessionInfo.ID)
+		assert.NoError(t, err)
+
+		session.Score = sessionInfo.Score
+		session.TotalAttempts = sessionInfo.TotalAttempts
+		session.Accuracy = sessionInfo.Accuracy
+		session.Phase = services.SessionPhaseFinished
+
+		err = sessionService.Update(session)
+		assert.NoError(t, err)
+	}
 
 	req, _ := http.NewRequest("GET", "/api/v1/leaderboard", nil)
 	w := httptest.NewRecorder()
@@ -137,11 +174,18 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response GetLeaderboardResponse
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	assert.NotNil(t, response["total"])
-	assert.NotNil(t, response["entries"])
+	assert.Equal(t, int64(5), response.Total)
+	assert.Len(t, response.Entries, 5)
+
+	expectedLeaderboardOrder := []domainmodels.SessionDomain{patchedSessionsInfo[2], patchedSessionsInfo[1], patchedSessionsInfo[0], patchedSessionsInfo[3], patchedSessionsInfo[4]}
+	for i, session := range response.Entries {
+		assert.Equal(t, expectedLeaderboardOrder[i].Score, session.Score)
+		assert.Equal(t, expectedLeaderboardOrder[i].TotalAttempts, session.TotalAttempts)
+		assert.Equal(t, expectedLeaderboardOrder[i].Accuracy, session.Accuracy)
+	}
 }
 
 func TestLeaderboardRoutes_Pagination(t *testing.T) {

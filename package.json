@@ -6,10 +6,11 @@
     "packages/*"
   ],
   "scripts": {
+    "setup": "yarn install && go install github.com/air-verse/air@latest",
     "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
     "build": "yarn workspace client build && yarn workspace server build",
     "test": "yarn workspace client test && yarn workspace server test",
-    "codegen": "yarn workspace client codegen && yarn workspaces server codegen"
+    "codegen": "yarn workspace client codegen && yarn workspace server codegen"
   },
   "devDependencies": {
     "concurrently": "9.2.1",

@@ -191,7 +191,7 @@ export function useGame() {
   };
 }
 
-export function useLeaderboard(page = 0, limit = 10) {
+export function useLeaderboard(page = 1, limit = 10) {
   return apiQuery.useQuery('get', '/api/v1/leaderboard', {
     params: {
       query: {

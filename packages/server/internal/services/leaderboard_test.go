@@ -25,7 +25,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		},
 		{
 			ID:                       "session2",
@@ -36,7 +36,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		},
 		{
 			ID:                       "session3",
@@ -47,7 +47,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		},
 	}
 
@@ -66,6 +66,53 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	assert.Equal(t, int32(80), entries[2].Score)
 }
 
+func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	// Add some test results
+	results := []models.SessionEntity{
+		{
+			ID:                       "s01",
+			Score:                    100,
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    SessionPhaseFinished,
+		},
+		{
+			ID:                       "s02",
+			Score:                    100,
+			TotalAttempts:            9,
+			Accuracy:                 95,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    SessionPhaseFinished,
+		},
+	}
+
+	for _, result := range results {
+		db.Create(&result)
+	}
+
+	// Get leaderboard
+	entries, err := service.GetLeaderboard(10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 2)
+
+	// Verify sorting by score, then accuracy (descending)
+	assert.Equal(t, "s02", entries[0].ID)
+	assert.Equal(t, float32(95), entries[0].Accuracy)
+
+	assert.Equal(t, "s01", entries[1].ID)
+	assert.Equal(t, float32(90), entries[1].Accuracy)
+}
+
 func TestLeaderboardService_Pagination(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
@@ -81,7 +128,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}
@@ -117,7 +164,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}
@@ -142,7 +189,7 @@ func TestLeaderboardService_GetTopScores(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    "finished",
+			Phase:                    SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 func (gr *Server) GetApiV1ItemsMe(c *gin.Context) {
-	userId, err := c.Cookie("user_id")
+	userId, err := c.Cookie(userIdCookie)
 	if err == http.ErrNoCookie {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return

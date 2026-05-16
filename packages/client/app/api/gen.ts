@@ -379,6 +379,8 @@ export interface components {
             total: number;
         };
         LeaderboardEntry: {
+            /** Format: uuid */
+            id: string;
             /**
              * Format: int32
              * @example 1

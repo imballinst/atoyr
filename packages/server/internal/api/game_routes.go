@@ -16,6 +16,7 @@ import (
 
 const (
 	sessionIdCookie = "session_id"
+	userIdCookie    = "user_id"
 )
 
 func (gr *Server) PostApiV1GameStart(c *gin.Context) {
@@ -25,7 +26,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
-	userId, err := c.Cookie("user_id")
+	userId, err := c.Cookie(userIdCookie)
 	if err != nil {
 		log.Println("No user_id cookie found, starting game without user association")
 	}
@@ -54,7 +55,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(sessionIdCookie, session.ID, int(session.RemainingSeconds), "/", "", false, true)
+	c.SetCookie(sessionIdCookie, session.ID, int(session.RemainingSeconds*2), "/", "", false, true)
 	c.JSON(http.StatusCreated, StartGameResponse{
 		SessionId:               session.ID,
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
@@ -80,7 +81,7 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		log.Println("Failed to continue game:", err)
 
 		status := http.StatusInternalServerError
-		if err == services.ErrSessionNotPlayingYet {
+		if err == services.ErrSessionNotPlayingYet || err == services.ErrSessionAlreadyFinished {
 			status = http.StatusBadRequest
 		}
 
@@ -182,7 +183,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 			return true
 		}
 
-		if session.Phase == "finished" {
+		if session.Phase == services.SessionPhaseFinished {
 			c.SSEvent("finish", gin.H{
 				"score":                    session.Score,
 				"totalAttempts":            session.TotalAttempts,

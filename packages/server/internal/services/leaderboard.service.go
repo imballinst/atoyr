@@ -17,6 +17,7 @@ func NewLeaderboardService(db *gorm.DB) *LeaderboardService {
 }
 
 type LeaderboardEntry struct {
+	ID            string     `json:"id"`
 	Rank          int32      `json:"rank"`
 	Score         int32      `json:"score"`
 	TotalAttempts int32      `json:"totalAttempts"`
@@ -34,8 +35,8 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 	var results []models.SessionEntity
 
 	if err := l.db.
-		Where("phase = ?", "finished").
-		Order("score DESC").
+		Where("phase = ?", SessionPhaseFinished).
+		Order("score DESC, accuracy DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&results).Error; err != nil {
@@ -45,6 +46,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 	entries := make([]LeaderboardEntry, len(results))
 	for i, result := range results {
 		entries[i] = LeaderboardEntry{
+			ID:            result.ID,
 			Rank:          int32(i + 1 + offset),
 			Score:         result.Score,
 			TotalAttempts: result.TotalAttempts,
