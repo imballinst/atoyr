@@ -6,10 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"yarn workspaces client dev\" \"yarn --cwd packages/server dev\"",
-    "build": "yarn workspaces client build && yarn workspaces server build",
-    "test": "yarn workspaces client test && yarn workspaces server test",
-    "codegen": "yarn workspaces client codegen && yarn workspaces server codegen"
+    "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
+    "build": "yarn workspace client build && yarn workspace server build",
+    "test": "yarn workspace client test && yarn workspace server test",
+    "codegen": "yarn workspace client codegen && yarn workspaces server codegen"
   },
   "devDependencies": {
     "concurrently": "9.2.1",
