@@ -73,7 +73,7 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 	session, err := gr.gameService.ContinueGame(sessionId)
 	if err == gorm.ErrRecordNotFound {
 		log.Printf("Session with ID %s not found\n", sessionId)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "session not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
 	}
 	if err != nil {
@@ -157,6 +157,18 @@ func (gr *Server) PostApiV1GameRegister(c *gin.Context) {
 func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 	sessionID := c.Param("sessionId")
 
+	_, err := gr.sessionService.FindByID(sessionID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			log.Printf("Session with ID %s not found\n", sessionId)
+			c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Set SSE headers
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
@@ -187,6 +199,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 				"score":                    session.Score,
 				"totalAttempts":            session.TotalAttempts,
 				"correctAttemptTimestamps": session.CorrectAttemptTimestamps,
+				"word":                     session.CurrentWord,
 			})
 
 			time.Sleep(time.Second)

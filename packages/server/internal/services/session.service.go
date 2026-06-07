@@ -81,6 +81,8 @@ func (s *SessionService) EndSession(sessionID string) error {
 		Updates(map[string]any{
 			"phase":             "finished",
 			"remaining_seconds": 0,
+			"ends_at":           time.Now(),
+			"updated_at":        time.Now(),
 		}).Error; err != nil {
 		return fmt.Errorf("failed to update phase: %w", err)
 	}

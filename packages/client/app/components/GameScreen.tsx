@@ -1,5 +1,5 @@
-import { type GameSessionState } from '@atoyr/shared';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { GameSessionState } from '~/lib/events';
 
 interface GameScreenProps extends GameSessionState {
   scrambled: string;

@@ -6,8 +6,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { GAME_DURATION_SECONDS, type GameState } from '~/lib/events';
 import { gameAPI } from '../api/client';
-import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
 
 interface ServerGameSession {
   sessionId: string;
@@ -212,7 +212,7 @@ export function useInventory(page = 0, limit = 10) {
   return useQuery({
     queryKey: ['inventory', page, limit],
     queryFn: async () => {
-      return gameAPI.getInventory(limit, page);
+      return gameAPI.getInventory();
     },
   });
 }
