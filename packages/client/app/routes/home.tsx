@@ -1,10 +1,9 @@
+import { useGame } from '~/api/hooks';
 import { GameScreen } from '~/components/GameScreen';
 import { ResultsScreen } from '~/components/ResultsScreen';
 import { StartScreen } from '~/components/StartScreen';
-import { useGame } from '~/hooks/use-game';
-import type { Route } from './+types/home';
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [{ title: 'Game | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
 }
 
@@ -20,14 +19,10 @@ export default function Home() {
   if (state.phase === 'playing' && currentWord && currentWordToken) {
     return (
       <GameScreen
+        {...state}
         token={currentWordToken}
-        scrambled={currentWord.scrambled}
         definition={currentWord.definition}
-        score={state.score}
-        totalAttempts={state.totalAttempts}
-        correctAttemptTimestamps={state.correctAttemptTimestamps}
-        remainingSeconds={state.remainingSeconds}
-        autoVoice={state.autoVoice}
+        scrambled={currentWord.scrambled}
         onSubmit={submitAnswer}
       />
     );
@@ -38,7 +33,6 @@ export default function Home() {
       <ResultsScreen
         score={state.score}
         totalAttempts={state.totalAttempts}
-        leaderboard={state.gameResults}
         onPlayAgain={resetGame}
         correctAttemptTimestamps={state.correctAttemptTimestamps}
       />

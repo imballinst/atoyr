@@ -1,4 +1,4 @@
-openapi: "3.0.0"
+openapi: '3.0.0'
 info:
   version: 1.0.0
   title: Minimal ping API server
@@ -159,10 +159,10 @@ components:
           x-go-type: string
         scrambledWord:
           type: string
-          example: "lpeap"
+          example: 'lpeap'
         scrambledWordDefinition:
           type: string
-          example: "A fruit that is often red or green."
+          example: 'A fruit that is often red or green.'
         token:
           type: string
           format: uuid
@@ -186,7 +186,7 @@ components:
           x-go-type: string
         answer:
           type: string
-          example: "apple"
+          example: 'apple'
         token:
           type: string
           format: uuid
@@ -205,12 +205,12 @@ components:
       properties:
         correct:
           type: boolean
-        scrambledWord:  
+        scrambledWord:
           type: string
-          example: "lpeap"
+          example: 'lpeap'
         scrambledWordDefinition:
           type: string
-          example: "A fruit that is often red or green."
+          example: 'A fruit that is often red or green.'
         correctAttemptTimestamps:
           type: array
           items:
@@ -241,7 +241,7 @@ components:
       properties:
         username:
           type: string
-          example: "john_doe"
+          example: 'john_doe'
     UserDomain:
       type: object
       allOf:
@@ -268,7 +268,7 @@ components:
           x-go-type: string
         username:
           type: string
-          example: "john_doe"
+          example: 'john_doe'
     GetItemsResponse:
       type: object
       required:
@@ -295,10 +295,10 @@ components:
           x-go-type: string
         name:
           type: string
-          example: "Magic Wand"
+          example: 'Magic Wand'
         description:
           type: string
-          example: "A wand that grants magical powers."
+          example: 'A wand that grants magical powers.'
         quantity:
           type: integer
           format: int32
@@ -326,12 +326,20 @@ components:
     LeaderboardEntry:
       type: object
       required:
+        - id
         - rank
         - score
         - totalAttempts
         - accuracy
         - timestamp
       properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: string
+        isSessionSameAsCurrentUser:
+          type: boolean
+          example: false
         rank:
           type: integer
           format: int32
@@ -355,4 +363,3 @@ components:
         user:
           type: object
           $ref: '#/components/schemas/UserDomain'
-

@@ -44,6 +44,6 @@ func TestSessionService_EndSession(t *testing.T) {
 	service.EndSession(session.ID)
 	found, _ := service.FindByID(session.ID)
 
-	assert.Equal(t, "finished", found.Phase)
+	assert.Equal(t, SessionPhaseFinished, found.Phase)
 	assert.Equal(t, int32(0), found.RemainingSeconds)
 }

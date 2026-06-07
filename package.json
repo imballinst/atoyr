@@ -6,16 +6,19 @@
     "packages/*"
   ],
   "scripts": {
-    "bootstrap": "yarn install",
-    "dev": "concurrently \"yarn --cwd packages/client dev\" \"yarn --cwd packages/server dev\"",
-    "build": "yarn --cwd packages/client build && cd packages/server && go build -o bin/server ./cmd",
-    "test": "yarn --cwd packages/client test && cd packages/server && go test -v ./...",
-    "codegen": "yarn --cwd packages/server codegen && yarn --cwd packages/client codegen"
+    "setup": "yarn install && go install github.com/air-verse/air@latest",
+    "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
+    "build": "yarn workspace client build && yarn workspace server build",
+    "test": "yarn workspace client test && yarn workspace server test",
+    "codegen": "yarn workspace client codegen && yarn workspace server codegen",
+    "prepare": "husky"
   },
   "devDependencies": {
     "concurrently": "9.2.1",
-    "prettier": "3.6.2",
-    "prettier-plugin-organize-imports": "4.3.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.0.4",
+    "oxfmt": "0.50.0",
+    "oxlint": "1.65.0",
     "typescript": "5.9.2"
   },
   "packageManager": "yarn@4.10.3"

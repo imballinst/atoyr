@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	ErrSessionNotPlayingYet = fmt.Errorf("session is not in %s phase yet", SessionPhasePlaying)
+	ErrSessionAlreadyFinished = fmt.Errorf("session is already finished")
+	ErrSessionNotPlayingYet   = fmt.Errorf("session is not in %s phase yet", SessionPhasePlaying)
 )
 
 type GameService struct {
@@ -84,6 +85,9 @@ func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomai
 		return nil, err
 	}
 
+	if session.Phase == SessionPhaseFinished {
+		return nil, ErrSessionAlreadyFinished
+	}
 	if session.Phase != SessionPhasePlaying {
 		return nil, ErrSessionNotPlayingYet
 	}
@@ -228,12 +232,7 @@ func (g *GameService) FinishGame(sessionID string) error {
 		return err
 	}
 
-	// Calculate accuracy
-	accuracy := float32(0)
-	if session.TotalAttempts > 0 {
-		accuracy = float32(session.Score/int32(session.TotalAttempts)) * 100
-	}
-	session.Accuracy = accuracy
+	session.Accuracy = utils.CalculateAccuracy(session.Score, session.TotalAttempts)
 	session.EndsAt = time.Now()
 
 	if err := g.sessionService.Update(session); err != nil {

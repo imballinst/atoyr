@@ -1,24 +1,30 @@
-import { useLeaderboard } from '../hooks/use-game';
+import { getFinalScore } from '~/lib/game';
 
-export function Leaderboard() {
-  const leaderboardQuery = useLeaderboard();
+import { useLeaderboard } from '../api/hooks';
+
+export function Leaderboard({ limit }: { limit?: number }) {
+  const leaderboardQuery = useLeaderboard(undefined, limit);
+  const leaderboardEntries = leaderboardQuery.data?.entries;
 
   return (
-    <div className="text-dark-text-tertiary">
-      <h2>Leaderboard</h2>
-
-      {leaderboardQuery.isLoading ? (
-        <div>Loading...</div>
-      ) : leaderboardQuery.data ? (
-        <ol>
-          {leaderboardQuery.data.entries.map((entry, index) => (
-            <li key={index}>
-              {entry.user?.username ?? 'Unknown'}: {entry.score}
-            </li>
-          ))}
-        </ol>
-      ) : leaderboardQuery.isError ? (
+    <div className="flex flex-col gap-2">
+      {leaderboardQuery.error ? (
         <div>Error loading leaderboard</div>
+      ) : leaderboardEntries ? (
+        leaderboardEntries.map((result, i) => (
+          <div key={result.id} className="flex gap-2 p-3 bg-dark-bg-tertiary rounded text-xs">
+            <div className="font-semibold text-dark-text-primary">#{i + 1}</div>
+            <div className="font-semibold text-dark-text-primary font-mono">
+              {result.id} {result.isSessionSameAsCurrentUser ? '(You)' : ''}
+            </div>
+            <div className="flex flex-1 gap-x-3 font-mono">
+              <div className="flex-1 text-right font-semibold text-dark-text-primary">
+                {getFinalScore(result.score, result.totalAttempts)}
+              </div>
+              <div className="font-semibold text-dark-interactive-success text-right">{result.accuracy}%</div>
+            </div>
+          </div>
+        ))
       ) : null}
     </div>
   );

@@ -23,4 +23,4 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 
 ## Tests
 
-Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces @atoyr/<folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
+Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
