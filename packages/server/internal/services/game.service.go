@@ -23,8 +23,8 @@ type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
-
-	items core.ItemInfoMap
+	items              core.ItemInfoMap
+	sessionOptions     core.SessionOptions
 }
 
 type SubmitAnswerResult struct {
@@ -43,13 +43,14 @@ func NewGameService(
 	wordService *WordService,
 	leaderboardService *LeaderboardService,
 	items core.ItemInfoMap,
+	sessionOptions core.SessionOptions,
 ) *GameService {
-
 	return &GameService{
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
 		items:              items,
+		sessionOptions:     sessionOptions,
 	}
 }
 
@@ -153,6 +154,11 @@ func (g *GameService) UpdateSessionBasedOnAnswerResult(sessionID string, isCorre
 	session.CurrentScrambledWord = utils.ScrambleWord(word)
 	session.Score += 1
 
+	if session.AutoVoice {
+		session.RemainingSeconds += core.BonusDurationPerWordWithAutoVoice
+		session.EndsAt = session.EndsAt.Add(time.Duration(core.BonusDurationPerWordWithAutoVoice) * time.Second)
+	}
+
 	if len(session.CorrectAttemptTimestamps) == 0 {
 		session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
 	}
@@ -243,7 +249,8 @@ func (g *GameService) FinishGame(sessionID string) error {
 }
 
 func (g *GameService) startTimer(sessionID string) {
-	ticker := time.NewTicker(1 * time.Second)
+	fmt.Println("xdd", time.Duration(g.sessionOptions.Tick), time.Second, utils.ToDuration(g.sessionOptions.Tick))
+	ticker := time.NewTicker(utils.ToDuration(g.sessionOptions.Tick))
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -257,6 +264,7 @@ func (g *GameService) startTimer(sessionID string) {
 		}
 
 		newRemaining := session.RemainingSeconds - 1
+		fmt.Println("new remaining", newRemaining)
 		if newRemaining <= 0 {
 			err = g.FinishGame(sessionID)
 			if err != nil {

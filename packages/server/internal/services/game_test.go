@@ -4,6 +4,7 @@ import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
+	"atoyr/server/internal/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,9 +17,9 @@ func TestGameService_StartGame(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	started, err := gs.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -35,17 +36,17 @@ func TestGameService_StartGame_WithItems(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 	is := NewInventoryService(db, itemInfoMap)
 	us := NewUserService(ss, is)
 
-	user, err := us.CreateUser("test")
+	user, err := us.CreateUser(utils.GenerateUUID())
 	assert.NoError(t, err)
 
 	err = is.AddItems(itemIDs, user.ID)
 	assert.NoError(t, err)
 
-	session, err := ss.Create(false, []string{})
+	session, err := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 
 	session.UserEntity = &domainmodels.UserDomain{
@@ -73,9 +74,9 @@ func TestGameService_ContinueGame(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	started, err := gs.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -99,9 +100,9 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	gs.StartGame(session.ID)
 
 	session, _ = ss.FindByID(session.ID)
@@ -124,9 +125,9 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	gs.StartGame(session.ID)
 
 	session, _ = ss.FindByID(session.ID)
@@ -146,9 +147,9 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	gs.StartGame(session.ID)
 
 	session, _ = ss.FindByID(session.ID)
@@ -184,9 +185,9 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	gs.StartGame(session.ID)
 
 	session, _ = ss.FindByID(session.ID)
@@ -222,9 +223,9 @@ func TestGameService_FinishGame(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	_, err := gs.StartGame(session.ID)
 	assert.NoError(t, err)
 
@@ -256,7 +257,7 @@ func TestGameService_TokenGeneration(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
 	// Same word should generate same token
 	token1 := gs.generateToken("test")
@@ -277,9 +278,9 @@ func TestGameService_AttemptCounting(t *testing.T) {
 	ws := setupTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	gs := NewGameService(ss, ws, ls, itemInfoMap)
+	gs := NewGameService(ss, ws, ls, itemInfoMap, testutils.TestSessionOptions)
 
-	session, _ := ss.Create(false, []string{})
+	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	gs.StartGame(session.ID)
 
 	gs.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)

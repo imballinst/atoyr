@@ -47,9 +47,14 @@ func main() {
 		log.Fatalf("Failed to load items: %v", err)
 	}
 
+	sessionOptions := core.SessionOptions{
+		Duration: 30,
+		Tick:     1,
+	}
+
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap, sessionOptions)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
 	userService := services.NewUserService(sessionService, inventoryService)
 
@@ -59,7 +64,7 @@ func main() {
 	// Apply middleware
 	router.Use(middleware.CORSMiddleware())
 
-	server := api.NewServer(gameService, sessionService, inventoryService, leaderboardService, userService)
+	server := api.NewServer(gameService, sessionService, inventoryService, leaderboardService, userService, sessionOptions)
 	api.RegisterHandlers(router, server)
 
 	// Start server

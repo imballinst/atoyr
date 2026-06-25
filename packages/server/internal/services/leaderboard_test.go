@@ -49,6 +49,17 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    SessionPhaseFinished,
 		},
+		{
+			ID:                       "session4",
+			Score:                    0,
+			TotalAttempts:            8,
+			Accuracy:                 0,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    SessionPhaseFinished,
+		},
 	}
 
 	for _, result := range results {

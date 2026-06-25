@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { GameSessionState } from '~/lib/events';
-
 import type { GameSessionState } from '~/lib/game';
 
 interface GameScreenProps extends GameSessionState {
@@ -101,7 +99,7 @@ export function GameScreen({
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
 
   return (
-    <div className="w-full flex flex-col items-center gap-4">
+    <div className="w-full h-full flex flex-col gap-4 justify-end items-center">
       <div className="w-full flex flex-col gap-2">
         <div
           className={`text-4xl font-mono font-bold bg-dark-bg-tertiary p-3 rounded-lg text-center ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'} w-full`}
@@ -239,9 +237,8 @@ export function GameScreen({
 
       {feedback && (
         <div
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${
-            feedback === 'correct' ? 'text-green-500' : 'text-red-500'
-          }`}
+          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${feedback === 'correct' ? 'text-green-500' : 'text-red-500'
+            }`}
         >
           {feedback === 'correct' ? '✓' : '✗'}
         </div>

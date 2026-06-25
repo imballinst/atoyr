@@ -35,7 +35,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 	var results []models.SessionEntity
 
 	if err := l.db.
-		Where("phase = ?", SessionPhaseFinished).
+		Where("phase = ? AND score > 0", SessionPhaseFinished).
 		Order("score DESC, accuracy DESC").
 		Limit(limit).
 		Offset(offset).

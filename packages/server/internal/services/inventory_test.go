@@ -3,6 +3,7 @@ package services
 import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/testutils"
+	"atoyr/server/internal/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ func TestUserService_AddItems(t *testing.T) {
 	ss := NewSessionService(db)
 	u := NewUserService(ss, is)
 
-	user, err := u.CreateUser("test-username")
+	user, err := u.CreateUser(utils.GenerateUUID())
 	assert.NoError(t, err)
 
 	userID := user.ID
@@ -33,7 +34,7 @@ func TestUserService_GetItems(t *testing.T) {
 	is := NewInventoryService(db, itemInfoMap)
 	u := NewUserService(ss, is)
 
-	user, err := u.CreateUser("test-username")
+	user, err := u.CreateUser(utils.GenerateUUID())
 	assert.NoError(t, err)
 
 	userID := user.ID
@@ -63,7 +64,7 @@ func TestUserService_UseItems(t *testing.T) {
 	is := NewInventoryService(db, itemInfoMap)
 	u := NewUserService(ss, is)
 
-	user, err := u.CreateUser("test-username")
+	user, err := u.CreateUser(utils.GenerateUUID())
 	assert.NoError(t, err)
 
 	userID := user.ID

@@ -47,9 +47,9 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex flex-col w-full h-full">
-        <div className="bg-dark-bg-secondary text-dark-text-primary text-sm">
-          <nav className="max-w-screen sm:max-w-[430px] mx-auto px-4 py-2">
+      <div className="flex flex-col max-w-screen sm:max-w-[430px] w-full h-full">
+        <div className="bg-dark-bg-primary text-dark-text-primary text-sm w-full">
+          <nav className="mx-auto px-4 py-2 border-b border-gray-700">
             <ul className="flex gap-4">
               <li>
                 <a href="/">Play</a>
@@ -61,7 +61,7 @@ export default function App() {
           </nav>
         </div>
 
-        <main className="flex flex-col items-center justify-center p-4 bg-dark-bg-primary w-full max-w-screen sm:max-w-[430px] m-auto">
+        <main className="flex flex-col items-center justify-center p-4 bg-dark-bg-primary w-full flex-1">
           <Outlet />
         </main>
       </div>

@@ -38,7 +38,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 	}
 
 	// Create session
-	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed)
+	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, gr.sessionOptions.Duration)
 	if err != nil {
 		log.Println("Failed to create session:", err)
 
@@ -178,7 +178,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 
 	c.Stream(func(w io.Writer) bool {
 		fmt.Println("Streaming data...")
-		time.Sleep(time.Second)
+		time.Sleep(utils.ToDuration(gr.sessionOptions.Tick))
 
 		session, err := gr.sessionService.FindByID(sessionID)
 		if err != nil {
@@ -202,8 +202,6 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 				"correctAttemptTimestamps": session.CorrectAttemptTimestamps,
 				"word":                     session.CurrentWord,
 			})
-
-			time.Sleep(time.Second)
 		}
 
 		fmt.Println("closing SSE connection...")

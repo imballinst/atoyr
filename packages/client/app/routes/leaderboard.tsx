@@ -5,5 +5,5 @@ export function meta() {
 }
 
 export default function LeaderboardPage() {
-  return <Leaderboard />;
+  return <Leaderboard HeadingComponent='h1' />;
 }

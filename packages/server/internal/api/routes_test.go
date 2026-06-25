@@ -53,7 +53,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap, testutils.TestSessionOptions)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
 	userService := services.NewUserService(sessionService, inventoryService)
 
@@ -62,13 +62,51 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	server := NewServer(gameService, sessionService, inventoryService, leaderboardService, userService)
+	server := NewServer(gameService, sessionService, inventoryService, leaderboardService, userService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 
 	return router, sessionService
 }
 
 func TestGameRoutes_StartGame(t *testing.T) {
+	router, _ := setupTestRouter(t)
+
+	autoVoice := false
+	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusCreated, recorder.Code)
+
+	var response StartGameResponse
+	json.Unmarshal(recorder.Body.Bytes(), &response)
+
+	assert.NotEqual(t, "", response.SessionId)
+	assert.NotEqual(t, "", response.ScrambledWord)
+	assert.NotEqual(t, "", response.ScrambledWordDefinition)
+	assert.NotEqual(t, "", response.Token)
+	assert.Equal(t, int32(1), response.RemainingSeconds) // 1 because of no autoVoice bonus.
+
+	cookie, err := http.ParseSetCookie(recorder.Header().Get("set-cookie"))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, cookie)
+
+	// Get SSE, it should return no error.
+	req, _ = http.NewRequest("GET", fmt.Sprintf("/api/v1/game/sse/%s", response.SessionId), nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder = testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+}
+
+func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
@@ -90,7 +128,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	assert.NotEqual(t, "", response.ScrambledWord)
 	assert.NotEqual(t, "", response.ScrambledWordDefinition)
 	assert.NotEqual(t, "", response.Token)
-	assert.NotEqual(t, int32(0), response.RemainingSeconds)
+	assert.Equal(t, int32(6), response.RemainingSeconds) // 1 + 5, because of auto voice bonus.
 
 	cookie, err := http.ParseSetCookie(recorder.Header().Get("set-cookie"))
 	assert.NoError(t, err)
@@ -252,7 +290,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	sessionIDs := []string{}
 	for range 5 {
-		session, _ := sessionService.Create(false, []string{})
+		session, _ := sessionService.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 		sessionIDs = append(sessionIDs, session.ID)
 	}
 

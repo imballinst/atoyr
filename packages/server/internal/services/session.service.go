@@ -25,13 +25,18 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*domainmodels.SessionDomain, error) {
+func (s *SessionService) Create(autoVoice bool, itemsUsed []string, remainingSeconds int32) (*domainmodels.SessionDomain, error) {
+	initialRemainingSeconds := remainingSeconds
+	if autoVoice {
+		initialRemainingSeconds += 5
+	}
+
 	session := &models.SessionEntity{
 		ID:                       utils.GenerateUUID(),
 		Phase:                    "idle",
 		Score:                    0,
 		TotalAttempts:            0,
-		RemainingSeconds:         30,
+		RemainingSeconds:         initialRemainingSeconds,
 		AutoVoice:                autoVoice,
 		UsedWords:                pq.StringArray{},
 		WordDefinitions:          pq.StringArray{},
@@ -41,7 +46,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string) (*domainmode
 		CurrentWordToken:         "",
 		UsedItemIDs:              itemsUsed,
 		CreatedAt:                time.Now(),
-		EndsAt:                   time.Now().Add(30 * time.Second),
+		EndsAt:                   time.Now().Add(time.Duration(initialRemainingSeconds) * time.Second),
 		UpdatedAt:                time.Now().Add(5 * time.Minute),
 	}
 
