@@ -44,7 +44,7 @@ type SessionEntity struct {
 	Score                    int32          `gorm:"type:integer;default:0"`
 	TotalAttempts            int32          `gorm:"type:integer;default:0"`
 	Accuracy                 float32        `gorm:"type:real;default:0"`
-	RemainingSeconds         int32          `gorm:"type:integer"`
+	DurationSeconds          int32          `gorm:"type:integer"`
 	CorrectAttemptTimestamps JSON           `gorm:"type:jsonb;default:'[]'"`
 	AutoVoice                bool           `gorm:"type:boolean;default:false"`
 	UsedWords                pq.StringArray `gorm:"type:text"`

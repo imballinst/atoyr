@@ -15,7 +15,7 @@ type SessionDomain struct {
 	Score                    int32
 	TotalAttempts            int32
 	Accuracy                 float32
-	RemainingSeconds         int32
+	DurationSeconds          int32
 	CorrectAttemptTimestamps [][]string
 	AutoVoice                bool
 	UsedWords                []string
@@ -47,7 +47,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
-		RemainingSeconds:         session.RemainingSeconds,
+		DurationSeconds:          session.DurationSeconds,
 		CorrectAttemptTimestamps: correctAttemptTimestamps,
 		AutoVoice:                session.AutoVoice,
 		UsedItemIDs:              []string(session.UsedItemIDs),
@@ -79,7 +79,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
-		RemainingSeconds:         session.RemainingSeconds,
+		DurationSeconds:          session.DurationSeconds,
 		CorrectAttemptTimestamps: correctAttemptTimestamps,
 		AutoVoice:                session.AutoVoice,
 		UsedWords:                session.UsedWords,

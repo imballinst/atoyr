@@ -88,13 +88,13 @@ export interface GameSession {
   autoVoice: boolean;
 }
 
-export type GamePhase = 'idle' | 'playing' | 'finished';
+export type GamePhase = "idle" | "playing" | "finished";
 
 export interface GameSessionState {
   phase: GamePhase;
   score: number;
   totalAttempts: number;
-  remainingSeconds: number;
+  durationSeconds: number;
   usedWords: string[]; // Array for JSON serialization
   currentWordToken: string | null; // Token for current word validation
 }
@@ -122,7 +122,7 @@ export interface SubmitAnswerResponse {
   correct: boolean;
   score: number;
   totalAttempts: number;
-  remainingSeconds: number;
+  durationSeconds: number;
   gameOver: boolean;
 }
 
@@ -130,7 +130,13 @@ export interface SubmitAnswerResponse {
 // SSE Event Types
 // ============================================
 
-export type SSEEventType = 'session:started' | 'word:new' | 'timer:tick' | 'timer:penalty' | 'game:finished' | 'error';
+export type SSEEventType =
+  | "session:started"
+  | "word:new"
+  | "timer:tick"
+  | "timer:penalty"
+  | "game:finished"
+  | "error";
 
 export interface SSEBaseEvent {
   type: SSEEventType;
@@ -138,14 +144,14 @@ export interface SSEBaseEvent {
 }
 
 export interface SessionStartedEvent extends SSEBaseEvent {
-  type: 'session:started';
+  type: "session:started";
   sessionId: string;
   autoVoice: boolean;
-  remainingSeconds: number;
+  durationSeconds: number;
 }
 
 export interface WordNewEvent extends SSEBaseEvent {
-  type: 'word:new';
+  type: "word:new";
   scrambled: string;
   definition: string;
   token: string; // Unique token for this word instance
@@ -153,18 +159,18 @@ export interface WordNewEvent extends SSEBaseEvent {
 }
 
 export interface TimerTickEvent extends SSEBaseEvent {
-  type: 'timer:tick';
-  remainingSeconds: number;
+  type: "timer:tick";
+  durationSeconds: number;
 }
 
 export interface TimerPenaltyEvent extends SSEBaseEvent {
-  type: 'timer:penalty';
+  type: "timer:penalty";
   penaltySeconds: number;
-  remainingSeconds: number;
+  durationSeconds: number;
 }
 
 export interface GameFinishedEvent extends SSEBaseEvent {
-  type: 'game:finished';
+  type: "game:finished";
   score: number;
   totalAttempts: number;
   accuracy: number;
@@ -172,12 +178,18 @@ export interface GameFinishedEvent extends SSEBaseEvent {
 }
 
 export interface SSEErrorEvent extends SSEBaseEvent {
-  type: 'error';
+  type: "error";
   message: string;
   code: string;
 }
 
-export type SSEEvent = SessionStartedEvent | WordNewEvent | TimerTickEvent | TimerPenaltyEvent | GameFinishedEvent | SSEErrorEvent;
+export type SSEEvent =
+  | SessionStartedEvent
+  | WordNewEvent
+  | TimerTickEvent
+  | TimerPenaltyEvent
+  | GameFinishedEvent
+  | SSEErrorEvent;
 
 // ============================================
 // Game Result Types
@@ -213,12 +225,12 @@ export interface LeaderboardResponse {
 // ============================================
 
 export type ErrorCode =
-  | 'SESSION_NOT_FOUND'
-  | 'SESSION_EXPIRED'
-  | 'INVALID_TOKEN'
-  | 'GAME_NOT_STARTED'
-  | 'GAME_ALREADY_FINISHED'
-  | 'INVALID_REQUEST';
+  | "SESSION_NOT_FOUND"
+  | "SESSION_EXPIRED"
+  | "INVALID_TOKEN"
+  | "GAME_NOT_STARTED"
+  | "GAME_ALREADY_FINISHED"
+  | "INVALID_REQUEST";
 
 export interface APIError {
   code: ErrorCode;
@@ -227,12 +239,12 @@ export interface APIError {
 }
 
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
-  SESSION_NOT_FOUND: 'Game session not found',
-  SESSION_EXPIRED: 'Game session has expired',
-  INVALID_TOKEN: 'Invalid word token',
-  GAME_NOT_STARTED: 'Game has not been started',
-  GAME_ALREADY_FINISHED: 'Game has already finished',
-  INVALID_REQUEST: 'Invalid request format',
+  SESSION_NOT_FOUND: "Game session not found",
+  SESSION_EXPIRED: "Game session has expired",
+  INVALID_TOKEN: "Invalid word token",
+  GAME_NOT_STARTED: "Game has not been started",
+  GAME_ALREADY_FINISHED: "Game has already finished",
+  INVALID_REQUEST: "Invalid request format",
 };
 ```
 
@@ -241,8 +253,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 ```typescript
 // packages/shared/src/schemas.ts
 
-import { z } from 'zod';
-import { WORD_LENGTH } from './types';
+import { z } from "zod";
+import { WORD_LENGTH } from "./types";
 
 export const startGameRequestSchema = z.object({
   autoVoice: z.boolean().optional().default(false),
@@ -265,7 +277,9 @@ export const uuidSchema = z.string().uuid();
 export function editDistance(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    Array(n + 1).fill(0),
+  );
 
   for (let i = 0; i <= m; i++) dp[i][0] = i;
   for (let j = 0; j <= n; j++) dp[0][j] = j;
@@ -287,16 +301,16 @@ export function editDistance(a: string, b: string): number {
 ```typescript
 // packages/shared/src/utils/scramble.ts
 
-import { editDistance } from './editDistance';
-import { SCRAMBLE_ATTEMPTS } from '../types';
+import { editDistance } from "./editDistance";
+import { SCRAMBLE_ATTEMPTS } from "../types";
 
 function shuffleLetters(word: string): string {
-  const letters = word.split('');
+  const letters = word.split("");
   for (let i = letters.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [letters[i], letters[j]] = [letters[j], letters[i]];
   }
-  return letters.join('');
+  return letters.join("");
 }
 
 export function scrambleWord(word: string): string | null {
@@ -309,7 +323,9 @@ export function scrambleWord(word: string): string | null {
 
   if (validShuffles.length === 0) return null;
 
-  return validShuffles.sort((a, b) => editDistance(b, word) - editDistance(a, word))[0];
+  return validShuffles.sort(
+    (a, b) => editDistance(b, word) - editDistance(a, word),
+  )[0];
 }
 ```
 
@@ -327,15 +343,15 @@ export function validateAnswer(input: string, expected: string): boolean {
 // packages/shared/src/index.ts
 
 // Types
-export * from './types';
+export * from "./types";
 
 // Schemas
-export * from './schemas';
+export * from "./schemas";
 
 // Utilities
-export { editDistance } from './utils/editDistance';
-export { scrambleWord } from './utils/scramble';
-export { validateAnswer } from './utils/validation';
+export { editDistance } from "./utils/editDistance";
+export { scrambleWord } from "./utils/scramble";
+export { validateAnswer } from "./utils/validation";
 ```
 
 ## Server Implementation
@@ -475,16 +491,16 @@ Connection: keep-alive
 
 ```
 event: session:started
-data: {"type":"session:started","sessionId":"...","autoVoice":false,"remainingSeconds":30,"timestamp":1706304000000}
+data: {"type":"session:started","sessionId":"...","autoVoice":false,"durationSeconds":30,"timestamp":1706304000000}
 
 event: word:new
 data: {"type":"word:new","scrambled":"DRAOB","definition":"Flat rigid surface","token":"abc123","wordIndex":1,"timestamp":1706304001000}
 
 event: timer:tick
-data: {"type":"timer:tick","remainingSeconds":29,"timestamp":1706304002000}
+data: {"type":"timer:tick","durationSeconds":29,"timestamp":1706304002000}
 
 event: timer:penalty
-data: {"type":"timer:penalty","penaltySeconds":1,"remainingSeconds":28,"timestamp":1706304003000}
+data: {"type":"timer:penalty","penaltySeconds":1,"durationSeconds":28,"timestamp":1706304003000}
 
 event: game:finished
 data: {"type":"game:finished","score":5,"totalAttempts":7,"accuracy":0.714,"resultId":"...","timestamp":1706304035000}
@@ -522,7 +538,7 @@ POST /api/game/answer
   "correct": true,
   "score": 1,
   "totalAttempts": 1,
-  "remainingSeconds": 28,
+  "durationSeconds": 28,
   "gameOver": false
 }
 ```
@@ -609,8 +625,8 @@ GET /api/leaderboard
 ```typescript
 // packages/server/src/game/game.service.ts
 
-import { Injectable } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   GAME_DURATION_SECONDS,
   AUTO_VOICE_EXTRA_SECONDS,
@@ -619,10 +635,10 @@ import {
   WordEntry,
   scrambleWord,
   validateAnswer,
-} from '@atoyr/shared';
-import { SessionService } from '../session/session.service';
-import { WordService } from '../word/word.service';
-import { v4 as uuidv4 } from 'uuid';
+} from "@atoyr/shared";
+import { SessionService } from "../session/session.service";
+import { WordService } from "../word/word.service";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class GameService {
@@ -634,10 +650,14 @@ export class GameService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async startGame(autoVoice: boolean): Promise<{ sessionId: string; expiresAt: number }> {
+  async startGame(
+    autoVoice: boolean,
+  ): Promise<{ sessionId: string; expiresAt: number }> {
     const sessionId = uuidv4();
     const now = Date.now();
-    const initialSeconds = autoVoice ? GAME_DURATION_SECONDS + AUTO_VOICE_EXTRA_SECONDS : GAME_DURATION_SECONDS;
+    const initialSeconds = autoVoice
+      ? GAME_DURATION_SECONDS + AUTO_VOICE_EXTRA_SECONDS
+      : GAME_DURATION_SECONDS;
     const expiresAt = now + (GAME_DURATION_SECONDS + 600) * 1000; // 10 min buffer
 
     await this.sessionService.create({
@@ -645,10 +665,10 @@ export class GameService {
       createdAt: now,
       expiresAt,
       state: {
-        phase: 'playing',
+        phase: "playing",
         score: 0,
         totalAttempts: 0,
-        remainingSeconds: initialSeconds,
+        durationSeconds: initialSeconds,
         usedWords: [],
         currentWordToken: null,
       },
@@ -660,14 +680,14 @@ export class GameService {
 
   async initializeSSE(sessionId: string): Promise<void> {
     const session = await this.sessionService.findById(sessionId);
-    if (!session) throw new Error('SESSION_NOT_FOUND');
+    if (!session) throw new Error("SESSION_NOT_FOUND");
 
     // Emit session started
     this.eventEmitter.emit(`sse.${sessionId}`, {
-      type: 'session:started',
+      type: "session:started",
       sessionId,
       autoVoice: session.autoVoice,
-      remainingSeconds: session.state.remainingSeconds,
+      durationSeconds: session.state.durationSeconds,
       timestamp: Date.now(),
     });
 
@@ -680,7 +700,7 @@ export class GameService {
 
   private async emitNextWord(sessionId: string): Promise<void> {
     const session = await this.sessionService.findById(sessionId);
-    if (!session || session.state.phase !== 'playing') return;
+    if (!session || session.state.phase !== "playing") return;
 
     const word = await this.wordService.getRandomWord(session.state.usedWords);
     if (!word) {
@@ -703,7 +723,7 @@ export class GameService {
     await this.sessionService.setCurrentWord(sessionId, word.word, token);
 
     this.eventEmitter.emit(`sse.${sessionId}`, {
-      type: 'word:new',
+      type: "word:new",
       scrambled: scrambled.toUpperCase(),
       definition: word.definition,
       token,
@@ -713,7 +733,7 @@ export class GameService {
 
     // Add extra time for auto-voice
     if (session.autoVoice) {
-      session.state.remainingSeconds += AUTO_VOICE_EXTRA_SECONDS;
+      session.state.durationSeconds += AUTO_VOICE_EXTRA_SECONDS;
       await this.sessionService.update(sessionId, session);
     }
   }
@@ -721,15 +741,15 @@ export class GameService {
   private startTimer(sessionId: string): void {
     const timer = setInterval(async () => {
       const session = await this.sessionService.findById(sessionId);
-      if (!session || session.state.phase !== 'playing') {
+      if (!session || session.state.phase !== "playing") {
         clearInterval(timer);
         this.activeTimers.delete(sessionId);
         return;
       }
 
-      session.state.remainingSeconds -= 1;
+      session.state.durationSeconds -= 1;
 
-      if (session.state.remainingSeconds <= 0) {
+      if (session.state.durationSeconds <= 0) {
         await this.finishGame(sessionId);
         clearInterval(timer);
         this.activeTimers.delete(sessionId);
@@ -739,8 +759,8 @@ export class GameService {
       await this.sessionService.update(sessionId, session);
 
       this.eventEmitter.emit(`sse.${sessionId}`, {
-        type: 'timer:tick',
-        remainingSeconds: session.state.remainingSeconds,
+        type: "timer:tick",
+        durationSeconds: session.state.durationSeconds,
         timestamp: Date.now(),
       });
     }, 1000);
@@ -756,16 +776,17 @@ export class GameService {
     correct: boolean;
     score: number;
     totalAttempts: number;
-    remainingSeconds: number;
+    durationSeconds: number;
     gameOver: boolean;
   }> {
     const session = await this.sessionService.findById(sessionId);
-    if (!session) throw new Error('SESSION_NOT_FOUND');
-    if (session.state.phase !== 'playing') throw new Error('GAME_NOT_STARTED');
-    if (session.state.currentWordToken !== token) throw new Error('INVALID_TOKEN');
+    if (!session) throw new Error("SESSION_NOT_FOUND");
+    if (session.state.phase !== "playing") throw new Error("GAME_NOT_STARTED");
+    if (session.state.currentWordToken !== token)
+      throw new Error("INVALID_TOKEN");
 
     const currentWord = await this.sessionService.getCurrentWord(sessionId);
-    if (!currentWord) throw new Error('GAME_NOT_STARTED');
+    if (!currentWord) throw new Error("GAME_NOT_STARTED");
 
     const isCorrect = validateAnswer(answer, currentWord);
     session.state.totalAttempts += 1;
@@ -775,18 +796,21 @@ export class GameService {
       await this.sessionService.update(sessionId, session);
       await this.emitNextWord(sessionId);
     } else {
-      const penalty = Math.min(WRONG_ANSWER_PENALTY_SECONDS, session.state.remainingSeconds);
-      session.state.remainingSeconds -= penalty;
+      const penalty = Math.min(
+        WRONG_ANSWER_PENALTY_SECONDS,
+        session.state.durationSeconds,
+      );
+      session.state.durationSeconds -= penalty;
       await this.sessionService.update(sessionId, session);
 
       this.eventEmitter.emit(`sse.${sessionId}`, {
-        type: 'timer:penalty',
+        type: "timer:penalty",
         penaltySeconds: penalty,
-        remainingSeconds: session.state.remainingSeconds,
+        durationSeconds: session.state.durationSeconds,
         timestamp: Date.now(),
       });
 
-      if (session.state.remainingSeconds <= 0) {
+      if (session.state.durationSeconds <= 0) {
         await this.finishGame(sessionId);
       }
     }
@@ -796,8 +820,8 @@ export class GameService {
       correct: isCorrect,
       score: updatedSession!.state.score,
       totalAttempts: updatedSession!.state.totalAttempts,
-      remainingSeconds: updatedSession!.state.remainingSeconds,
-      gameOver: updatedSession!.state.phase === 'finished',
+      durationSeconds: updatedSession!.state.durationSeconds,
+      gameOver: updatedSession!.state.phase === "finished",
     };
   }
 
@@ -805,11 +829,14 @@ export class GameService {
     const session = await this.sessionService.findById(sessionId);
     if (!session) return;
 
-    session.state.phase = 'finished';
-    session.state.remainingSeconds = 0;
+    session.state.phase = "finished";
+    session.state.durationSeconds = 0;
     await this.sessionService.update(sessionId, session);
 
-    const accuracy = session.state.totalAttempts > 0 ? session.state.score / session.state.totalAttempts : 0;
+    const accuracy =
+      session.state.totalAttempts > 0
+        ? session.state.score / session.state.totalAttempts
+        : 0;
 
     const resultId = await this.sessionService.saveResult(sessionId, {
       score: session.state.score,
@@ -819,7 +846,7 @@ export class GameService {
     });
 
     this.eventEmitter.emit(`sse.${sessionId}`, {
-      type: 'game:finished',
+      type: "game:finished",
       score: session.state.score,
       totalAttempts: session.state.totalAttempts,
       accuracy,
@@ -850,14 +877,21 @@ export class GameService {
 ```typescript
 // packages/server/src/game/game.gateway.ts
 
-import { Controller, Get, Param, Res, HttpException, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { GameService } from './game.service';
-import { SessionService } from '../session/session.service';
-import { SSEEvent } from '@atoyr/shared';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  HttpException,
+  HttpStatus,
+} from "@nestjs/common";
+import { Response } from "express";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { GameService } from "./game.service";
+import { SessionService } from "../session/session.service";
+import { SSEEvent } from "@atoyr/shared";
 
-@Controller('api/game')
+@Controller("api/game")
 export class GameGateway {
   constructor(
     private gameService: GameService,
@@ -865,23 +899,23 @@ export class GameGateway {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  @Get('sse/:sessionId')
-  async stream(@Param('sessionId') sessionId: string, @Res() res: Response) {
+  @Get("sse/:sessionId")
+  async stream(@Param("sessionId") sessionId: string, @Res() res: Response) {
     const session = await this.sessionService.findById(sessionId);
 
     if (!session) {
-      throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+      throw new HttpException("Session not found", HttpStatus.NOT_FOUND);
     }
 
     if (session.expiresAt < Date.now()) {
-      throw new HttpException('Session expired', HttpStatus.GONE);
+      throw new HttpException("Session expired", HttpStatus.GONE);
     }
 
     // Set SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
     res.flushHeaders();
 
     // Event listener for this session
@@ -897,13 +931,15 @@ export class GameGateway {
       await this.gameService.initializeSSE(sessionId);
     } catch (error) {
       res.write(`event: error\n`);
-      res.write(`data: ${JSON.stringify({ type: 'error', message: error.message, timestamp: Date.now() })}\n\n`);
+      res.write(
+        `data: ${JSON.stringify({ type: "error", message: error.message, timestamp: Date.now() })}\n\n`,
+      );
       res.end();
       return;
     }
 
     // Handle client disconnect
-    res.on('close', () => {
+    res.on("close", () => {
       this.eventEmitter.off(`sse.${sessionId}`, eventHandler);
       this.gameService.cleanupSession(sessionId);
     });
@@ -965,11 +1001,11 @@ packages/server/test/
 ```typescript
 // packages/server/test/setup.ts
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
-import * as request from 'supertest';
-import EventSource from 'eventsource';
+import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication } from "@nestjs/common";
+import { AppModule } from "../src/app.module";
+import * as request from "supertest";
+import EventSource from "eventsource";
 
 export async function createTestApp(): Promise<INestApplication> {
   const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -985,7 +1021,11 @@ export function createSSEClient(url: string): EventSource {
   return new EventSource(url);
 }
 
-export function waitForSSEEvent(es: EventSource, eventType: string, timeout = 5000): Promise<MessageEvent> {
+export function waitForSSEEvent(
+  es: EventSource,
+  eventType: string,
+  timeout = 5000,
+): Promise<MessageEvent> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));
@@ -998,7 +1038,11 @@ export function waitForSSEEvent(es: EventSource, eventType: string, timeout = 50
   });
 }
 
-export async function collectSSEEvents(es: EventSource, eventTypes: string[], timeout = 10000): Promise<Record<string, MessageEvent[]>> {
+export async function collectSSEEvents(
+  es: EventSource,
+  eventTypes: string[],
+  timeout = 10000,
+): Promise<Record<string, MessageEvent[]>> {
   const events: Record<string, MessageEvent[]> = {};
   eventTypes.forEach((type) => (events[type] = []));
 
@@ -1011,7 +1055,7 @@ export async function collectSSEEvents(es: EventSource, eventTypes: string[], ti
       });
     });
 
-    es.addEventListener('game:finished', () => {
+    es.addEventListener("game:finished", () => {
       clearTimeout(timer);
       setTimeout(() => resolve(events), 100);
     });
@@ -1024,12 +1068,12 @@ export async function collectSSEEvents(es: EventSource, eventTypes: string[], ti
 ```typescript
 // packages/server/test/game/game.e2e-spec.ts
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { createTestApp } from '../setup';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { INestApplication } from "@nestjs/common";
+import * as request from "supertest";
+import { createTestApp } from "../setup";
 
-describe('Game Start (e2e)', () => {
+describe("Game Start (e2e)", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -1040,30 +1084,44 @@ describe('Game Start (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /api/game/start', () => {
-    it('should create a new game session', async () => {
-      const response = await request(app.getHttpServer()).post('/api/game/start').send({ autoVoice: false }).expect(201);
+  describe("POST /api/game/start", () => {
+    it("should create a new game session", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/api/game/start")
+        .send({ autoVoice: false })
+        .expect(201);
 
-      expect(response.body).toHaveProperty('sessionId');
-      expect(response.body).toHaveProperty('expiresAt');
-      expect(typeof response.body.sessionId).toBe('string');
-      expect(response.body.sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(response.body).toHaveProperty("sessionId");
+      expect(response.body).toHaveProperty("expiresAt");
+      expect(typeof response.body.sessionId).toBe("string");
+      expect(response.body.sessionId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
     });
 
-    it('should create session with autoVoice enabled', async () => {
-      const response = await request(app.getHttpServer()).post('/api/game/start').send({ autoVoice: true }).expect(201);
+    it("should create session with autoVoice enabled", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/api/game/start")
+        .send({ autoVoice: true })
+        .expect(201);
 
-      expect(response.body).toHaveProperty('sessionId');
+      expect(response.body).toHaveProperty("sessionId");
     });
 
-    it('should default autoVoice to false if not provided', async () => {
-      const response = await request(app.getHttpServer()).post('/api/game/start').send({}).expect(201);
+    it("should default autoVoice to false if not provided", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/api/game/start")
+        .send({})
+        .expect(201);
 
-      expect(response.body).toHaveProperty('sessionId');
+      expect(response.body).toHaveProperty("sessionId");
     });
 
-    it('should return expiry time in the future', async () => {
-      const response = await request(app.getHttpServer()).post('/api/game/start').send({}).expect(201);
+    it("should return expiry time in the future", async () => {
+      const response = await request(app.getHttpServer())
+        .post("/api/game/start")
+        .send({})
+        .expect(201);
 
       const now = Date.now();
       expect(response.body.expiresAt).toBeGreaterThan(now);
@@ -1077,10 +1135,15 @@ describe('Game Start (e2e)', () => {
 ```typescript
 // packages/server/test/sse/sse.e2e-spec.ts
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { createTestApp, createSSEClient, waitForSSEEvent, collectSSEEvents } from '../setup';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { INestApplication } from "@nestjs/common";
+import * as request from "supertest";
+import {
+  createTestApp,
+  createSSEClient,
+  waitForSSEEvent,
+  collectSSEEvents,
+} from "../setup";
 import {
   SessionStartedEvent,
   WordNewEvent,
@@ -1088,10 +1151,10 @@ import {
   TimerPenaltyEvent,
   GAME_DURATION_SECONDS,
   AUTO_VOICE_EXTRA_SECONDS,
-} from '@atoyr/shared';
-import EventSource from 'eventsource';
+} from "@atoyr/shared";
+import EventSource from "eventsource";
 
-describe('SSE Game Flow (e2e)', () => {
+describe("SSE Game Flow (e2e)", () => {
   let app: INestApplication;
   let baseUrl: string;
 
@@ -1105,52 +1168,54 @@ describe('SSE Game Flow (e2e)', () => {
     await app.close();
   });
 
-  describe('SSE Connection', () => {
-    it('should emit session:started event on connection', async () => {
+  describe("SSE Connection", () => {
+    it("should emit session:started event on connection", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const event = await waitForSSEEvent(es, 'session:started');
+        const event = await waitForSSEEvent(es, "session:started");
         const data: SessionStartedEvent = JSON.parse(event.data);
 
-        expect(data.type).toBe('session:started');
+        expect(data.type).toBe("session:started");
         expect(data.sessionId).toBe(sessionId);
-        expect(data.remainingSeconds).toBe(GAME_DURATION_SECONDS);
+        expect(data.durationSeconds).toBe(GAME_DURATION_SECONDS);
         expect(data.autoVoice).toBe(false);
       } finally {
         es.close();
       }
     });
 
-    it('should emit session:started with extended time when autoVoice is true', async () => {
+    it("should emit session:started with extended time when autoVoice is true", async () => {
       const { sessionId } = await startGameSession(app, true);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const event = await waitForSSEEvent(es, 'session:started');
+        const event = await waitForSSEEvent(es, "session:started");
         const data: SessionStartedEvent = JSON.parse(event.data);
 
         expect(data.autoVoice).toBe(true);
-        expect(data.remainingSeconds).toBe(GAME_DURATION_SECONDS + AUTO_VOICE_EXTRA_SECONDS);
+        expect(data.durationSeconds).toBe(
+          GAME_DURATION_SECONDS + AUTO_VOICE_EXTRA_SECONDS,
+        );
       } finally {
         es.close();
       }
     });
 
-    it('should emit word:new event after session:started', async () => {
+    it("should emit word:new event after session:started", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        await waitForSSEEvent(es, 'session:started');
-        const event = await waitForSSEEvent(es, 'word:new');
+        await waitForSSEEvent(es, "session:started");
+        const event = await waitForSSEEvent(es, "word:new");
         const data: WordNewEvent = JSON.parse(event.data);
 
-        expect(data.type).toBe('word:new');
+        expect(data.type).toBe("word:new");
         expect(data.scrambled).toBeDefined();
         expect(data.scrambled.length).toBe(5);
         expect(data.definition).toBeDefined();
@@ -1161,87 +1226,93 @@ describe('SSE Game Flow (e2e)', () => {
       }
     });
 
-    it('should emit timer:tick events every second', async () => {
+    it("should emit timer:tick events every second", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const events = await collectSSEEvents(es, ['timer:tick'], 3500);
+        const events = await collectSSEEvents(es, ["timer:tick"], 3500);
 
-        expect(events['timer:tick'].length).toBeGreaterThanOrEqual(2);
+        expect(events["timer:tick"].length).toBeGreaterThanOrEqual(2);
 
-        const firstTick: TimerTickEvent = JSON.parse(events['timer:tick'][0].data);
-        const secondTick: TimerTickEvent = JSON.parse(events['timer:tick'][1].data);
+        const firstTick: TimerTickEvent = JSON.parse(
+          events["timer:tick"][0].data,
+        );
+        const secondTick: TimerTickEvent = JSON.parse(
+          events["timer:tick"][1].data,
+        );
 
-        expect(firstTick.remainingSeconds).toBe(GAME_DURATION_SECONDS - 1);
-        expect(secondTick.remainingSeconds).toBe(GAME_DURATION_SECONDS - 2);
+        expect(firstTick.durationSeconds).toBe(GAME_DURATION_SECONDS - 1);
+        expect(secondTick.durationSeconds).toBe(GAME_DURATION_SECONDS - 2);
       } finally {
         es.close();
       }
     });
 
-    it('should return 404 for non-existent session', async () => {
-      const fakeSessionId = '00000000-0000-0000-0000-000000000000';
+    it("should return 404 for non-existent session", async () => {
+      const fakeSessionId = "00000000-0000-0000-0000-000000000000";
       const es = createSSEClient(`${baseUrl}/api/game/sse/${fakeSessionId}`);
 
-      await expect(waitForSSEEvent(es, 'session:started', 2000)).rejects.toThrow();
+      await expect(
+        waitForSSEEvent(es, "session:started", 2000),
+      ).rejects.toThrow();
 
       es.close();
     });
   });
 
-  describe('Answer Submission', () => {
-    it('should emit timer:penalty event on wrong answer', async () => {
+  describe("Answer Submission", () => {
+    it("should emit timer:penalty event on wrong answer", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        await waitForSSEEvent(es, 'session:started');
-        const wordEvent = await waitForSSEEvent(es, 'word:new');
+        await waitForSSEEvent(es, "session:started");
+        const wordEvent = await waitForSSEEvent(es, "word:new");
         const wordData: WordNewEvent = JSON.parse(wordEvent.data);
 
         // Submit wrong answer
-        const penaltyPromise = waitForSSEEvent(es, 'timer:penalty');
+        const penaltyPromise = waitForSSEEvent(es, "timer:penalty");
 
         await request(app.getHttpServer())
-          .post('/api/game/answer')
+          .post("/api/game/answer")
           .send({
             sessionId,
             token: wordData.token,
-            answer: 'XXXXX', // Wrong answer
+            answer: "XXXXX", // Wrong answer
           })
           .expect(200);
 
         const penaltyEvent = await penaltyPromise;
         const penaltyData: TimerPenaltyEvent = JSON.parse(penaltyEvent.data);
 
-        expect(penaltyData.type).toBe('timer:penalty');
+        expect(penaltyData.type).toBe("timer:penalty");
         expect(penaltyData.penaltySeconds).toBe(1);
       } finally {
         es.close();
       }
     });
 
-    it('should emit word:new event on correct answer', async () => {
+    it("should emit word:new event on correct answer", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        await waitForSSEEvent(es, 'session:started');
-        const wordEvent = await waitForSSEEvent(es, 'word:new');
+        await waitForSSEEvent(es, "session:started");
+        const wordEvent = await waitForSSEEvent(es, "word:new");
         const wordData: WordNewEvent = JSON.parse(wordEvent.data);
 
         // We need to cheat here and get the actual word from the session
         // In real tests, we'd mock the word service
         const actualWord = await getSessionCurrentWord(app, sessionId);
 
-        const newWordPromise = waitForSSEEvent(es, 'word:new');
+        const newWordPromise = waitForSSEEvent(es, "word:new");
 
         const response = await request(app.getHttpServer())
-          .post('/api/game/answer')
+          .post("/api/game/answer")
           .send({
             sessionId,
             token: wordData.token,
@@ -1262,21 +1333,21 @@ describe('SSE Game Flow (e2e)', () => {
       }
     });
 
-    it('should reject answer with invalid token', async () => {
+    it("should reject answer with invalid token", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        await waitForSSEEvent(es, 'session:started');
-        await waitForSSEEvent(es, 'word:new');
+        await waitForSSEEvent(es, "session:started");
+        await waitForSSEEvent(es, "word:new");
 
         await request(app.getHttpServer())
-          .post('/api/game/answer')
+          .post("/api/game/answer")
           .send({
             sessionId,
-            token: 'invalid-token',
-            answer: 'BOARD',
+            token: "invalid-token",
+            answer: "BOARD",
           })
           .expect(400);
       } finally {
@@ -1284,7 +1355,7 @@ describe('SSE Game Flow (e2e)', () => {
       }
     });
 
-    it('should reject answer for expired session', async () => {
+    it("should reject answer for expired session", async () => {
       // This test would require time manipulation or a test helper
       // to create an already-expired session
     });
@@ -1292,17 +1363,25 @@ describe('SSE Game Flow (e2e)', () => {
 });
 
 // Helper functions
-async function startGameSession(app: INestApplication, autoVoice = false): Promise<{ sessionId: string }> {
-  const response = await request(app.getHttpServer()).post('/api/game/start').send({ autoVoice });
+async function startGameSession(
+  app: INestApplication,
+  autoVoice = false,
+): Promise<{ sessionId: string }> {
+  const response = await request(app.getHttpServer())
+    .post("/api/game/start")
+    .send({ autoVoice });
 
   return { sessionId: response.body.sessionId };
 }
 
-async function getSessionCurrentWord(app: INestApplication, sessionId: string): Promise<string> {
+async function getSessionCurrentWord(
+  app: INestApplication,
+  sessionId: string,
+): Promise<string> {
   // This would typically use a test helper or direct DB access
   // For the actual implementation, we'd inject a mock word service
   // that returns predictable words
-  return 'BOARD'; // Placeholder
+  return "BOARD"; // Placeholder
 }
 ```
 
@@ -1311,13 +1390,18 @@ async function getSessionCurrentWord(app: INestApplication, sessionId: string): 
 ```typescript
 // packages/server/test/game/game-finished.e2e-spec.ts
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { createTestApp, createSSEClient, waitForSSEEvent, collectSSEEvents } from '../setup';
-import { GameFinishedEvent, GAME_DURATION_SECONDS } from '@atoyr/shared';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { INestApplication } from "@nestjs/common";
+import * as request from "supertest";
+import {
+  createTestApp,
+  createSSEClient,
+  waitForSSEEvent,
+  collectSSEEvents,
+} from "../setup";
+import { GameFinishedEvent, GAME_DURATION_SECONDS } from "@atoyr/shared";
 
-describe('Game Finished (e2e)', () => {
+describe("Game Finished (e2e)", () => {
   let app: INestApplication;
   let baseUrl: string;
 
@@ -1331,21 +1415,27 @@ describe('Game Finished (e2e)', () => {
     await app.close();
   });
 
-  describe('Game Completion', () => {
-    it('should emit game:finished event when timer reaches 0', async () => {
+  describe("Game Completion", () => {
+    it("should emit game:finished event when timer reaches 0", async () => {
       // Create a session with minimal time for faster test
       const { sessionId } = await startGameSessionWithCustomTime(app, 2);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const events = await collectSSEEvents(es, ['session:started', 'word:new', 'timer:tick', 'game:finished'], 5000);
+        const events = await collectSSEEvents(
+          es,
+          ["session:started", "word:new", "timer:tick", "game:finished"],
+          5000,
+        );
 
-        expect(events['game:finished'].length).toBe(1);
+        expect(events["game:finished"].length).toBe(1);
 
-        const finishedData: GameFinishedEvent = JSON.parse(events['game:finished'][0].data);
+        const finishedData: GameFinishedEvent = JSON.parse(
+          events["game:finished"][0].data,
+        );
 
-        expect(finishedData.type).toBe('game:finished');
+        expect(finishedData.type).toBe("game:finished");
         expect(finishedData.score).toBeDefined();
         expect(finishedData.totalAttempts).toBeDefined();
         expect(finishedData.accuracy).toBeDefined();
@@ -1355,20 +1445,26 @@ describe('Game Finished (e2e)', () => {
       }
     });
 
-    it('should save result to database on game finish', async () => {
+    it("should save result to database on game finish", async () => {
       const { sessionId } = await startGameSessionWithCustomTime(app, 2);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const events = await collectSSEEvents(es, ['game:finished'], 5000);
+        const events = await collectSSEEvents(es, ["game:finished"], 5000);
 
-        const finishedData: GameFinishedEvent = JSON.parse(events['game:finished'][0].data);
+        const finishedData: GameFinishedEvent = JSON.parse(
+          events["game:finished"][0].data,
+        );
 
         // Verify result is in leaderboard
-        const leaderboard = await request(app.getHttpServer()).get('/api/leaderboard').expect(200);
+        const leaderboard = await request(app.getHttpServer())
+          .get("/api/leaderboard")
+          .expect(200);
 
-        const savedResult = leaderboard.body.entries.find((e: any) => e.id === finishedData.resultId);
+        const savedResult = leaderboard.body.entries.find(
+          (e: any) => e.id === finishedData.resultId,
+        );
 
         expect(savedResult).toBeDefined();
         expect(savedResult.score).toBe(finishedData.score);
@@ -1377,23 +1473,27 @@ describe('Game Finished (e2e)', () => {
       }
     });
 
-    it('should reject answers after game is finished', async () => {
+    it("should reject answers after game is finished", async () => {
       const { sessionId } = await startGameSessionWithCustomTime(app, 2);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        const events = await collectSSEEvents(es, ['word:new', 'game:finished'], 5000);
+        const events = await collectSSEEvents(
+          es,
+          ["word:new", "game:finished"],
+          5000,
+        );
 
-        const wordData = JSON.parse(events['word:new'][0].data);
+        const wordData = JSON.parse(events["word:new"][0].data);
 
         // Try to submit answer after game finished
         await request(app.getHttpServer())
-          .post('/api/game/answer')
+          .post("/api/game/answer")
           .send({
             sessionId,
             token: wordData.token,
-            answer: 'BOARD',
+            answer: "BOARD",
           })
           .expect(400);
       } finally {
@@ -1401,28 +1501,30 @@ describe('Game Finished (e2e)', () => {
       }
     });
 
-    it('should calculate accuracy correctly', async () => {
+    it("should calculate accuracy correctly", async () => {
       const { sessionId } = await startGameSession(app);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       try {
-        await waitForSSEEvent(es, 'session:started');
-        const wordEvent = await waitForSSEEvent(es, 'word:new');
+        await waitForSSEEvent(es, "session:started");
+        const wordEvent = await waitForSSEEvent(es, "word:new");
         const wordData = JSON.parse(wordEvent.data);
 
         // Submit 2 wrong answers, then drain timer
         for (let i = 0; i < 2; i++) {
-          await request(app.getHttpServer()).post('/api/game/answer').send({
+          await request(app.getHttpServer()).post("/api/game/answer").send({
             sessionId,
             token: wordData.token,
-            answer: 'XXXXX',
+            answer: "XXXXX",
           });
         }
 
         // Wait for game to finish
-        const events = await collectSSEEvents(es, ['game:finished'], 35000);
-        const finishedData: GameFinishedEvent = JSON.parse(events['game:finished'][0].data);
+        const events = await collectSSEEvents(es, ["game:finished"], 35000);
+        const finishedData: GameFinishedEvent = JSON.parse(
+          events["game:finished"][0].data,
+        );
 
         // 0 correct out of 2 attempts = 0% accuracy
         expect(finishedData.accuracy).toBe(0);
@@ -1433,17 +1535,17 @@ describe('Game Finished (e2e)', () => {
       }
     }, 40000);
 
-    it('should close SSE connection after game:finished', async () => {
+    it("should close SSE connection after game:finished", async () => {
       const { sessionId } = await startGameSessionWithCustomTime(app, 2);
 
       const es = createSSEClient(`${baseUrl}/api/game/sse/${sessionId}`);
 
       return new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('Connection did not close'));
+          reject(new Error("Connection did not close"));
         }, 10000);
 
-        es.addEventListener('game:finished', () => {
+        es.addEventListener("game:finished", () => {
           // Connection should close shortly after
           es.onerror = () => {
             clearTimeout(timeout);
@@ -1458,15 +1560,20 @@ describe('Game Finished (e2e)', () => {
 });
 
 async function startGameSession(app: INestApplication) {
-  const response = await request(app.getHttpServer()).post('/api/game/start').send({ autoVoice: false });
+  const response = await request(app.getHttpServer())
+    .post("/api/game/start")
+    .send({ autoVoice: false });
   return { sessionId: response.body.sessionId };
 }
 
-async function startGameSessionWithCustomTime(app: INestApplication, seconds: number) {
+async function startGameSessionWithCustomTime(
+  app: INestApplication,
+  seconds: number,
+) {
   // Use test-only endpoint to create session with custom duration
   // This allows fast test completion without waiting full 30 seconds
   const response = await request(app.getHttpServer())
-    .post('/api/game/start/test')
+    .post("/api/game/start/test")
     .send({ autoVoice: false, durationSeconds: seconds })
     .expect(201);
 
@@ -1479,12 +1586,12 @@ async function startGameSessionWithCustomTime(app: INestApplication, seconds: nu
 ```typescript
 // packages/server/test/leaderboard/leaderboard.e2e-spec.ts
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { createTestApp } from '../setup';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { INestApplication } from "@nestjs/common";
+import * as request from "supertest";
+import { createTestApp } from "../setup";
 
-describe('Leaderboard (e2e)', () => {
+describe("Leaderboard (e2e)", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -1495,19 +1602,23 @@ describe('Leaderboard (e2e)', () => {
     await app.close();
   });
 
-  describe('GET /api/leaderboard', () => {
-    it('should return empty leaderboard initially', async () => {
-      const response = await request(app.getHttpServer()).get('/api/leaderboard').expect(200);
+  describe("GET /api/leaderboard", () => {
+    it("should return empty leaderboard initially", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/api/leaderboard")
+        .expect(200);
 
-      expect(response.body).toHaveProperty('entries');
-      expect(response.body).toHaveProperty('totalGames');
-      expect(response.body).toHaveProperty('lastUpdated');
+      expect(response.body).toHaveProperty("entries");
+      expect(response.body).toHaveProperty("totalGames");
+      expect(response.body).toHaveProperty("lastUpdated");
       expect(Array.isArray(response.body.entries)).toBe(true);
     });
 
-    it('should return leaderboard sorted by score descending', async () => {
+    it("should return leaderboard sorted by score descending", async () => {
       // This test assumes some games have been played
-      const response = await request(app.getHttpServer()).get('/api/leaderboard').expect(200);
+      const response = await request(app.getHttpServer())
+        .get("/api/leaderboard")
+        .expect(200);
 
       const entries = response.body.entries;
       for (let i = 1; i < entries.length; i++) {
@@ -1515,32 +1626,44 @@ describe('Leaderboard (e2e)', () => {
       }
     });
 
-    it('should respect limit parameter', async () => {
-      const response = await request(app.getHttpServer()).get('/api/leaderboard?limit=5').expect(200);
+    it("should respect limit parameter", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/api/leaderboard?limit=5")
+        .expect(200);
 
       expect(response.body.entries.length).toBeLessThanOrEqual(5);
     });
 
-    it('should respect offset parameter', async () => {
-      const fullResponse = await request(app.getHttpServer()).get('/api/leaderboard?limit=10').expect(200);
+    it("should respect offset parameter", async () => {
+      const fullResponse = await request(app.getHttpServer())
+        .get("/api/leaderboard?limit=10")
+        .expect(200);
 
-      const offsetResponse = await request(app.getHttpServer()).get('/api/leaderboard?limit=5&offset=5').expect(200);
+      const offsetResponse = await request(app.getHttpServer())
+        .get("/api/leaderboard?limit=5&offset=5")
+        .expect(200);
 
       if (fullResponse.body.entries.length > 5) {
-        expect(offsetResponse.body.entries[0]).toEqual(fullResponse.body.entries[5]);
+        expect(offsetResponse.body.entries[0]).toEqual(
+          fullResponse.body.entries[5],
+        );
       }
     });
 
-    it('should include rank in entries', async () => {
-      const response = await request(app.getHttpServer()).get('/api/leaderboard').expect(200);
+    it("should include rank in entries", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/api/leaderboard")
+        .expect(200);
 
       response.body.entries.forEach((entry: any, index: number) => {
         expect(entry.rank).toBe(index + 1);
       });
     });
 
-    it('should cap limit at 100', async () => {
-      const response = await request(app.getHttpServer()).get('/api/leaderboard?limit=200').expect(200);
+    it("should cap limit at 100", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/api/leaderboard?limit=200")
+        .expect(200);
 
       expect(response.body.entries.length).toBeLessThanOrEqual(100);
     });
@@ -1572,14 +1695,14 @@ CORS_ORIGIN=http://localhost:5173
 ```typescript
 // packages/server/src/config/database.config.ts
 
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 
 export const databaseConfig = (): TypeOrmModuleOptions => ({
-  type: 'sqlite',
-  database: process.env.DATABASE_PATH || './database/atoyr.sqlite',
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: process.env.NODE_ENV !== 'production',
-  logging: process.env.NODE_ENV === 'development',
+  type: "sqlite",
+  database: process.env.DATABASE_PATH || "./database/atoyr.sqlite",
+  entities: [__dirname + "/../**/*.entity{.ts,.js}"],
+  synchronize: process.env.NODE_ENV !== "production",
+  logging: process.env.NODE_ENV === "development",
 });
 ```
 
@@ -1833,7 +1956,7 @@ packages/server/
 ```yaml
 - uses: actions/setup-go@v4
   with:
-    go-version: '1.21'
+    go-version: "1.21"
 - working-directory: packages/server
   run: go build -o bin/server ./cmd
 - working-directory: packages/server

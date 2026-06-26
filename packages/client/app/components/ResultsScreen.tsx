@@ -40,7 +40,7 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
       </button>
 
       <div className="mt-6 pt-6 border-t border-dark-border-secondary w-full">
-        <Leaderboard limit={5} HeadingComponent='h2' />
+        <Leaderboard limit={5} HeadingComponent="h2" />
       </div>
     </>
   );

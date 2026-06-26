@@ -1,6 +1,7 @@
 package api
 
 import (
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/services"
 	"atoyr/server/internal/utils"
 	"fmt"
@@ -61,7 +62,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		Token:                   session.CurrentWordToken,
-		RemainingSeconds:        session.RemainingSeconds,
+		RemainingSeconds:        session.DurationSeconds,
 	})
 }
 
@@ -100,7 +101,7 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		Token:                   session.CurrentWordToken,
-		RemainingSeconds:        session.RemainingSeconds,
+		RemainingSeconds:        core.SessionDurationManager.Get(session.ID),
 		AutoVoice:               session.AutoVoice,
 	})
 }
@@ -177,7 +178,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 	c.Header("Access-Control-Allow-Origin", "*")
 
 	c.Stream(func(w io.Writer) bool {
-		fmt.Println("Streaming data...")
+		// fmt.Println("Streaming data...")
 		time.Sleep(utils.ToDuration(gr.sessionOptions.Tick))
 
 		session, err := gr.sessionService.FindByID(sessionID)
@@ -188,9 +189,9 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 
 		if session.Phase == services.SessionPhasePlaying {
 			c.SSEvent("tick", gin.H{
-				"remainingSeconds": session.RemainingSeconds,
-				"phase":            session.Phase,
-				"score":            session.Score,
+				"durationSeconds": session.DurationSeconds,
+				"phase":           session.Phase,
+				"score":           session.Score,
 			})
 			return true
 		}

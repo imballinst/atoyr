@@ -3,18 +3,12 @@
  * Uses SSE for real-time updates and HTTP for answer submissions
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { GAME_DURATION_SECONDS, type GameState } from "../lib/game";
-import {
-  apiQuery,
-  apiResumeGame,
-  apiStartGame,
-  apiSubmitAnswer,
-  apiSubscribeToSSE,
-} from "./client";
+import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
+import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
 
 interface ServerGameSession {
   sessionId: string;
@@ -22,7 +16,7 @@ interface ServerGameSession {
 }
 
 const INITIAL_STATE: GameState = {
-  phase: "idle",
+  phase: 'idle',
   currentWord: null,
   currentWordToken: null,
   score: 0,
@@ -40,109 +34,84 @@ export function useGame() {
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<any | null>(null);
 
-  const startGame = useCallback(
-    async (
-      autoVoice: boolean = false,
-      action: "start" | "resume" = "start",
-    ) => {
+  const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
+    setState((prev) => ({
+      ...prev,
+      score: 0,
+      totalAttempts: 0,
+      remainingSeconds: autoVoice ? GAME_DURATION_SECONDS + 5 : GAME_DURATION_SECONDS,
+      usedWords: [],
+      autoVoice,
+    }));
+
+    try {
+      const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
+      sessionRef.current = {
+        sessionId: response.sessionId,
+        autoVoice,
+      };
       setState((prev) => ({
         ...prev,
-        score: 0,
-        totalAttempts: 0,
-        remainingSeconds: autoVoice
-          ? GAME_DURATION_SECONDS + 5
-          : GAME_DURATION_SECONDS,
-        usedWords: [],
-        autoVoice,
+        phase: 'playing',
+        remainingSeconds: response.remainingSeconds,
+        currentWord: {
+          scrambled: response.scrambledWord,
+          definition: response.scrambledWordDefinition,
+        },
+        currentWordToken: response.token,
       }));
 
-      try {
-        const response =
-          action === "start"
-            ? await apiStartGame(autoVoice, [])
-            : await apiResumeGame();
-        sessionRef.current = {
-          sessionId: response.sessionId,
-          autoVoice,
-        };
-        setState((prev) => ({
-          ...prev,
-          phase: "playing",
-          remainingSeconds: response.remainingSeconds,
-          currentWord: {
-            scrambled: response.scrambledWord,
-            definition: response.scrambledWordDefinition,
-          },
-          currentWordToken: response.token,
-        }));
+      // Subscribe to SSE events
+      sseUnsubscribeRef.current = apiSubscribeToSSE(
+        response.sessionId,
+        async (event) => {
+          const eventType = (event.type as string) || '';
 
-        // Subscribe to SSE events
-        sseUnsubscribeRef.current = apiSubscribeToSSE(
-          response.sessionId,
-          async (event) => {
-            const eventType = (event.type as string) || "";
-
-            if (eventType === "tick") {
-              setState((prev) => ({
-                ...prev,
-                remainingSeconds: event.remainingSeconds as number,
-              }));
-            } else if (eventType === "finish") {
-              setState((prev) => ({
-                ...prev,
-                phase: "finished",
-                correctAttemptTimestamps:
-                  event.correctAttemptTimestamps as string[][],
-                score: event.score as number,
-                totalAttempts: event.totalAttempts as number,
-              }));
-            }
-          },
-          (error) => {
-            console.error("SSE error:", error);
+          if (eventType === 'tick') {
             setState((prev) => ({
               ...prev,
-              phase: "finished",
+              durationSeconds: event.durationSeconds as number,
             }));
-          },
-        );
-      } catch (err) {
-        if (
-          isAxiosError(err) &&
-          err.response &&
-          err.response.status >= 400 &&
-          err.response.status < 500
-        ) {
-          return;
-        }
-
-        console.error(`Failed to ${action} game:`, err);
-
-        if (action === "start") {
-          alert(`Failed to ${action} game. Please try again.`);
-        }
+          } else if (eventType === 'finish') {
+            setState((prev) => ({
+              ...prev,
+              phase: 'finished',
+              correctAttemptTimestamps: event.correctAttemptTimestamps as string[][],
+              score: event.score as number,
+              totalAttempts: event.totalAttempts as number,
+            }));
+          }
+        },
+        (error) => {
+          console.error('SSE error:', error);
+          setState((prev) => ({
+            ...prev,
+            phase: 'finished',
+          }));
+        },
+      );
+    } catch (err) {
+      if (isAxiosError(err) && err.response && err.response.status >= 400 && err.response.status < 500) {
+        return;
       }
-    },
-    [],
-  );
+
+      console.error(`Failed to ${action} game:`, err);
+
+      if (action === 'start') {
+        alert(`Failed to ${action} game. Please try again.`);
+      }
+    }
+  }, []);
 
   const submitAnswer = useCallback(
-    async (
-      answer: string,
-      token: string,
-      opts: { onSuccess?: () => void; onError?: () => void },
-    ) => {
-      if (state.phase !== "playing" || !sessionRef.current) return;
+    async (answer: string, token: string, opts: { onSuccess?: () => void; onError?: () => void }) => {
+      if (state.phase !== 'playing' || !sessionRef.current) return;
 
       const session = sessionRef.current;
       const { onSuccess, onError } = opts;
 
       try {
-        const response = await apiSubmitAnswer(
-          session.sessionId,
-          token,
-          answer,
-        );
+        const response = await apiSubmitAnswer(session.sessionId, token, answer);
         setState((prev) => ({
           ...prev,
           score: response.score,
@@ -151,18 +120,9 @@ export function useGame() {
           remainingSeconds: response.remainingSeconds,
         }));
 
-        const {
-          scrambledWord: nextScrambledWord,
-          scrambledWordDefinition: nextDefinition,
-          token: nextToken,
-        } = response;
+        const { scrambledWord: nextScrambledWord, scrambledWordDefinition: nextDefinition, token: nextToken } = response;
 
-        if (
-          response.correct &&
-          nextScrambledWord &&
-          nextDefinition &&
-          nextToken
-        ) {
+        if (response.correct && nextScrambledWord && nextDefinition && nextToken) {
           setState((prev) => ({
             ...prev,
             currentWord: {
@@ -173,15 +133,12 @@ export function useGame() {
           }));
           onSuccess?.();
         } else if (response.correct) {
-          console.error(
-            "Received correct response but missing next word data:",
-            response,
-          );
+          console.error('Received correct response but missing next word data:', response);
         } else {
           onError?.();
         }
       } catch (err) {
-        console.error("Failed to submit answer:", err);
+        console.error('Failed to submit answer:', err);
       }
     },
     [state.phase],
@@ -202,14 +159,14 @@ export function useGame() {
   }, []);
 
   useQuery({
-    queryKey: ["resumeGame"],
+    queryKey: ['resumeGame'],
     queryFn: async () => {
       try {
         const response = await apiResumeGame();
-        startGame(response.autoVoice, "resume");
+        startGame(response.autoVoice, 'resume');
         return response;
       } catch (err) {
-        console.warn("No active session to resume");
+        console.warn('No active session to resume');
         throw err;
       }
     },
@@ -236,7 +193,7 @@ export function useGame() {
 }
 
 export function useLeaderboard(page = 1, limit = 10) {
-  return apiQuery.useQuery("get", "/api/v1/leaderboard", {
+  return apiQuery.useQuery('get', '/api/v1/leaderboard', {
     params: {
       query: {
         page,
@@ -247,5 +204,5 @@ export function useLeaderboard(page = 1, limit = 10) {
 }
 
 export function useInventory() {
-  return apiQuery.useQuery("get", "/api/v1/items/me");
+  return apiQuery.useQuery('get', '/api/v1/items/me');
 }

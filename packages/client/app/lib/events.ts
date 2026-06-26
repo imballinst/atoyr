@@ -9,7 +9,7 @@ export interface SessionStartedEvent extends SSEBaseEvent {
   type: 'session:started';
   sessionId: string;
   autoVoice: boolean;
-  remainingSeconds: number;
+  durationSeconds: number;
 }
 
 export interface WordNewEvent extends SSEBaseEvent {
@@ -22,13 +22,13 @@ export interface WordNewEvent extends SSEBaseEvent {
 
 export interface TimerTickEvent extends SSEBaseEvent {
   type: 'timer:tick';
-  remainingSeconds: number;
+  durationSeconds: number;
 }
 
 export interface TimerPenaltyEvent extends SSEBaseEvent {
   type: 'timer:penalty';
   penaltySeconds: number;
-  remainingSeconds: number;
+  durationSeconds: number;
 }
 
 export interface GameFinishedEvent extends SSEBaseEvent {

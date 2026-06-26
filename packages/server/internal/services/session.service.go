@@ -25,8 +25,8 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autoVoice bool, itemsUsed []string, remainingSeconds int32) (*domainmodels.SessionDomain, error) {
-	initialRemainingSeconds := remainingSeconds
+func (s *SessionService) Create(autoVoice bool, itemsUsed []string, durationSeconds int32) (*domainmodels.SessionDomain, error) {
+	initialRemainingSeconds := durationSeconds
 	if autoVoice {
 		initialRemainingSeconds += 5
 	}
@@ -36,7 +36,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string, remainingSec
 		Phase:                    "idle",
 		Score:                    0,
 		TotalAttempts:            0,
-		RemainingSeconds:         initialRemainingSeconds,
+		DurationSeconds:          initialRemainingSeconds,
 		AutoVoice:                autoVoice,
 		UsedWords:                pq.StringArray{},
 		WordDefinitions:          pq.StringArray{},
@@ -84,10 +84,9 @@ func (s *SessionService) EndSession(sessionID string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]any{
-			"phase":             SessionPhaseFinished,
-			"remaining_seconds": 0,
-			"ends_at":           time.Now(),
-			"updated_at":        time.Now(),
+			"phase":      SessionPhaseFinished,
+			"ends_at":    time.Now(),
+			"updated_at": time.Now(),
 		}).Error; err != nil {
 		return fmt.Errorf("failed to update phase: %w", err)
 	}

@@ -1,9 +1,11 @@
-import { getFinalScore } from '~/lib/game';
-import { useLeaderboard } from '../api/hooks';
-import { Loader2Icon } from 'lucide-react'
+import { Loader2Icon } from 'lucide-react';
 import type { JSX } from 'react';
 
-export function Leaderboard({ limit, HeadingComponent }: { limit?: number, HeadingComponent: keyof JSX.IntrinsicElements }) {
+import { getFinalScore } from '~/lib/game';
+
+import { useLeaderboard } from '../api/hooks';
+
+export function Leaderboard({ limit, HeadingComponent }: { limit?: number; HeadingComponent: keyof JSX.IntrinsicElements }) {
   const leaderboardQuery = useLeaderboard(undefined, limit);
   const leaderboardEntries = leaderboardQuery.data?.entries;
 
@@ -15,7 +17,7 @@ export function Leaderboard({ limit, HeadingComponent }: { limit?: number, Headi
         {leaderboardQuery.error ? (
           <div>Error loading leaderboard</div>
         ) : leaderboardQuery.isFetching ? (
-          <Loader2Icon className='animate-spin text-dark-text-primary' />
+          <Loader2Icon className="animate-spin text-dark-text-primary" />
         ) : leaderboardEntries ? (
           leaderboardEntries.map((result, i) => (
             <div key={result.id} className="flex gap-2 p-3 bg-dark-bg-tertiary rounded text-xs">
