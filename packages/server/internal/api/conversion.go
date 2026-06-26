@@ -5,7 +5,7 @@ import (
 	"atoyr/server/internal/utils"
 )
 
-func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, userId, sessionId string) LeaderboardEntry {
+func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, sessionId string) LeaderboardEntry {
 	isSessionSameAsCurrentUser := domainEntry.ID == sessionId
 
 	return LeaderboardEntry{

@@ -94,8 +94,9 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	assert.NotEmpty(t, cookie)
 
 	// Get SSE, it should return no error.
-	req, _ = http.NewRequest("GET", fmt.Sprintf("/api/v1/game/sse/%s", response.SessionId), nil)
+	req, _ = http.NewRequest("GET", "/api/v1/game/sse", nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: response.SessionId})
 
 	recorder = testutils.CreateTestResponseRecorder()
 	router.ServeHTTP(recorder, req)
@@ -132,8 +133,9 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	assert.NotEmpty(t, cookie)
 
 	// Get SSE, it should return no error.
-	req, _ = http.NewRequest("GET", fmt.Sprintf("/api/v1/game/sse/%s", response.SessionId), nil)
+	req, _ = http.NewRequest("GET", "/api/v1/game/sse", nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: response.SessionId})
 
 	recorder = testutils.CreateTestResponseRecorder()
 	router.ServeHTTP(recorder, req)
@@ -213,8 +215,9 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	assert.NotEmpty(t, cookie)
 
 	// Get SSE, it should return no error.
-	sseReq, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/game/sse/%s", response.SessionId), nil)
+	sseReq, _ := http.NewRequest("GET", "/api/v1/game/sse", nil)
 	sseReq.Header.Set("Content-Type", "application/json")
+	sseReq.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: response.SessionId})
 
 	sseRecorder := testutils.CreateTestResponseRecorder()
 	router.ServeHTTP(sseRecorder, sseReq)
@@ -261,14 +264,14 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 
 	// Submit answer
 	answerPayload := SubmitAnswerRequest{
-		SessionId: startResponse.SessionId,
-		Answer:    session.CurrentWord,
-		Token:     session.CurrentWordToken,
+		Answer: session.CurrentWord,
+		Token:  session.CurrentWordToken,
 	}
 	answerBody, _ := json.Marshal(answerPayload)
 
 	req, _ = http.NewRequest("POST", "/api/v1/game/submit", bytes.NewBuffer(answerBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: session.ID})
 
 	recorder = testutils.CreateTestResponseRecorder()
 	router.ServeHTTP(recorder, req)
@@ -337,7 +340,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 	for i, session := range response.Entries {
 		assert.Equal(t, expectedLeaderboardOrder[i].Score, session.Score)
 		assert.Equal(t, expectedLeaderboardOrder[i].TotalAttempts, session.TotalAttempts)
-		assert.Equal(t, expectedLeaderboardOrder[i].Accuracy, session.Accuracy)
+		assert.Equal(t, utils.ToPercentage(expectedLeaderboardOrder[i].Accuracy), session.Accuracy)
 
 		// Ensure the IDs are all masked.
 		assert.Equal(t, utils.MaskSessionID(expectedLeaderboardOrder[i].ID), session.Id)

@@ -57,18 +57,10 @@ paths:
                 $ref: '#/components/schemas/SubmitAnswerResponse'
         '404':
           description: Game session not found
-  /api/v1/game/sse/{sessionId}:
+  /api/v1/game/sse:
     get:
       tags:
         - game
-      parameters:
-        - in: path
-          name: sessionId
-          required: true
-          schema:
-            type: string
-            format: uuid
-            x-go-type: string
       responses:
         '200':
           description: SSE stream for real-time game updates
@@ -98,6 +90,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetLeaderboardResponse'
+  /api/v1/leaderboard/percentile:
+    get:
+      tags:
+        - leaderboard
+      responses:
+        '200':
+          description: Percentile data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetLeaderboardPercentileResponse'
 components:
   schemas:
     StartGameRequest:
@@ -146,14 +149,9 @@ components:
     SubmitAnswerRequest:
       type: object
       required:
-        - sessionId
         - answer
         - token
       properties:
-        sessionId:
-          type: string
-          format: uuid
-          x-go-type: string
         answer:
           type: string
           example: 'apple'
@@ -218,6 +216,13 @@ components:
         total:
           type: integer
           format: int64
+    GetLeaderboardPercentileResponse:
+      type: object
+      required:
+        - percentile
+      properties:
+        percentile:
+          type: number
     LeaderboardEntry:
       type: object
       required:

@@ -43,7 +43,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			ID:                       "session3",
 			Score:                    80,
 			TotalAttempts:            8,
-			Accuracy:                 85,
+			Accuracy:                 85.12345,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
@@ -76,6 +76,9 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	assert.Equal(t, int32(150), entries[0].Score)
 	assert.Equal(t, int32(100), entries[1].Score)
 	assert.Equal(t, int32(80), entries[2].Score)
+
+	// Truncates to last 2 decimals.
+	assert.Equal(t, float32(85.12), entries[2].Accuracy)
 }
 
 func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
@@ -130,7 +133,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 	service := NewLeaderboardService(db)
 
 	// Add 25 results
-	for i := 0; i < 25; i++ {
+	for i := range 25 {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Score:                    int32(100 + i),
@@ -166,7 +169,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Score:                    int32(100 + i),
@@ -185,18 +188,17 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	assert.Equal(t, int64(5), total)
 }
 
-func TestLeaderboardService_GetTopScores(t *testing.T) {
+func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
-	// Add results
-	scores := []int32{50, 100, 150, 75, 200}
-	for i, score := range scores {
+	// Add 25 results
+	for i := range 10 {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
-			Score:                    score,
-			TotalAttempts:            10,
-			Accuracy:                 90,
+			Score:                    int32(i * 10),
+			TotalAttempts:            int32(10),
+			Accuracy:                 float32(100 - (i * 10)),
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
@@ -206,12 +208,15 @@ func TestLeaderboardService_GetTopScores(t *testing.T) {
 		db.Create(&result)
 	}
 
-	// Get top 3
-	entries, _ := service.GetTopScores(3)
-	assert.Len(t, entries, 3)
+	for i := 1; i < 10; i++ {
+		// 0 is not eligible in the code, so we start from 1 to 10.
+		score := int32(i * 10)
+		totalEligible := float32(9)
+		totalBelowCurrentScore := float32(i)
+		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-	// Verify top scores
-	assert.Equal(t, int32(200), entries[0].Score)
-	assert.Equal(t, int32(150), entries[1].Score)
-	assert.Equal(t, int32(100), entries[2].Score)
+		percentile, err := service.GetPercentile(score)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
+	}
 }

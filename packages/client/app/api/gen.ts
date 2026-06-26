@@ -131,46 +131,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/game/register': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['RegisterUserRequest'];
-        };
-      };
-      responses: {
-        /** @description User registered successfully */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['UserDomain'];
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/game/sse/{sessionId}': {
+  '/api/v1/game/sse': {
     parameters: {
       query?: never;
       header?: never;
@@ -181,9 +142,7 @@ export interface paths {
       parameters: {
         query?: never;
         header?: never;
-        path: {
-          sessionId: string;
-        };
+        path?: never;
         cookie?: never;
       };
       requestBody?: never;
@@ -245,6 +204,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/leaderboard/percentile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Percentile data retrieved successfully */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['GetLeaderboardPercentileResponse'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -270,8 +264,6 @@ export interface components {
       autoVoice: boolean;
     };
     SubmitAnswerRequest: {
-      /** Format: uuid */
-      sessionId: string;
       /** @example apple */
       answer: string;
       /** Format: uuid */
@@ -302,26 +294,13 @@ export interface components {
        */
       remainingSeconds: number;
     };
-    RegisterUserRequest: {
-      /** @example john_doe */
-      username: string;
-    };
-    UserDomain: {
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    } & components['schemas']['UserCompact'];
-    UserCompact: {
-      /** Format: uuid */
-      id: string;
-      /** @example john_doe */
-      username: string;
-    };
     GetLeaderboardResponse: {
       entries: components['schemas']['LeaderboardEntry'][];
       /** Format: int64 */
       total: number;
+    };
+    GetLeaderboardPercentileResponse: {
+      percentile: number;
     };
     LeaderboardEntry: {
       /** Format: uuid */
@@ -353,7 +332,6 @@ export interface components {
        * @example 1627847284
        */
       timestamp: number;
-      user?: components['schemas']['UserDomain'];
     };
   };
   responses: never;
@@ -366,10 +344,8 @@ export type StartGameRequest = components['schemas']['StartGameRequest'];
 export type StartGameResponse = components['schemas']['StartGameResponse'];
 export type SubmitAnswerRequest = components['schemas']['SubmitAnswerRequest'];
 export type SubmitAnswerResponse = components['schemas']['SubmitAnswerResponse'];
-export type RegisterUserRequest = components['schemas']['RegisterUserRequest'];
-export type UserDomain = components['schemas']['UserDomain'];
-export type UserCompact = components['schemas']['UserCompact'];
 export type GetLeaderboardResponse = components['schemas']['GetLeaderboardResponse'];
+export type GetLeaderboardPercentileResponse = components['schemas']['GetLeaderboardPercentileResponse'];
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

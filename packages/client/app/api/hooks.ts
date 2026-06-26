@@ -87,7 +87,6 @@ export function useGame(shouldContinueGame: boolean) {
       }
 
       sseUnsubscribeRef.current = apiSubscribeToSSE(
-        response.sessionId,
         async (event) => {
           const { data } = EventSchema.safeParse(event);
           if (!data) return;
@@ -134,11 +133,10 @@ export function useGame(shouldContinueGame: boolean) {
     async (answer: string, token: string, opts: { onSuccess?: () => void; onError?: () => void }) => {
       if (state.phase !== 'playing' || !sessionRef.current) return;
 
-      const session = sessionRef.current;
       const { onSuccess, onError } = opts;
 
       try {
-        const response = await apiSubmitAnswer(session.sessionId, token, answer);
+        const response = await apiSubmitAnswer(token, answer);
         setState((prev) => ({
           ...prev,
           score: response.score,
@@ -223,4 +221,8 @@ export function useLeaderboard(page = 1, limit = 10) {
       },
     },
   });
+}
+
+export function useLeaderboardPercentile() {
+  return apiQuery.useQuery('get', '/api/v1/leaderboard/percentile');
 }

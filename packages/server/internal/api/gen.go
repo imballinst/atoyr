@@ -12,6 +12,11 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// GetLeaderboardPercentileResponse defines model for GetLeaderboardPercentileResponse.
+type GetLeaderboardPercentileResponse struct {
+	Percentile float32 `json:"percentile"`
+}
+
 // GetLeaderboardResponse defines model for GetLeaderboardResponse.
 type GetLeaderboardResponse struct {
 	Entries []LeaderboardEntry `json:"entries"`
@@ -47,9 +52,8 @@ type StartGameResponse struct {
 
 // SubmitAnswerRequest defines model for SubmitAnswerRequest.
 type SubmitAnswerRequest struct {
-	Answer    string `json:"answer"`
-	SessionId string `json:"sessionId"`
-	Token     string `json:"token"`
+	Answer string `json:"answer"`
+	Token  string `json:"token"`
 }
 
 // SubmitAnswerResponse defines model for SubmitAnswerResponse.
@@ -82,8 +86,8 @@ type ServerInterface interface {
 	// (POST /api/v1/game/continue)
 	PostApiV1GameContinue(c *gin.Context)
 
-	// (GET /api/v1/game/sse/{sessionId})
-	GetApiV1GameSseSessionId(c *gin.Context, sessionId string)
+	// (GET /api/v1/game/sse)
+	GetApiV1GameSse(c *gin.Context)
 
 	// (POST /api/v1/game/start)
 	PostApiV1GameStart(c *gin.Context)
@@ -93,6 +97,9 @@ type ServerInterface interface {
 
 	// (GET /api/v1/leaderboard)
 	GetApiV1Leaderboard(c *gin.Context, params GetApiV1LeaderboardParams)
+
+	// (GET /api/v1/leaderboard/percentile)
+	GetApiV1LeaderboardPercentile(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -117,20 +124,8 @@ func (siw *ServerInterfaceWrapper) PostApiV1GameContinue(c *gin.Context) {
 	siw.Handler.PostApiV1GameContinue(c)
 }
 
-// GetApiV1GameSseSessionId operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1GameSseSessionId(c *gin.Context) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "sessionId" -------------
-	var sessionId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "sessionId", c.Param("sessionId"), &sessionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
-	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sessionId: %w", err), http.StatusBadRequest)
-		return
-	}
+// GetApiV1GameSse operation middleware
+func (siw *ServerInterfaceWrapper) GetApiV1GameSse(c *gin.Context) {
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -139,7 +134,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1GameSseSessionId(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetApiV1GameSseSessionId(c, sessionId)
+	siw.Handler.GetApiV1GameSse(c)
 }
 
 // PostApiV1GameStart operation middleware
@@ -203,6 +198,19 @@ func (siw *ServerInterfaceWrapper) GetApiV1Leaderboard(c *gin.Context) {
 	siw.Handler.GetApiV1Leaderboard(c, params)
 }
 
+// GetApiV1LeaderboardPercentile operation middleware
+func (siw *ServerInterfaceWrapper) GetApiV1LeaderboardPercentile(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetApiV1LeaderboardPercentile(c)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -231,8 +239,9 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.POST(options.BaseURL+"/api/v1/game/continue", wrapper.PostApiV1GameContinue)
-	router.GET(options.BaseURL+"/api/v1/game/sse/:sessionId", wrapper.GetApiV1GameSseSessionId)
+	router.GET(options.BaseURL+"/api/v1/game/sse", wrapper.GetApiV1GameSse)
 	router.POST(options.BaseURL+"/api/v1/game/start", wrapper.PostApiV1GameStart)
 	router.POST(options.BaseURL+"/api/v1/game/submit", wrapper.PostApiV1GameSubmit)
 	router.GET(options.BaseURL+"/api/v1/leaderboard", wrapper.GetApiV1Leaderboard)
+	router.GET(options.BaseURL+"/api/v1/leaderboard/percentile", wrapper.GetApiV1LeaderboardPercentile)
 }

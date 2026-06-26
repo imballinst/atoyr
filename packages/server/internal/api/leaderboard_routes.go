@@ -1,9 +1,12 @@
 package api
 
 import (
+	"atoyr/server/internal/core"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1LeaderboardParams) {
@@ -41,15 +44,48 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	}
 
 	sessionId, err := c.Cookie(sessionIdCookie)
-	userId, err := c.Cookie(sessionIdCookie)
-
 	apiEntries := make([]LeaderboardEntry, len(entries))
 	for i, entry := range entries {
-		apiEntries[i] = ToApiLeaderboardEntry(entry, userId, sessionId)
+		apiEntries[i] = ToApiLeaderboardEntry(entry, sessionId)
 	}
 
 	c.JSON(http.StatusOK, GetLeaderboardResponse{
 		Entries: apiEntries,
 		Total:   total,
+	})
+}
+
+func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
+	sessionId, err := c.Cookie(sessionIdCookie)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch session ID from cookie"})
+		return
+	}
+
+	session, err := gr.sessionService.FindByID(sessionId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			log.Printf("Session with ID %s not found\n", sessionId)
+			c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if session.Phase != core.SessionPhaseFinished {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session not finished yet"})
+		return
+	}
+
+	percentile, err := gr.leaderboardService.GetPercentile(session.Score)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard percentile"})
+		return
+	}
+
+	c.JSON(http.StatusOK, GetLeaderboardPercentileResponse{
+		Percentile: percentile,
 	})
 }

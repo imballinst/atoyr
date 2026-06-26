@@ -95,13 +95,20 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 }
 
 func (gr *Server) PostApiV1GameSubmit(c *gin.Context) {
+	sessionId, err := c.Cookie(sessionIdCookie)
+	if err != nil {
+		log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
+		c.JSON(http.StatusNotFound, gin.H{"error": "invalid session"})
+		return
+	}
+
 	var req SubmitAnswerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	result, err := gr.gameService.SubmitAnswer(req.SessionId, strings.ToLower(req.Answer), req.Token)
+	result, err := gr.gameService.SubmitAnswer(sessionId, strings.ToLower(req.Answer), req.Token)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -110,10 +117,15 @@ func (gr *Server) PostApiV1GameSubmit(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
-	sessionID := c.Param("sessionId")
+func (gr *Server) GetApiV1GameSse(c *gin.Context) {
+	sessionId, err := c.Cookie(sessionIdCookie)
+	if err != nil {
+		log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
+		c.JSON(http.StatusNotFound, gin.H{"error": "invalid session"})
+		return
+	}
 
-	_, err := gr.sessionService.FindByID(sessionID)
+	_, err = gr.sessionService.FindByID(sessionId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			log.Printf("Session with ID %s not found\n", sessionId)
@@ -135,7 +147,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 		// fmt.Println("Streaming data...")
 		time.Sleep(utils.ToDuration(gr.sessionOptions.Tick))
 
-		remainingSeconds := core.SessionDurationManager.Get(sessionID)
+		remainingSeconds := core.SessionDurationManager.Get(sessionId)
 		currentPhase := core.GetSessionPhase(remainingSeconds)
 
 		if currentPhase == core.SessionPhasePlaying {
@@ -146,7 +158,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 		}
 
 		if currentPhase == core.SessionPhaseFinished {
-			session, err := gr.sessionService.FindByID(sessionID)
+			session, err := gr.sessionService.FindByID(sessionId)
 			if err != nil {
 				fmt.Println(fmt.Errorf("error when retrieving session after session finished: %v", err))
 				return false

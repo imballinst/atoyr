@@ -33,10 +33,9 @@ export async function apiStartGame(autoVoice: boolean, itemsUsed: string[]) {
   return response.data;
 }
 
-export async function apiSubmitAnswer(sessionId: string, token: string, answer: string) {
+export async function apiSubmitAnswer(token: string, answer: string) {
   const response = await apiClient.POST('/api/v1/game/submit', {
     body: {
-      sessionId,
       token,
       answer,
     },
@@ -48,13 +47,18 @@ export async function apiSubmitAnswer(sessionId: string, token: string, answer: 
   return response.data;
 }
 
-export function apiSubscribeToSSE(
-  sessionId: string,
-  onEvent: (data: Record<string, unknown>) => void,
-  onError: (error: Error) => void,
-): () => void {
-  const eventSourceURL: keyof paths = '/api/v1/game/sse/{sessionId}';
-  const eventSource = new EventSource(eventSourceURL.replace('{sessionId}', sessionId));
+export async function apiGetPercentile() {
+  const response = await apiClient.GET('/api/v1/leaderboard/percentile');
+  if (!response.data) {
+    throw new Error(response.error);
+  }
+
+  return response.data;
+}
+
+export function apiSubscribeToSSE(onEvent: (data: Record<string, unknown>) => void, onError: (error: Error) => void): () => void {
+  const eventSourceURL: keyof paths = '/api/v1/game/sse';
+  const eventSource = new EventSource(eventSourceURL);
 
   const handleEvent = (event: MessageEvent) => {
     console.info('SSE message received:', event.type, event.data);

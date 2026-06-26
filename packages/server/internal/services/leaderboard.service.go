@@ -5,6 +5,7 @@ import (
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -45,7 +46,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 			Rank:          int32(i + 1 + offset),
 			Score:         result.Score,
 			TotalAttempts: result.TotalAttempts,
-			Accuracy:      result.Accuracy,
+			Accuracy:      utils.ToPercentage(result.Accuracy),
 			Timestamp:     result.EndsAt.UnixMilli(),
 		}
 	}
@@ -53,14 +54,30 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 	return entries, nil
 }
 
-func (l *LeaderboardService) GetTopScores(limit int) ([]LeaderboardEntry, error) {
-	return l.GetLeaderboard(limit, 0)
+func (l *LeaderboardService) GetTotalEntries() (int64, error) {
+	var totalEntries int64
+
+	if err := l.db.
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ?;", core.SessionPhaseFinished).Find(&totalEntries).Error; err != nil {
+		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
+	}
+
+	return totalEntries, nil
 }
 
-func (l *LeaderboardService) GetTotalEntries() (int64, error) {
-	var count int64
-	if err := l.db.Model(&models.SessionEntity{}).Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("failed to count results: %w", err)
+func (l *LeaderboardService) GetPercentile(score int32) (float32, error) {
+	var totalEligible int32
+	var totalBelowCurrentScore int32
+
+	if err := l.db.
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0;", core.SessionPhaseFinished).Find(&totalEligible).Error; err != nil {
+		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
-	return count, nil
+	if err := l.db.
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score <= ?;", core.SessionPhaseFinished, score).Find(&totalBelowCurrentScore).Error; err != nil {
+		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
+	}
+
+	percentile := (float32(totalBelowCurrentScore) / float32(totalEligible)) * 100
+	return percentile, nil
 }

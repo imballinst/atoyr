@@ -3,6 +3,7 @@ package utils
 import (
 	"atoyr/server/internal/models"
 	"encoding/json"
+	"math"
 	"time"
 )
 
@@ -26,6 +27,12 @@ func ConvertNestedStringArrayToDbJson(arr [][]string) (models.JSON, error) {
 // Number is any numeric type this function accepts.
 type Number interface {
 	int32 | float32
+}
+
+func ToPercentage[T Number](v T) float32 {
+	f := float64(v)
+
+	return float32(math.Trunc(f*100)) / 100
 }
 
 // ToDuration converts a value to a time.Duration.

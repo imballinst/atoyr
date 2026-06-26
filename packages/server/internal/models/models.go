@@ -40,8 +40,8 @@ type SessionEntity struct {
 	UpdatedAt time.Time `gorm:"type:datetime"`
 	EndsAt    time.Time `gorm:"type:datetime"`
 	// Available phases: idle, playing, finished.
-	Phase                    string         `gorm:"type:text;default:idle"`
-	Score                    int32          `gorm:"type:integer;default:0"`
+	Phase                    string         `gorm:"index:idx_phase_score,priority:1;type:text;default:idle"`
+	Score                    int32          `gorm:"index:idx_phase_score,priority:2;type:integer;default:0"`
 	TotalAttempts            int32          `gorm:"type:integer;default:0"`
 	Accuracy                 float32        `gorm:"type:real;default:0"`
 	DurationSeconds          int32          `gorm:"type:integer"`
