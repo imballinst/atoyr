@@ -35,10 +35,15 @@ const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: 
 const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
 export function useGame(shouldContinueGame: boolean) {
-  const [state, setState] = useState(INITIAL_STATE);
+  const [state, setState] = useState<GameState>({
+    ...INITIAL_STATE,
+    phase: shouldContinueGame ? 'resuming' : 'idle',
+  });
 
   const sessionRef = useRef<ServerGameSession | null>(null);
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
+  const isBeforeUnloadFnRef = useRef<(() => void) | null>(null);
+  const isBeforeUnloadRef = useRef(false);
 
   const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
     setState((prev) => ({
@@ -52,6 +57,13 @@ export function useGame(shouldContinueGame: boolean) {
 
     try {
       const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
+      setGameEndsAt(response.remainingSeconds);
+
+      isBeforeUnloadFnRef.current = () => {
+        isBeforeUnloadRef.current = true;
+      };
+      window.addEventListener('beforeunload', isBeforeUnloadFnRef.current);
+
       sessionRef.current = {
         sessionId: response.sessionId,
         autoVoice,
@@ -94,6 +106,8 @@ export function useGame(shouldContinueGame: boolean) {
           }
         },
         (error) => {
+          if (isBeforeUnloadRef.current) return;
+
           console.error('SSE error:', error);
           setState((prev) => ({
             ...prev,
@@ -161,16 +175,17 @@ export function useGame(shouldContinueGame: boolean) {
       sseUnsubscribeRef.current = null;
     }
     sessionRef.current = null;
+    isBeforeUnloadFnRef.current = null;
 
     setState(INITIAL_STATE);
   }, []);
 
-  const resumeGameQuery = useQuery({
+  useQuery({
     queryKey: ['resumeGame'],
     queryFn: async () => {
       try {
         const response = await apiResumeGame();
-        startGame(response.autoVoice, 'resume');
+        await startGame(response.autoVoice, 'resume');
         return response;
       } catch (err) {
         console.warn('No active session to resume');
@@ -194,7 +209,6 @@ export function useGame(shouldContinueGame: boolean) {
     startGame,
     submitAnswer,
     resetGame,
-    resumeGameQuery,
   };
 }
 

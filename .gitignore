@@ -15,3 +15,4 @@ packages/server/bin/
 
 *.sqlite3
 .env.local
+tmp

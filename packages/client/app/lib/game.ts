@@ -13,7 +13,7 @@ export const SCRAMBLE_ATTEMPTS = 10;
 export const LEADERBOARD_COOKIE_NAME = 'atoyr_leaderboard';
 export const LEADERBOARD_COOKIE_EXPIRY_DAYS = 7;
 
-export type GamePhase = 'idle' | 'playing' | 'finished';
+export type GamePhase = 'resuming' | 'idle' | 'playing' | 'finished';
 
 export interface GameSession {
   id: string; // UUID

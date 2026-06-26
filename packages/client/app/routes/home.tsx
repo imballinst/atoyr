@@ -12,14 +12,14 @@ export function meta() {
 }
 
 export function clientLoader() {
-  return { shouldFetch: hasGameEnded() };
+  return { shouldFetch: !hasGameEnded() };
 }
 
 export default function Home() {
   const { shouldFetch } = useLoaderData<typeof clientLoader>();
-  const { state, startGame, submitAnswer, resetGame, resumeGameQuery } = useGame(shouldFetch);
+  const { state, startGame, submitAnswer, resetGame } = useGame(shouldFetch);
 
-  if (resumeGameQuery.isFetching) {
+  if (state.phase === 'resuming') {
     return (
       <div className="w-full h-full text-dark-text-primary flex flex-col items-center justify-center gap-y-2">
         <Loader2Icon className="animate-spin" />
