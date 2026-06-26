@@ -1,6 +1,7 @@
 package services
 
 import (
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/testutils"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestSessionService_EndSession(t *testing.T) {
 	service.EndSession(session.ID)
 	found, _ := service.FindByID(session.ID)
 
-	assert.Equal(t, SessionPhaseFinished, found.Phase)
+	assert.Equal(t, core.SessionPhaseFinished, found.Phase)
 	// Duration should be kept as-is.
 	assert.Equal(t, int32(1), found.DurationSeconds)
 }

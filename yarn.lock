@@ -2167,6 +2167,7 @@ __metadata:
     "@types/react": "npm:19.1.16"
     "@types/react-dom": "npm:19.1.9"
     axios: "npm:1.13.6"
+    date-fns: "npm:4.4.0"
     isbot: "npm:5.1.36"
     lucide-react: "npm:1.21.0"
     nanoid: "npm:5.1.6"
@@ -2335,6 +2336,13 @@ __metadata:
   version: 3.1.3
   resolution: "csstype@npm:3.1.3"
   checksum: 10c0/80c089d6f7e0c5b2bd83cf0539ab41474198579584fa10d86d0cafe0642202343cbc119e076a0b1aece191989477081415d66c9fefbf3c957fc2fc4b7009f248
+  languageName: node
+  linkType: hard
+
+"date-fns@npm:4.4.0":
+  version: 4.4.0
+  resolution: "date-fns@npm:4.4.0"
+  checksum: 10c0/988f0a13db183f5dfc85c36bbb6847a9c135a9225888bbea4005876ec15539a8613c21a07370a4e7ea543918d5a1cafb423c528b42cdbbde5fdfddb178126b21
   languageName: node
   linkType: hard
 

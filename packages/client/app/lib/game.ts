@@ -36,6 +36,7 @@ export interface GameState {
   phase: GamePhase;
   currentWord: WordEntry | null;
   currentWordToken: string | null;
+  lastWordAnswer: string | null;
   score: number;
   totalAttempts: number;
   correctAttemptTimestamps: string[][];

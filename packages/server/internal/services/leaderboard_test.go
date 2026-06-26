@@ -3,6 +3,7 @@ package services
 import (
 	"testing"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/testutils"
 
@@ -25,7 +26,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session2",
@@ -36,7 +37,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session3",
@@ -47,7 +48,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session4",
@@ -58,7 +59,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 	}
 
@@ -92,7 +93,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "s02",
@@ -103,7 +104,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		},
 	}
 
@@ -139,7 +140,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}
@@ -175,7 +176,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}
@@ -200,7 +201,7 @@ func TestLeaderboardService_GetTopScores(t *testing.T) {
 			UsedWords:                pq.StringArray{},
 			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
-			Phase:                    SessionPhaseFinished,
+			Phase:                    core.SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}

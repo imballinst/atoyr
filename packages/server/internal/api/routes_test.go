@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
 	"atoyr/server/internal/services/domainmodels"
@@ -228,7 +229,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	session, err := sessionService.FindByID(response.SessionId)
 	assert.NoError(t, err)
 
-	session.Phase = services.SessionPhaseFinished
+	session.Phase = core.SessionPhaseFinished
 
 	err = sessionService.Update(session)
 	assert.NoError(t, err)
@@ -318,7 +319,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 		session.Score = sessionInfo.Score
 		session.TotalAttempts = sessionInfo.TotalAttempts
 		session.Accuracy = sessionInfo.Accuracy
-		session.Phase = services.SessionPhaseFinished
+		session.Phase = core.SessionPhaseFinished
 
 		err = sessionService.Update(session)
 		assert.NoError(t, err)

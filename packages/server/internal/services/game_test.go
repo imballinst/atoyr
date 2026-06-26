@@ -23,7 +23,7 @@ func TestGameService_StartGame(t *testing.T) {
 	started, err := gs.StartGame(session.ID)
 
 	assert.NoError(t, err)
-	assert.Equal(t, SessionPhasePlaying, started.Phase)
+	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
 	assert.Equal(t, int32(1), session.DurationSeconds)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
@@ -60,7 +60,7 @@ func TestGameService_StartGame_WithItems(t *testing.T) {
 	session, err = gs.StartGame(session.ID)
 
 	assert.NoError(t, err)
-	assert.Equal(t, SessionPhasePlaying, session.Phase)
+	assert.Equal(t, core.SessionPhasePlaying, session.Phase)
 	assert.Equal(t, int32(11), session.DurationSeconds)
 	assert.NotEqual(t, "", session.CurrentWord)
 	assert.NotEqual(t, "", session.CurrentWordToken)
@@ -80,7 +80,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 	started, err := gs.StartGame(session.ID)
 
 	assert.NoError(t, err)
-	assert.Equal(t, SessionPhasePlaying, started.Phase)
+	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
 	assert.Equal(t, int32(1), session.DurationSeconds)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
@@ -88,7 +88,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 	started, err = gs.ContinueGame(session.ID)
 
 	assert.NoError(t, err)
-	assert.Equal(t, SessionPhasePlaying, started.Phase)
+	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
 }

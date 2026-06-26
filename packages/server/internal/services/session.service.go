@@ -4,17 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/utils"
 
 	"github.com/lib/pq"
 	"gorm.io/gorm"
-)
-
-const (
-	SessionPhasePlaying  = "playing"
-	SessionPhaseFinished = "finished"
 )
 
 type SessionService struct {
@@ -84,7 +80,7 @@ func (s *SessionService) EndSession(sessionID string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
 		Where("id = ?", sessionID).
 		Updates(map[string]any{
-			"phase":      SessionPhaseFinished,
+			"phase":      core.SessionPhaseFinished,
 			"ends_at":    time.Now(),
 			"updated_at": time.Now(),
 		}).Error; err != nil {

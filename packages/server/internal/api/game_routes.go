@@ -181,27 +181,25 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 		// fmt.Println("Streaming data...")
 		time.Sleep(utils.ToDuration(gr.sessionOptions.Tick))
 
-		session, err := gr.sessionService.FindByID(sessionID)
-		if err != nil {
-			fmt.Println("Cannot get session by ID: " + err.Error())
-			return false
-		}
+		remainingSeconds := core.SessionDurationManager.Get(sessionID)
+		currentPhase := core.GetSessionPhase(remainingSeconds)
 
-		if session.Phase == services.SessionPhasePlaying {
+		if currentPhase == core.SessionPhasePlaying {
 			c.SSEvent("tick", gin.H{
-				"durationSeconds": session.DurationSeconds,
-				"phase":           session.Phase,
-				"score":           session.Score,
+				"remainingSeconds": remainingSeconds,
 			})
 			return true
 		}
 
-		if session.Phase == services.SessionPhaseFinished {
+		if currentPhase == core.SessionPhaseFinished {
+			session, err := gr.sessionService.FindByID(sessionID)
+			if err != nil {
+				fmt.Println(fmt.Errorf("error when retrieving session after session finished: %v"))
+				return false
+			}
+
 			c.SSEvent("finish", gin.H{
-				"score":                    session.Score,
-				"totalAttempts":            session.TotalAttempts,
-				"correctAttemptTimestamps": session.CorrectAttemptTimestamps,
-				"word":                     session.CurrentWord,
+				"lastWordAnswer": session.CurrentWord,
 			})
 		}
 

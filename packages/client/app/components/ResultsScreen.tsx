@@ -1,11 +1,21 @@
 import { getFinalScore, type GameState } from '../lib/game';
 import { Leaderboard } from './Leaderboard';
 
-interface ResultsScreenProps extends Pick<GameState, 'score' | 'totalAttempts' | 'correctAttemptTimestamps'> {
+interface ResultsScreenProps extends Pick<
+  GameState,
+  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer'
+> {
   onPlayAgain: () => void;
 }
 
-export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, onPlayAgain }: ResultsScreenProps) {
+export function ResultsScreen({
+  score,
+  totalAttempts,
+  correctAttemptTimestamps,
+  onPlayAgain,
+  currentWord,
+  lastWordAnswer,
+}: ResultsScreenProps) {
   const accuracy = totalAttempts > 0 ? (score / totalAttempts) * 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
@@ -14,6 +24,9 @@ export function ResultsScreen({ score, totalAttempts, correctAttemptTimestamps, 
       <h1 className="text-4xl font-bold mb-6 text-dark-text-primary">Game Over!</h1>
 
       <div className="flex flex-col gap-2 mb-3 w-full text-center">
+        <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm">
+          {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
+        </div>
         <div className="grid grid-cols-5 gap-2">
           <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-3">
             <div className="text-xs text-dark-text-tertiary mb-2 font-medium">Score</div>

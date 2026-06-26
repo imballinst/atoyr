@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 
+	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 
 	"gorm.io/gorm"
@@ -35,7 +36,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 	var results []models.SessionEntity
 
 	if err := l.db.
-		Where("phase = ? AND score > 0", SessionPhaseFinished).
+		Where("phase = ? AND score > 0", core.SessionPhaseFinished).
 		Order("score DESC, accuracy DESC").
 		Limit(limit).
 		Offset(offset).

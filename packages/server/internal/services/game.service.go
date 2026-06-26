@@ -16,7 +16,7 @@ import (
 
 var (
 	ErrSessionAlreadyFinished = fmt.Errorf("session is already finished")
-	ErrSessionNotPlayingYet   = fmt.Errorf("session is not in %s phase yet", SessionPhasePlaying)
+	ErrSessionNotPlayingYet   = fmt.Errorf("session is not in %s phase yet", core.SessionPhasePlaying)
 )
 
 type GameService struct {
@@ -63,7 +63,7 @@ func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, 
 
 	// Update phase to playing
 	g.resolveItemEffects(session)
-	session.Phase = SessionPhasePlaying
+	session.Phase = core.SessionPhasePlaying
 	session.EndsAt = time.Now().Add(time.Second * time.Duration(session.DurationSeconds))
 
 	if err := g.sessionService.Update(session); err != nil {
@@ -86,17 +86,17 @@ func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomai
 		return nil, err
 	}
 
-	if session.Phase == SessionPhaseFinished {
+	if session.Phase == core.SessionPhaseFinished {
 		return nil, ErrSessionAlreadyFinished
 	}
-	if session.Phase != SessionPhasePlaying {
+	if session.Phase != core.SessionPhasePlaying {
 		return nil, ErrSessionNotPlayingYet
 	}
 
 	// Update seconds, because the second is paused prior to resume.
 	if time.Now().Equal(session.EndsAt) || time.Now().After(session.EndsAt) {
 		session.DurationSeconds = 0
-		session.Phase = SessionPhaseFinished
+		session.Phase = core.SessionPhaseFinished
 	} else {
 		session.DurationSeconds = int32(time.Until(session.EndsAt).Seconds())
 	}
@@ -106,7 +106,7 @@ func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomai
 		return nil, fmt.Errorf("error when updating session, %+v", err.Error())
 	}
 
-	if session.Phase == SessionPhaseFinished {
+	if session.Phase == core.SessionPhaseFinished {
 		return nil, nil
 	}
 
@@ -155,7 +155,7 @@ func (g *GameService) UpdateSessionBasedOnAnswerResult(sessionID string, isCorre
 	session.Score += 1
 
 	if session.AutoVoice {
-		session.DurationSeconds += core.BonusDurationPerWordWithAutoVoice
+		core.SessionDurationManager.Extend(session.ID, core.BonusDurationPerWordWithAutoVoice)
 		session.EndsAt = session.EndsAt.Add(time.Duration(core.BonusDurationPerWordWithAutoVoice) * time.Second)
 	}
 
@@ -182,7 +182,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		return nil, err
 	}
 
-	if session.Phase != SessionPhasePlaying {
+	if session.Phase != core.SessionPhasePlaying {
 		return nil, fmt.Errorf("game is not in playing state")
 	}
 
@@ -258,7 +258,6 @@ func (g *GameService) startTimer(session *domainmodels.SessionDomain) {
 
 	for range ticker.C {
 		remainingSeconds := core.SessionDurationManager.Get(session.ID)
-		fmt.Println("remainingSeconds", remainingSeconds)
 		if remainingSeconds <= 0 {
 			return
 		}

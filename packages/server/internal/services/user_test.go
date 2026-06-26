@@ -16,7 +16,7 @@ func TestUserService_UpsertUserFromSession(t *testing.T) {
 	s := NewUserService(ss, is)
 
 	session, _ := ss.Create(false, []string{}, testutils.TestSessionOptions.Duration)
-	session.Phase = SessionPhaseFinished
+	session.Phase = core.SessionPhaseFinished
 
 	err := ss.Update(session)
 	assert.NoError(t, err)

@@ -1,3 +1,5 @@
+import { Loader2Icon } from 'lucide-react';
+
 import { useGame } from '~/api/hooks';
 import { GameScreen } from '~/components/GameScreen';
 import { ResultsScreen } from '~/components/ResultsScreen';
@@ -8,7 +10,16 @@ export function meta() {
 }
 
 export default function Home() {
-  const { state, startGame, submitAnswer, resetGame } = useGame();
+  const { state, startGame, submitAnswer, resetGame, resumeGameQuery } = useGame();
+
+  if (resumeGameQuery.isFetching) {
+    return (
+      <div className="w-full h-full text-dark-text-primary flex flex-col items-center justify-center gap-y-2">
+        <Loader2Icon className="animate-spin" />
+        <div>Resuming your game...</div>
+      </div>
+    );
+  }
 
   if (state.phase === 'idle') {
     return <StartScreen onStart={startGame} />;
@@ -33,6 +44,8 @@ export default function Home() {
       <ResultsScreen
         score={state.score}
         totalAttempts={state.totalAttempts}
+        currentWord={state.currentWord}
+        lastWordAnswer={state.lastWordAnswer}
         onPlayAgain={resetGame}
         correctAttemptTimestamps={state.correctAttemptTimestamps}
       />

@@ -5,7 +5,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { addSeconds, isAfter } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 
 import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
@@ -19,6 +21,7 @@ const INITIAL_STATE: GameState = {
   phase: 'idle',
   currentWord: null,
   currentWordToken: null,
+  lastWordAnswer: null,
   score: 0,
   totalAttempts: 0,
   correctAttemptTimestamps: [],
@@ -26,13 +29,17 @@ const INITIAL_STATE: GameState = {
   usedWords: [],
   autoVoice: false,
 };
+const LOCAL_STORAGE_GAME_ENDS_AT = 'session-ends-at';
+
+const TickEventSchema = z.object({ type: z.literal('tick'), remainingSeconds: z.number() });
+const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string() });
+const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
 export function useGame() {
   const [state, setState] = useState(INITIAL_STATE);
 
   const sessionRef = useRef<ServerGameSession | null>(null);
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
-  const timerIntervalRef = useRef<any | null>(null);
 
   const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
     setState((prev) => ({
@@ -62,23 +69,28 @@ export function useGame() {
       }));
 
       // Subscribe to SSE events
+      if (sseUnsubscribeRef.current) {
+        sseUnsubscribeRef.current();
+        sseUnsubscribeRef.current = null;
+      }
+
       sseUnsubscribeRef.current = apiSubscribeToSSE(
         response.sessionId,
         async (event) => {
-          const eventType = (event.type as string) || '';
+          const { data } = EventSchema.safeParse(event);
+          if (!data) return;
 
-          if (eventType === 'tick') {
+          if (data.type === 'tick') {
+            setGameEndsAt(data.remainingSeconds);
             setState((prev) => ({
               ...prev,
-              durationSeconds: event.durationSeconds as number,
+              remainingSeconds: data.remainingSeconds,
             }));
-          } else if (eventType === 'finish') {
+          } else if (data.type === 'finish') {
             setState((prev) => ({
               ...prev,
               phase: 'finished',
-              correctAttemptTimestamps: event.correctAttemptTimestamps as string[][],
-              score: event.score as number,
-              totalAttempts: event.totalAttempts as number,
+              lastWordAnswer: data.lastWordAnswer,
             }));
           }
         },
@@ -149,16 +161,12 @@ export function useGame() {
       sseUnsubscribeRef.current();
       sseUnsubscribeRef.current = null;
     }
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
     sessionRef.current = null;
 
     setState(INITIAL_STATE);
   }, []);
 
-  useQuery({
+  const resumeGameQuery = useQuery({
     queryKey: ['resumeGame'],
     queryFn: async () => {
       try {
@@ -170,6 +178,7 @@ export function useGame() {
         throw err;
       }
     },
+    enabled: !hasGameEnded(),
   });
 
   // Cleanup on unmount
@@ -177,9 +186,6 @@ export function useGame() {
     return () => {
       if (sseUnsubscribeRef.current) {
         sseUnsubscribeRef.current();
-      }
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
       }
     };
   }, []);
@@ -189,6 +195,7 @@ export function useGame() {
     startGame,
     submitAnswer,
     resetGame,
+    resumeGameQuery,
   };
 }
 
@@ -205,4 +212,17 @@ export function useLeaderboard(page = 1, limit = 10) {
 
 export function useInventory() {
   return apiQuery.useQuery('get', '/api/v1/items/me');
+}
+
+// Helper functions.
+function setGameEndsAt(remainingSeconds: number) {
+  localStorage.setItem(LOCAL_STORAGE_GAME_ENDS_AT, addSeconds(new Date(), remainingSeconds).toString());
+}
+function hasGameEnded() {
+  if (typeof localStorage === 'undefined') return true;
+
+  const ts = localStorage.getItem(LOCAL_STORAGE_GAME_ENDS_AT);
+  if (!ts) return true;
+
+  return isAfter(new Date(), new Date(ts));
 }
