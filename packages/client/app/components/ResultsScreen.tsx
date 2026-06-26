@@ -35,7 +35,7 @@ export function ResultsScreen({
 
       <div className="flex flex-col gap-2 mb-3 w-full text-center">
         <div className="border-dark-bg-tertiary text-dark-text-primary p-2 sm:p-4 rounded-lg col-span-5 text-sm">
-          Your performance is above <Pulse value={data?.percentile} />% of other players!
+          Your performance is above <Percentile value={data?.percentile} />% of other players!
         </div>
         <div className="grid grid-cols-6 gap-2">
           <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-3 md:col-span-2">
@@ -66,12 +66,12 @@ export function ResultsScreen({
   );
 }
 
-function Pulse({ value }: { value: ReactNode | undefined }) {
+function Percentile({ value }: { value: number | undefined }) {
   if (!value) {
     return <span className="animate-pulse">--</span>;
   }
 
-  return <span className="font-bold">{value}</span>;
+  return <span className={`font-bold ${parseColor(value)}`}>{value}</span>;
 }
 
 function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {
@@ -81,4 +81,13 @@ function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {
       <div className="text-3xl font-bold text-dark-interactive-success">{children}</div>
     </>
   );
+}
+
+function parseColor(percentile: number) {
+  if (percentile >= 99) return 'text-amber-400';
+  if (percentile >= 95) return 'text-fuchsia-400';
+  if (percentile >= 75) return 'text-purple-400';
+  if (percentile >= 50) return 'text-blue-400';
+  if (percentile >= 25) return 'text-emerald-400';
+  return 'text-slate-400';
 }
