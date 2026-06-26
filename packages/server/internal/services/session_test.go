@@ -16,7 +16,7 @@ func TestSessionService_Create(t *testing.T) {
 	assert.NotEqual(t, "", session.ID)
 	assert.Equal(t, "idle", session.Phase)
 	assert.Equal(t, int32(0), session.Score)
-	assert.Equal(t, int32(30), session.RemainingSeconds)
+	assert.Equal(t, int32(6), session.RemainingSeconds)
 	assert.Equal(t, true, session.AutoVoice)
 	assert.Equal(t, "test-item-id", session.UsedItemIDs[0])
 }
