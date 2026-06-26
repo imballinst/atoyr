@@ -207,41 +207,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/items/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description List of items in the user's inventory */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['GetItemsResponse'];
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/v1/leaderboard': {
     parameters: {
       query?: never;
@@ -353,26 +318,6 @@ export interface components {
       /** @example john_doe */
       username: string;
     };
-    GetItemsResponse: {
-      data: components['schemas']['InventoryItem'][];
-    };
-    InventoryItem: {
-      /** Format: uuid */
-      id: string;
-      /** @example Magic Wand */
-      name: string;
-      /** @example A wand that grants magical powers. */
-      description: string;
-      /**
-       * Format: int32
-       * @example 1
-       */
-      quantity: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
     GetLeaderboardResponse: {
       entries: components['schemas']['LeaderboardEntry'][];
       /** Format: int64 */
@@ -424,8 +369,6 @@ export type SubmitAnswerResponse = components['schemas']['SubmitAnswerResponse']
 export type RegisterUserRequest = components['schemas']['RegisterUserRequest'];
 export type UserDomain = components['schemas']['UserDomain'];
 export type UserCompact = components['schemas']['UserCompact'];
-export type GetItemsResponse = components['schemas']['GetItemsResponse'];
-export type InventoryItem = components['schemas']['InventoryItem'];
 export type GetLeaderboardResponse = components['schemas']['GetLeaderboardResponse'];
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
 export type $defs = Record<string, never>;

@@ -12,42 +12,21 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
-// GetItemsResponse defines model for GetItemsResponse.
-type GetItemsResponse struct {
-	Data []InventoryItem `json:"data"`
-}
-
 // GetLeaderboardResponse defines model for GetLeaderboardResponse.
 type GetLeaderboardResponse struct {
 	Entries []LeaderboardEntry `json:"entries"`
 	Total   int64              `json:"total"`
 }
 
-// InventoryItem defines model for InventoryItem.
-type InventoryItem struct {
-	CreatedAt   time.Time `json:"createdAt"`
-	Description string    `json:"description"`
-	Id          string    `json:"id"`
-	Name        string    `json:"name"`
-	Quantity    int32     `json:"quantity"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
-
 // LeaderboardEntry defines model for LeaderboardEntry.
 type LeaderboardEntry struct {
-	Accuracy                   float32     `json:"accuracy"`
-	Id                         string      `json:"id"`
-	IsSessionSameAsCurrentUser *bool       `json:"isSessionSameAsCurrentUser,omitempty"`
-	Rank                       int32       `json:"rank"`
-	Score                      int32       `json:"score"`
-	Timestamp                  int64       `json:"timestamp"`
-	TotalAttempts              int32       `json:"totalAttempts"`
-	User                       *UserDomain `json:"user,omitempty"`
-}
-
-// RegisterUserRequest defines model for RegisterUserRequest.
-type RegisterUserRequest struct {
-	Username string `json:"username"`
+	Accuracy                   float32 `json:"accuracy"`
+	Id                         string  `json:"id"`
+	IsSessionSameAsCurrentUser *bool   `json:"isSessionSameAsCurrentUser,omitempty"`
+	Rank                       int32   `json:"rank"`
+	Score                      int32   `json:"score"`
+	Timestamp                  int64   `json:"timestamp"`
+	TotalAttempts              int32   `json:"totalAttempts"`
 }
 
 // StartGameRequest defines model for StartGameRequest.
@@ -85,23 +64,11 @@ type SubmitAnswerResponse struct {
 	Token                    string        `json:"token"`
 }
 
-// UserCompact defines model for UserCompact.
-type UserCompact struct {
-	Id       string `json:"id"`
-	Username string `json:"username"`
-}
-
-// UserDomain defines model for UserDomain.
-type UserDomain = UserCompact
-
 // GetApiV1LeaderboardParams defines parameters for GetApiV1Leaderboard.
 type GetApiV1LeaderboardParams struct {
 	Page  *int `form:"page,omitempty" json:"page,omitempty"`
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
-
-// PostApiV1GameRegisterJSONRequestBody defines body for PostApiV1GameRegister for application/json ContentType.
-type PostApiV1GameRegisterJSONRequestBody = RegisterUserRequest
 
 // PostApiV1GameStartJSONRequestBody defines body for PostApiV1GameStart for application/json ContentType.
 type PostApiV1GameStartJSONRequestBody = StartGameRequest
@@ -115,9 +82,6 @@ type ServerInterface interface {
 	// (POST /api/v1/game/continue)
 	PostApiV1GameContinue(c *gin.Context)
 
-	// (POST /api/v1/game/register)
-	PostApiV1GameRegister(c *gin.Context)
-
 	// (GET /api/v1/game/sse/{sessionId})
 	GetApiV1GameSseSessionId(c *gin.Context, sessionId string)
 
@@ -126,9 +90,6 @@ type ServerInterface interface {
 
 	// (POST /api/v1/game/submit)
 	PostApiV1GameSubmit(c *gin.Context)
-
-	// (GET /api/v1/items/me)
-	GetApiV1ItemsMe(c *gin.Context)
 
 	// (GET /api/v1/leaderboard)
 	GetApiV1Leaderboard(c *gin.Context, params GetApiV1LeaderboardParams)
@@ -154,19 +115,6 @@ func (siw *ServerInterfaceWrapper) PostApiV1GameContinue(c *gin.Context) {
 	}
 
 	siw.Handler.PostApiV1GameContinue(c)
-}
-
-// PostApiV1GameRegister operation middleware
-func (siw *ServerInterfaceWrapper) PostApiV1GameRegister(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.PostApiV1GameRegister(c)
 }
 
 // GetApiV1GameSseSessionId operation middleware
@@ -218,19 +166,6 @@ func (siw *ServerInterfaceWrapper) PostApiV1GameSubmit(c *gin.Context) {
 	}
 
 	siw.Handler.PostApiV1GameSubmit(c)
-}
-
-// GetApiV1ItemsMe operation middleware
-func (siw *ServerInterfaceWrapper) GetApiV1ItemsMe(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetApiV1ItemsMe(c)
 }
 
 // GetApiV1Leaderboard operation middleware
@@ -296,10 +231,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.POST(options.BaseURL+"/api/v1/game/continue", wrapper.PostApiV1GameContinue)
-	router.POST(options.BaseURL+"/api/v1/game/register", wrapper.PostApiV1GameRegister)
 	router.GET(options.BaseURL+"/api/v1/game/sse/:sessionId", wrapper.GetApiV1GameSseSessionId)
 	router.POST(options.BaseURL+"/api/v1/game/start", wrapper.PostApiV1GameStart)
 	router.POST(options.BaseURL+"/api/v1/game/submit", wrapper.PostApiV1GameSubmit)
-	router.GET(options.BaseURL+"/api/v1/items/me", wrapper.GetApiV1ItemsMe)
 	router.GET(options.BaseURL+"/api/v1/leaderboard", wrapper.GetApiV1Leaderboard)
 }

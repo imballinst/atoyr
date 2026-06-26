@@ -25,7 +25,6 @@ type SessionDomain struct {
 	CurrentWordDefinition    string
 	CurrentWordToken         string
 	UsedItemIDs              []string
-	UserEntity               *UserDomain
 }
 
 func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, error) {
@@ -56,7 +55,6 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		CurrentWord:              session.CurrentWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentWordToken:         session.CurrentWordToken,
-		UserEntity:               ConvertUserDBToDomain(session.UserEntity),
 	}, nil
 }
 
@@ -89,37 +87,5 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentWordToken:         session.CurrentWordToken,
-		UserEntity:               ConvertUserDomainToDB(session.UserEntity),
 	}, nil
-}
-
-type UserDomain struct {
-	ID        string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Username  string
-}
-
-func ConvertUserDBToDomain(user *models.UserEntity) *UserDomain {
-	if user == nil {
-		return nil
-	}
-	return &UserDomain{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Username:  user.Username,
-	}
-}
-
-func ConvertUserDomainToDB(user *UserDomain) *models.UserEntity {
-	if user == nil {
-		return nil
-	}
-	return &models.UserEntity{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Username:  user.Username,
-	}
 }

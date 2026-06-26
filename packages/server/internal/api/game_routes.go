@@ -17,24 +17,12 @@ import (
 
 const (
 	sessionIdCookie = "session_id"
-	userIdCookie    = "user_id"
 )
 
 func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 	var req StartGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, " + err.Error()})
-		return
-	}
-
-	userId, err := c.Cookie(userIdCookie)
-	if err != nil {
-		log.Println("No user_id cookie found, starting game without user association")
-	}
-
-	err = gr.inventoryService.UseItems(req.ItemsUsed, userId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "error when using items, " + err.Error()})
 		return
 	}
 
@@ -114,40 +102,6 @@ func (gr *Server) PostApiV1GameSubmit(c *gin.Context) {
 	}
 
 	result, err := gr.gameService.SubmitAnswer(req.SessionId, strings.ToLower(req.Answer), req.Token)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
-func (gr *Server) PostApiV1GameRegister(c *gin.Context) {
-	var req RegisterUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
-
-	sessionId, err := c.Cookie(sessionIdCookie)
-	if err != nil {
-		if err == http.ErrNoCookie {
-			log.Printf("No %s cookie found, starting game without user association\n", sessionIdCookie)
-			c.JSON(http.StatusOK, gin.H{"message": "user registered without session association"})
-			return
-		}
-
-		log.Printf("Error retrieving %s from cookie, %s\n", sessionIdCookie, err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve session cookie"})
-		return
-	}
-
-	if req.Username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username cannot be empty"})
-		return
-	}
-
-	result, err := gr.userService.UpsertUserFromSession(req.Username, sessionId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

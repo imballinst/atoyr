@@ -54,33 +54,4 @@ type SessionEntity struct {
 	CurrentWordDefinition    string         `gorm:"type:text"`
 	CurrentWordToken         string         `gorm:"type:text"`
 	UsedItemIDs              pq.StringArray `gorm:"type:text"`
-	// Belongs to user entity.
-	UserEntityID *string `gorm:"type:text;index:idx_sessions_user"`
-	UserEntity   *UserEntity
-}
-
-type UserEntity struct {
-	ID        string    `gorm:"primaryKey;type:text"`
-	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	Username  string    `gorm:"type:text;uniqueIndex:idx_profiles_username"`
-}
-
-type InventoryEntity struct {
-	ID        string    `gorm:"primaryKey;type:text"`
-	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	// Belongs to user entity.
-	UserEntityID string `gorm:"type:text;index:idx_inventory_user"`
-	UserEntity   UserEntity
-}
-
-type InventoryItemEntity struct {
-	ItemID    string    `gorm:"primaryKey;type:text"`
-	Quantity  int32     `gorm:"type:integer;default:0"`
-	CreatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	// Belongs to inventory and user entity.
-	InventoryEntityID string `gorm:"type:text;index:idx_inventory_items_inventory"`
-	InventoryEntity   InventoryEntity
 }

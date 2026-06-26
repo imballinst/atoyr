@@ -23,8 +23,6 @@ type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
-	inventoryService   *InventoryService
-	items              core.ItemInfoMap
 	sessionOptions     core.SessionOptions
 }
 
@@ -43,16 +41,12 @@ func NewGameService(
 	sessionService *SessionService,
 	wordService *WordService,
 	leaderboardService *LeaderboardService,
-	inventoryService *InventoryService,
-	items core.ItemInfoMap,
 	sessionOptions core.SessionOptions,
 ) *GameService {
 	return &GameService{
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
-		inventoryService:   inventoryService,
-		items:              items,
 		sessionOptions:     sessionOptions,
 	}
 }
@@ -65,7 +59,6 @@ func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, 
 	}
 
 	// Update phase to playing
-	g.resolveItemEffects(session)
 	session.Phase = core.SessionPhasePlaying
 	session.EndsAt = time.Now().Add(time.Second * time.Duration(session.DurationSeconds))
 
@@ -117,68 +110,6 @@ func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomai
 	return session, err
 }
 
-func (g *GameService) UpdateSessionBasedOnAnswerResult(sessionID string, isCorrect bool) (*domainmodels.SessionDomain, error) {
-	session, err := g.sessionService.FindByID(sessionID)
-	if err != nil {
-		return nil, err
-	}
-
-	session.TotalAttempts += 1
-
-	if !isCorrect {
-		core.SessionDurationManager.Decrement(session.ID)
-
-		lastIdx := len(session.CorrectAttemptTimestamps) - 1
-		if lastIdx >= 0 && len(session.CorrectAttemptTimestamps[lastIdx]) > 0 {
-			session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
-		}
-
-		if err := g.sessionService.Update(session); err != nil {
-			return nil, err
-		}
-
-		return session, nil
-	}
-
-	word, definition, err := g.wordService.GetRandomWord(session.UsedWords)
-	if err != nil {
-		// All words used, finish game
-		return nil, g.FinishGame(sessionID)
-	}
-
-	token := g.generateToken(word)
-	newUsedWords := append(session.UsedWords, word)
-
-	session.CurrentWordToken = word
-	session.UsedWords = newUsedWords
-	session.CurrentWordToken = token
-	session.CurrentWordDefinition = definition
-	session.CurrentWord = word
-	session.CurrentScrambledWord = utils.ScrambleWord(word)
-	session.Score += 1
-
-	if session.AutoVoice {
-		core.SessionDurationManager.Extend(session.ID, core.BonusDurationPerWordWithAutoVoice)
-		session.EndsAt = session.EndsAt.Add(time.Duration(core.BonusDurationPerWordWithAutoVoice) * time.Second)
-	}
-
-	if len(session.CorrectAttemptTimestamps) == 0 {
-		session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
-	}
-
-	lastIdx := len(session.CorrectAttemptTimestamps) - 1
-
-	currentStreakTimestamps := session.CorrectAttemptTimestamps[lastIdx]
-	currentStreakTimestamps = append(currentStreakTimestamps, time.Now().Format(time.RFC3339))
-	session.CorrectAttemptTimestamps[lastIdx] = currentStreakTimestamps
-
-	if err := g.sessionService.Update(session); err != nil {
-		return nil, err
-	}
-
-	return session, nil
-}
-
 func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnswerResult, error) {
 	session, err := g.sessionService.FindByID(sessionID)
 	if err != nil {
@@ -211,7 +142,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		// No-op.
 	}
 
-	session, err = g.UpdateSessionBasedOnAnswerResult(session.ID, result.Correct)
+	session, err = g.updateSessionBasedOnAnswerResult(session.ID, result.Correct)
 	if err != nil {
 		// If error is "all words used", finish game
 		if err.Error() == "all words have been used" {
@@ -283,15 +214,6 @@ func (g *GameService) generateToken(word string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (g *GameService) resolveItemEffects(session *domainmodels.SessionDomain) {
-	// The assumption here is that the item IDs are already resolved in the inventory service.
-	for _, itemID := range session.UsedItemIDs {
-		if g.items[itemID].Kind == core.ItemTimerKind {
-			session.DurationSeconds += int32(g.items[itemID].Value)
-		}
-	}
-}
-
 func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.SessionDomain, error) {
 	session, err := g.sessionService.FindByID(sessionID)
 	if err != nil {
@@ -312,6 +234,68 @@ func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.Se
 	session.CurrentWordToken = token
 	session.CurrentWordDefinition = definition
 	session.CurrentWord = word
+
+	return session, nil
+}
+
+func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorrect bool) (*domainmodels.SessionDomain, error) {
+	session, err := g.sessionService.FindByID(sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	session.TotalAttempts += 1
+
+	if !isCorrect {
+		core.SessionDurationManager.Decrement(session.ID)
+
+		lastIdx := len(session.CorrectAttemptTimestamps) - 1
+		if lastIdx >= 0 && len(session.CorrectAttemptTimestamps[lastIdx]) > 0 {
+			session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
+		}
+
+		if err := g.sessionService.Update(session); err != nil {
+			return nil, err
+		}
+
+		return session, nil
+	}
+
+	word, definition, err := g.wordService.GetRandomWord(session.UsedWords)
+	if err != nil {
+		// All words used, finish game
+		return nil, g.FinishGame(sessionID)
+	}
+
+	token := g.generateToken(word)
+	newUsedWords := append(session.UsedWords, word)
+
+	session.CurrentWordToken = word
+	session.UsedWords = newUsedWords
+	session.CurrentWordToken = token
+	session.CurrentWordDefinition = definition
+	session.CurrentWord = word
+	session.CurrentScrambledWord = utils.ScrambleWord(word)
+	session.Score += 1
+
+	if session.AutoVoice {
+		core.SessionDurationManager.Extend(session.ID, core.BonusDurationPerWordWithAutoVoice)
+		session.EndsAt = session.EndsAt.Add(time.Duration(core.BonusDurationPerWordWithAutoVoice) * time.Second)
+	}
+
+	if len(session.CorrectAttemptTimestamps) == 0 {
+		session.CorrectAttemptTimestamps = append(session.CorrectAttemptTimestamps, []string{})
+	}
+
+	lastIdx := len(session.CorrectAttemptTimestamps) - 1
+
+	currentStreakTimestamps := session.CorrectAttemptTimestamps[lastIdx]
+	currentStreakTimestamps = append(currentStreakTimestamps, time.Now().Format(time.RFC3339))
+	session.CorrectAttemptTimestamps[lastIdx] = currentStreakTimestamps
+
+	if err := g.sessionService.Update(session); err != nil {
+		return nil, err
+	}
 
 	return session, nil
 }

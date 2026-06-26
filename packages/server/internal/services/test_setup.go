@@ -1,7 +1,6 @@
 package services
 
 import (
-	"atoyr/server/internal/core"
 	"atoyr/server/internal/testutils"
 	"testing"
 
@@ -14,21 +13,17 @@ type TestValues struct {
 	Session     *SessionService
 	Leaderboard *LeaderboardService
 	Game        *GameService
-	Inventory   *InventoryService
-	User        *UserService
 }
 
-func initTestServices(t *testing.T, itemInfoMap core.ItemInfoMap) TestValues {
+func initTestServices(t *testing.T) TestValues {
 	db := testutils.SetupTestDB(t)
 
 	ws := initTestWordService()
 	ss := NewSessionService(db)
 	ls := NewLeaderboardService(db)
-	is := NewInventoryService(db, itemInfoMap)
-	gs := NewGameService(ss, ws, ls, is, itemInfoMap, testutils.TestSessionOptions)
-	us := NewUserService(ss, is)
+	gs := NewGameService(ss, ws, ls, testutils.TestSessionOptions)
 
-	return TestValues{db, ws, ss, ls, gs, is, us}
+	return TestValues{db, ws, ss, ls, gs}
 }
 
 func initTestWordService() *WordService {

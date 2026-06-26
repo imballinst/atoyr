@@ -224,7 +224,3 @@ export function useLeaderboard(page = 1, limit = 10) {
     },
   });
 }
-
-export function useInventory() {
-  return apiQuery.useQuery('get', '/api/v1/items/me');
-}

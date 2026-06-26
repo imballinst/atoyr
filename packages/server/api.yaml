@@ -5,8 +5,6 @@ info:
 tags:
   - name: game
     description: Endpoints related to game sessions, including starting a new game, submitting answers, and real-time updates.
-  - name: inventory
-    description: Endpoints for managing user inventory items, including retrieving the list of items.
   - name: leaderboard
     description: Endpoints for retrieving leaderboard data, including pagination support.
 paths:
@@ -59,23 +57,6 @@ paths:
                 $ref: '#/components/schemas/SubmitAnswerResponse'
         '404':
           description: Game session not found
-  /api/v1/game/register:
-    post:
-      tags:
-        - game
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterUserRequest'
-      responses:
-        '200':
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserDomain'
   /api/v1/game/sse/{sessionId}:
     get:
       tags:
@@ -95,17 +76,6 @@ paths:
             text/event-stream:
               schema:
                 type: string
-  /api/v1/items/me:
-    get:
-      tags:
-        - inventory
-      responses:
-        '200':
-          description: List of items in the user's inventory
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetItemsResponse'
   /api/v1/leaderboard:
     get:
       tags:
@@ -234,81 +204,6 @@ components:
           type: integer
           format: int32
           example: 45
-    RegisterUserRequest:
-      type: object
-      required:
-        - username
-      properties:
-        username:
-          type: string
-          example: 'john_doe'
-    UserDomain:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/UserCompact'
-      required:
-        - createdAt
-        - updatedAt
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-    UserCompact:
-      type: object
-      required:
-        - id
-        - username
-      properties:
-        id:
-          type: string
-          format: uuid
-          x-go-type: string
-        username:
-          type: string
-          example: 'john_doe'
-    GetItemsResponse:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            $ref: '#/components/schemas/InventoryItem'
-    InventoryItem:
-      type: object
-      required:
-        - id
-        - name
-        - description
-        - quantity
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-          x-go-type: string
-        name:
-          type: string
-          example: 'Magic Wand'
-        description:
-          type: string
-          example: 'A wand that grants magical powers.'
-        quantity:
-          type: integer
-          format: int32
-          example: 1
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     GetLeaderboardResponse:
       type: object
       required:
@@ -360,6 +255,3 @@ components:
           type: integer
           format: int64
           example: 1627847284
-        user:
-          type: object
-          $ref: '#/components/schemas/UserDomain'

@@ -14,9 +14,7 @@ import (
 var (
 	migratedModels = []any{
 		&models.SessionEntity{},
-		&models.UserEntity{},
-		&models.InventoryEntity{},
-		&models.InventoryItemEntity{}}
+	}
 )
 
 func Initialize() (*gorm.DB, error) {

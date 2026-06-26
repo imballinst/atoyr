@@ -42,11 +42,6 @@ func main() {
 		log.Fatalf("Failed to initialize word service: %v", err)
 	}
 
-	itemInfoMap, err := core.LoadItems()
-	if err != nil {
-		log.Fatalf("Failed to load items: %v", err)
-	}
-
 	sessionOptions := core.SessionOptions{
 		Duration: 30,
 		Tick:     1,
@@ -54,9 +49,7 @@ func main() {
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	inventoryService := services.NewInventoryService(db, itemInfoMap)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, inventoryService, itemInfoMap, sessionOptions)
-	userService := services.NewUserService(sessionService, inventoryService)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, sessionOptions)
 
 	// Initialize Gin
 	router := gin.Default()
@@ -64,7 +57,7 @@ func main() {
 	// Apply middleware
 	router.Use(middleware.CORSMiddleware())
 
-	server := api.NewServer(gameService, sessionService, inventoryService, leaderboardService, userService, sessionOptions)
+	server := api.NewServer(gameService, sessionService, leaderboardService, sessionOptions)
 	api.RegisterHandlers(router, server)
 
 	// Start server

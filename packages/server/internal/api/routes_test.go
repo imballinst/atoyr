@@ -50,20 +50,16 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 
 	wordService.SetWords(wordDefinitions)
 
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"test"})
-
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	inventoryService := services.NewInventoryService(db, itemInfoMap)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, inventoryService, itemInfoMap, testutils.TestSessionOptions)
-	userService := services.NewUserService(sessionService, inventoryService)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, testutils.TestSessionOptions)
 
 	// Create router
 	router := gin.New()
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	server := NewServer(gameService, sessionService, inventoryService, leaderboardService, userService, testutils.TestSessionOptions)
+	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 
 	return router, sessionService

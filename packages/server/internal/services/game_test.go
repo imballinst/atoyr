@@ -2,18 +2,14 @@ package services
 
 import (
 	"atoyr/server/internal/core"
-	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
-	"atoyr/server/internal/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGameService_StartGame(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	started, err := testServices.Game.StartGame(session.ID)
@@ -25,42 +21,8 @@ func TestGameService_StartGame(t *testing.T) {
 	assert.NotEqual(t, "", started.CurrentWordToken)
 }
 
-func TestGameService_StartGame_WithItems(t *testing.T) {
-	itemIDs, itemInfoMap := testutils.SetupItemInfoMapWithKind([]string{core.BonusTimerRewardItemID}, []core.ItemInfo{{Kind: core.ItemTimerKind, Value: 10}})
-
-	testServices := initTestServices(t, itemInfoMap)
-
-	user, err := testServices.User.CreateUser(utils.GenerateUUID())
-	assert.NoError(t, err)
-
-	err = testServices.Inventory.AddItems(itemIDs, user.ID)
-	assert.NoError(t, err)
-
-	session, err := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
-	assert.NoError(t, err)
-
-	session.UserEntity = &domainmodels.UserDomain{
-		ID: user.ID,
-	}
-	session.UsedItemIDs = itemIDs
-
-	err = testServices.Session.Update(session)
-	assert.NoError(t, err)
-
-	session, err = testServices.Game.StartGame(session.ID)
-
-	assert.NoError(t, err)
-	assert.Equal(t, core.SessionPhasePlaying, session.Phase)
-	assert.Equal(t, int32(11), session.DurationSeconds)
-	assert.NotEqual(t, "", session.CurrentWord)
-	assert.NotEqual(t, "", session.CurrentWordToken)
-	assert.Equal(t, itemIDs, session.UsedItemIDs)
-}
-
 func TestGameService_ContinueGame(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	started, err := testServices.Game.StartGame(session.ID)
@@ -80,9 +42,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 }
 
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	testServices.Game.StartGame(session.ID)
@@ -101,9 +61,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 }
 
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	testServices.Game.StartGame(session.ID)
@@ -119,9 +77,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 }
 
 func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	testServices.Game.StartGame(session.ID)
@@ -153,9 +109,7 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 }
 
 func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	testServices.Game.StartGame(session.ID)
@@ -187,9 +141,7 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 }
 
 func TestGameService_FinishGame(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	_, err := testServices.Game.StartGame(session.ID)
@@ -217,9 +169,7 @@ func TestGameService_FinishGame(t *testing.T) {
 }
 
 func TestGameService_TokenGeneration(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	// Same word should generate same token
 	token1 := testServices.Game.generateToken("test")
@@ -234,9 +184,7 @@ func TestGameService_TokenGeneration(t *testing.T) {
 }
 
 func TestGameService_AttemptCounting(t *testing.T) {
-	_, itemInfoMap := testutils.SetupItemInfoMap([]string{"item1", "item2"})
-
-	testServices := initTestServices(t, itemInfoMap)
+	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration)
 	testServices.Game.StartGame(session.ID)
