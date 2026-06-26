@@ -1,16 +1,23 @@
 import { Loader2Icon } from 'lucide-react';
+import { useLoaderData } from 'react-router';
 
 import { useGame } from '~/api/hooks';
 import { GameScreen } from '~/components/GameScreen';
 import { ResultsScreen } from '~/components/ResultsScreen';
 import { StartScreen } from '~/components/StartScreen';
+import { hasGameEnded } from '~/lib/game';
 
 export function meta() {
   return [{ title: 'Game | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
 }
 
+export function clientLoader() {
+  return { shouldFetch: hasGameEnded() };
+}
+
 export default function Home() {
-  const { state, startGame, submitAnswer, resetGame, resumeGameQuery } = useGame();
+  const { shouldFetch } = useLoaderData<typeof clientLoader>();
+  const { state, startGame, submitAnswer, resetGame, resumeGameQuery } = useGame(shouldFetch);
 
   if (resumeGameQuery.isFetching) {
     return (

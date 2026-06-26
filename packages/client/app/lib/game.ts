@@ -1,3 +1,5 @@
+import { addSeconds, isAfter } from 'date-fns';
+
 export interface WordEntry {
   scrambled: string;
   definition: string;
@@ -67,6 +69,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   GAME_ALREADY_FINISHED: 'Game has already finished',
   INVALID_REQUEST: 'Invalid request format',
 };
+const LOCAL_STORAGE_GAME_ENDS_AT = 'session-ends-at';
 
 export function getFinalScore(score: number, totalAttempts: number): string {
   let finalScore = `${score}`;
@@ -76,4 +79,14 @@ export function getFinalScore(score: number, totalAttempts: number): string {
   }
 
   return finalScore;
+}
+
+export function setGameEndsAt(remainingSeconds: number) {
+  localStorage.setItem(LOCAL_STORAGE_GAME_ENDS_AT, addSeconds(new Date(), remainingSeconds).toString());
+}
+export function hasGameEnded() {
+  const ts = localStorage.getItem(LOCAL_STORAGE_GAME_ENDS_AT);
+  if (!ts) return true;
+
+  return isAfter(new Date(), new Date(ts));
 }

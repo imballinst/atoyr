@@ -9,7 +9,7 @@ import { addSeconds, isAfter } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import { GAME_DURATION_SECONDS, type GameState } from '../lib/game';
+import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
 
 interface ServerGameSession {
@@ -29,13 +29,12 @@ const INITIAL_STATE: GameState = {
   usedWords: [],
   autoVoice: false,
 };
-const LOCAL_STORAGE_GAME_ENDS_AT = 'session-ends-at';
 
 const TickEventSchema = z.object({ type: z.literal('tick'), remainingSeconds: z.number() });
 const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string() });
 const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
-export function useGame() {
+export function useGame(shouldContinueGame: boolean) {
   const [state, setState] = useState(INITIAL_STATE);
 
   const sessionRef = useRef<ServerGameSession | null>(null);
@@ -178,7 +177,7 @@ export function useGame() {
         throw err;
       }
     },
-    enabled: !hasGameEnded(),
+    enabled: shouldContinueGame,
   });
 
   // Cleanup on unmount
@@ -212,17 +211,4 @@ export function useLeaderboard(page = 1, limit = 10) {
 
 export function useInventory() {
   return apiQuery.useQuery('get', '/api/v1/items/me');
-}
-
-// Helper functions.
-function setGameEndsAt(remainingSeconds: number) {
-  localStorage.setItem(LOCAL_STORAGE_GAME_ENDS_AT, addSeconds(new Date(), remainingSeconds).toString());
-}
-function hasGameEnded() {
-  if (typeof localStorage === 'undefined') return true;
-
-  const ts = localStorage.getItem(LOCAL_STORAGE_GAME_ENDS_AT);
-  if (!ts) return true;
-
-  return isAfter(new Date(), new Date(ts));
 }
