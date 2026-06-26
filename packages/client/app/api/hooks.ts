@@ -35,6 +35,7 @@ const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: 
 const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
 export function useGame(shouldContinueGame: boolean) {
+  const [shouldContinue, setShouldContinue] = useState(shouldContinueGame);
   const [state, setState] = useState<GameState>({
     ...INITIAL_STATE,
     phase: shouldContinueGame ? 'resuming' : 'idle',
@@ -103,6 +104,7 @@ export function useGame(shouldContinueGame: boolean) {
               phase: 'finished',
               lastWordAnswer: data.lastWordAnswer,
             }));
+            setShouldContinue(false);
           }
         },
         (error) => {
@@ -192,7 +194,7 @@ export function useGame(shouldContinueGame: boolean) {
         throw err;
       }
     },
-    enabled: shouldContinueGame,
+    enabled: shouldContinue,
   });
 
   // Cleanup on unmount
