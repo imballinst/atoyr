@@ -113,9 +113,7 @@ function scrambleWord(word: string): string | null {
   if (validShuffles.length === 0) return null;
 
   // Sort by edit distance (descending) and pick first (hardest)
-  return validShuffles.sort(
-    (a, b) => editDistance(b, word) - editDistance(a, word),
-  )[0];
+  return validShuffles.sort((a, b) => editDistance(b, word) - editDistance(a, word))[0];
 }
 ```
 
@@ -125,14 +123,14 @@ function scrambleWord(word: string): string | null {
 
 ```typescript
 type GameState =
-  | { phase: "idle" }
+  | { phase: 'idle' }
   | {
-      phase: "playing";
+      phase: 'playing';
       currentWord: WordEntry;
       scrambled: string;
       autoVoice: boolean;
     }
-  | { phase: "finished"; score: number; totalWords: number };
+  | { phase: 'finished'; score: number; totalWords: number };
 ```
 
 **Flow**:
@@ -190,7 +188,7 @@ interface GameResult {
 }
 
 // Cookie storage
-const LEADERBOARD_COOKIE_NAME = "atoyr_leaderboard";
+const LEADERBOARD_COOKIE_NAME = 'atoyr_leaderboard';
 const LEADERBOARD_COOKIE_EXPIRY_DAYS = 7;
 ```
 

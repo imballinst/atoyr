@@ -11,6 +11,7 @@
     "build": "yarn workspace client build && yarn workspace server build",
     "test": "yarn workspace client test && yarn workspace server test",
     "codegen": "yarn workspace client codegen && yarn workspace server codegen",
+    "lint": "oxlint --fix --fix-suggestions",
     "prepare": "husky"
   },
   "devDependencies": {

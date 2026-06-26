@@ -2,12 +2,12 @@
   "name": "server",
   "version": "0.1.0",
   "private": true,
+  "description": "Atoyr backend server written in Go with Gin and GORM",
   "scripts": {
     "postinstall": "go mod tidy",
     "dev": "air -c .air.toml",
     "build": "go build -o bin/server ./cmd/main.go",
     "test": "gotestsum -- -short ./...",
     "codegen": "go tool oapi-codegen -config api.cfg.yaml ./api.yaml"
-  },
-  "description": "Atoyr backend server written in Go with Gin and GORM"
+  }
 }
