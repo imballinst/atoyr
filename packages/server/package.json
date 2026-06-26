@@ -7,7 +7,7 @@
     "postinstall": "go mod tidy",
     "dev": "air -c .air.toml",
     "build": "go build -o bin/server ./cmd/main.go",
-    "test": "gotestsum -- -short ./...",
+    "test": "gotestsum -- -short -count=1 ./...",
     "codegen": "go tool oapi-codegen -config api.cfg.yaml ./api.yaml"
   }
 }

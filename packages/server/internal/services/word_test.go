@@ -7,7 +7,7 @@ import (
 )
 
 func TestWordService_GetRandomWord(t *testing.T) {
-	ws := setupTestWordService()
+	ws := initTestWordService()
 
 	word, _, err := ws.GetRandomWord([]string{})
 	assert.NoError(t, err)
@@ -15,7 +15,7 @@ func TestWordService_GetRandomWord(t *testing.T) {
 
 	// Verify word is in the list
 	found := false
-	for _, w := range ws.words {
+	for _, w := range ws.Words {
 		if w.Word == word {
 			found = true
 			break
@@ -26,7 +26,7 @@ func TestWordService_GetRandomWord(t *testing.T) {
 }
 
 func TestWordService_ExcludeWords(t *testing.T) {
-	ws := setupTestWordService()
+	ws := initTestWordService()
 
 	// Exclude all words except one
 	exclude := []string{"hello", "world", "apple", "banana", "cherry", "dragon", "elephant", "forest", "guitar"}
@@ -36,11 +36,11 @@ func TestWordService_ExcludeWords(t *testing.T) {
 }
 
 func TestWordService_AllWordsUsed(t *testing.T) {
-	ws := setupTestWordService()
+	ws := initTestWordService()
 
 	// Exclude all words
 	excluded := []string{}
-	for _, w := range ws.words {
+	for _, w := range ws.Words {
 		excluded = append(excluded, w.Word)
 	}
 
@@ -50,7 +50,7 @@ func TestWordService_AllWordsUsed(t *testing.T) {
 }
 
 func TestWordService_CaseInsensitive(t *testing.T) {
-	ws := setupTestWordService()
+	ws := initTestWordService()
 
 	// Exclude with different case
 	Excluded := []string{"HELLO", "World", "APPLE"}

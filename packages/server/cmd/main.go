@@ -54,8 +54,8 @@ func main() {
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap, sessionOptions)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, inventoryService, itemInfoMap, sessionOptions)
 	userService := services.NewUserService(sessionService, inventoryService)
 
 	// Initialize Gin

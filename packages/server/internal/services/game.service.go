@@ -23,6 +23,7 @@ type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
+	inventoryService   *InventoryService
 	items              core.ItemInfoMap
 	sessionOptions     core.SessionOptions
 }
@@ -42,6 +43,7 @@ func NewGameService(
 	sessionService *SessionService,
 	wordService *WordService,
 	leaderboardService *LeaderboardService,
+	inventoryService *InventoryService,
 	items core.ItemInfoMap,
 	sessionOptions core.SessionOptions,
 ) *GameService {
@@ -49,6 +51,7 @@ func NewGameService(
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
+		inventoryService:   inventoryService,
 		items:              items,
 		sessionOptions:     sessionOptions,
 	}

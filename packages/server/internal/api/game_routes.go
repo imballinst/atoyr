@@ -194,7 +194,7 @@ func (gr *Server) GetApiV1GameSseSessionId(c *gin.Context, sessionId string) {
 		if currentPhase == core.SessionPhaseFinished {
 			session, err := gr.sessionService.FindByID(sessionID)
 			if err != nil {
-				fmt.Println(fmt.Errorf("error when retrieving session after session finished: %v"))
+				fmt.Println(fmt.Errorf("error when retrieving session after session finished: %v", err))
 				return false
 			}
 

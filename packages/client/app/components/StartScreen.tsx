@@ -32,7 +32,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
       <div className="text-left mb-10">
         <p className="text-sm text-dark-text-secondary mb-6">Unscramble 5-letter words as fast as you can!</p>
-        <ul className="text-xs text-dark-text-tertiary space-y-2">
+        <ul className="text-xs text-dark-text-secondary space-y-2">
           <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>You have 30 seconds</span>
@@ -43,7 +43,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </li>
           <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
-            <span>Type using the keyboard or click the on-screen buttons</span>
+            <span>Type using external keyboard or on-screen buttons</span>
           </li>
           <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
@@ -54,7 +54,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
       <div className="flex items-center gap-2 mb-4">
         <input type="checkbox" id="auto-voice" checked={autoVoice} onChange={handleAutoVoiceChange} className="w-4 h-4 cursor-pointer" />
-        <label htmlFor="auto-voice" className="text-sm text-left text-dark-text-secondary cursor-pointer flex-1">
+        <label htmlFor="auto-voice" className="text-xs text-left text-dark-text-secondary cursor-pointer flex-1">
           Enable automatic text-to-speech*
         </label>
       </div>
@@ -68,7 +68,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
       <hr className="my-8 border-t border-t-dark-border-primary" />
 
-      <p className="text-xs text-dark-text-tertiary italic text-left">
+      <p className="text-xs text-dark-text-secondary italic text-left">
         * Uses your browser's built-in text-to-speech functionality. You will get 5 extra seconds for each word, but the scrambled letters
         will only be shown for screen readers.
       </p>

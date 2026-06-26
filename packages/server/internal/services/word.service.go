@@ -9,7 +9,7 @@ import (
 )
 
 type WordService struct {
-	words []WordDefinition
+	Words []WordDefinition
 }
 
 type WordDefinition struct {
@@ -42,12 +42,12 @@ func (w *WordService) loadWords() error {
 		return fmt.Errorf("failed to parse words file: %w", err)
 	}
 
-	w.words = dbContent
+	w.Words = dbContent
 	return nil
 }
 
 func (w *WordService) GetRandomWord(excludeWords []string) (string, string, error) {
-	if len(w.words) == 0 {
+	if len(w.Words) == 0 {
 		return "", "", fmt.Errorf("no words available")
 	}
 
@@ -60,7 +60,7 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 	// Find available words
 	available := []string{}
 	availableDefinitions := []string{}
-	for _, word := range w.words {
+	for _, word := range w.Words {
 		if !excluded[strings.ToLower(word.Word)] {
 			available = append(available, word.Word)
 			availableDefinitions = append(availableDefinitions, word.Definition)
@@ -76,5 +76,5 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 }
 
 func (w *WordService) SetWords(words []WordDefinition) {
-	w.words = words
+	w.Words = words
 }

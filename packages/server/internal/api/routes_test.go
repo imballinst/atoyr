@@ -54,8 +54,8 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, itemInfoMap, testutils.TestSessionOptions)
 	inventoryService := services.NewInventoryService(db, itemInfoMap)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, inventoryService, itemInfoMap, testutils.TestSessionOptions)
 	userService := services.NewUserService(sessionService, inventoryService)
 
 	// Create router
