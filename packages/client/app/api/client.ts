@@ -56,12 +56,55 @@ export async function apiGetPercentile() {
   return response.data;
 }
 
+const EVENT_SOURCE_URL: keyof paths = '/api/v1/game/sse';
+const HEARTBEAT_TIMEOUT = 5000;
+const HEARTBEAT_INTERVAL = 1000;
+
 export function apiSubscribeToSSE(onEvent: (data: Record<string, unknown>) => void, onError: (error: Error) => void): () => void {
-  const eventSourceURL: keyof paths = '/api/v1/game/sse';
-  const eventSource = new EventSource(eventSourceURL);
+  let eventSource: EventSource;
+  let heartbeatInterval: ReturnType<typeof setInterval>;
+
+  const cleanup = () => {
+    clearInterval(heartbeatInterval);
+    eventSource?.close();
+  };
+
+  const reconnect = () => {
+    clearInterval(heartbeatInterval);
+    setTimeout(() => {
+      const result = initSSE(onEvent, reconnect, onError);
+      eventSource = result.eventSource;
+      heartbeatInterval = result.heartbeatInterval;
+    }, 1000);
+  };
+
+  const result = initSSE(onEvent, reconnect, onError);
+  eventSource = result.eventSource;
+  heartbeatInterval = result.heartbeatInterval;
+
+  return cleanup;
+}
+
+function initSSE(onEvent: (data: Record<string, unknown>) => void, onReconnect: () => void, onError: (error: Error) => void) {
+  const eventSource = new EventSource(EVENT_SOURCE_URL);
+  let lastMessageReceived: string | undefined;
+  let lastEventTime = Date.now();
+
+  const heartbeatInterval = setInterval(() => {
+    if (Date.now() - lastEventTime > HEARTBEAT_TIMEOUT) {
+      clearInterval(heartbeatInterval);
+      eventSource.close();
+      if (lastMessageReceived !== 'finish') {
+        onReconnect();
+      }
+    }
+  }, HEARTBEAT_INTERVAL);
 
   const handleEvent = (event: MessageEvent) => {
     console.info('SSE message received:', event.type, event.data);
+
+    lastMessageReceived = event.type;
+    lastEventTime = Date.now();
 
     try {
       const data = JSON.parse(event.data);
@@ -71,17 +114,19 @@ export function apiSubscribeToSSE(onEvent: (data: Record<string, unknown>) => vo
     }
   };
 
-  // Listen for named events from the server
   eventSource.addEventListener('start', handleEvent);
   eventSource.addEventListener('tick', handleEvent);
   eventSource.addEventListener('finish', handleEvent);
 
-  eventSource.onerror = (event) => {
-    console.error(event);
-
+  eventSource.onerror = () => {
+    clearInterval(heartbeatInterval);
     eventSource.close();
-    onError(new Error('SSE connection closed'));
+
+    if (lastMessageReceived !== 'finish') {
+      // Reconnect only if the last state isn't finish.
+      onReconnect();
+    }
   };
 
-  return () => eventSource.close();
+  return { eventSource, heartbeatInterval };
 }

@@ -212,7 +212,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		// 0 is not eligible in the code, so we start from 1 to 10.
 		score := int32(i * 10)
 		totalEligible := float32(9)
-		totalBelowCurrentScore := float32(i)
+		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
 		percentile, err := service.GetPercentile(score)

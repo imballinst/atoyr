@@ -1,7 +1,6 @@
 package database
 
 import (
-	"atoyr/server/internal/models"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,12 +8,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-)
-
-var (
-	migratedModels = []any{
-		&models.SessionEntity{},
-	}
 )
 
 func Initialize() (*gorm.DB, error) {
@@ -37,22 +30,10 @@ func Initialize() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Auto-migrate models
-	if err := Automigrate(db); err != nil {
+	// Run SQL migrations instead of AutoMigrate
+	if err := RunMigrations(db); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return db, nil
-}
-
-func Automigrate(db *gorm.DB) error {
-	dbSetup := db
-	if os.Getenv("GORM_DEBUG") == "true" {
-		dbSetup = dbSetup.Debug()
-	}
-
-	if err := dbSetup.AutoMigrate(migratedModels...); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
-	}
-	return nil
 }

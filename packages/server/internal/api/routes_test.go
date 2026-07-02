@@ -10,6 +10,7 @@ import (
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/middleware"
+	"atoyr/server/internal/models"
 	"atoyr/server/internal/services"
 	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/testutils"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
@@ -63,6 +65,48 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	RegisterHandlers(router, server)
 
 	return router, sessionService
+}
+
+func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService) {
+	gin.SetMode(gin.TestMode)
+
+	db := testutils.SetupTestDB(t)
+
+	wordService := &services.WordService{}
+	wordService.SetWords([]services.WordDefinition{
+		{Word: "hello", Definition: "test"},
+		{Word: "world", Definition: "test"},
+		{Word: "apple", Definition: "test"},
+		{Word: "banana", Definition: "test"},
+		{Word: "cherry", Definition: "test"},
+		{Word: "dragon", Definition: "test"},
+		{Word: "elephant", Definition: "test"},
+		{Word: "forest", Definition: "test"},
+		{Word: "guitar", Definition: "test"},
+		{Word: "horizon", Definition: "test"},
+	})
+
+	sessionService := services.NewSessionService(db)
+	leaderboardService := services.NewLeaderboardService(db)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, testutils.TestSessionOptions)
+	metricsCollector := middleware.NewMetricsCollector()
+	statsService := services.NewStatsService(db, metricsCollector)
+
+	nowFn := func() time.Time {
+		now := time.Now().UTC()
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+	statsService.Now = nowFn
+
+	router := gin.New()
+	router.Use(middleware.CORSMiddleware())
+	router.Use(middleware.Metrics(metricsCollector))
+
+	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
+	RegisterHandlers(router, server)
+	RegisterAdminRoutes(router, statsService, middleware.NewNoopAuthMiddleware())
+
+	return router, db, sessionService
 }
 
 func TestGameRoutes_StartGame(t *testing.T) {
@@ -238,8 +282,6 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 
 	var lastTick map[string]any
 	json.Unmarshal(sseRecorder.Body.Bytes(), &lastTick)
-
-	fmt.Println(lastTick)
 }
 
 func TestGameRoutes_SubmitAnswer(t *testing.T) {
@@ -355,4 +397,118 @@ func TestLeaderboardRoutes_Pagination(t *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
+}
+
+func TestAdminRoutes_GetStats(t *testing.T) {
+	router, _, sessionService := setupAdminTestRouter(t)
+
+	// Create sessions
+	session, err := sessionService.Create(false, []string{}, testutils.TestSessionOptions.Duration)
+	assert.NoError(t, err)
+	// Update the session to happen for some times this month.
+	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.Now().Location())
+	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 30, 0, time.Now().Location())
+	sessionService.Update(session)
+
+	session, err = sessionService.Create(true, []string{}, testutils.TestSessionOptions.Duration)
+	assert.NoError(t, err)
+	// Update the session to happen for some times this week (but not today).
+	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 2, 0, 0, 0, 0, time.Now().Location())
+	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 2, 0, 0, 30, 0, time.Now().Location())
+	sessionService.Update(session)
+
+	req, _ := http.NewRequest("GET", "/api/v1/admin/stats", nil)
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var stats services.StatsResponse
+	err = json.Unmarshal(recorder.Body.Bytes(), &stats)
+	assert.NoError(t, err)
+
+	assert.Equal(t, int64(0), stats.SessionsToday)
+	assert.Equal(t, int64(1), stats.SessionsThisWeek)
+	assert.Equal(t, int64(2), stats.SessionsThisMonth)
+	assert.GreaterOrEqual(t, stats.Uptime, int64(0))
+}
+
+func TestAdminRoutes_GetStats_Empty(t *testing.T) {
+	router, _, _ := setupAdminTestRouter(t)
+
+	req, _ := http.NewRequest("GET", "/api/v1/admin/stats", nil)
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var stats services.StatsResponse
+	err := json.Unmarshal(recorder.Body.Bytes(), &stats)
+	assert.NoError(t, err)
+
+	assert.Equal(t, int64(0), stats.SessionsToday)
+	assert.Equal(t, int64(0), stats.SessionsThisWeek)
+	assert.Equal(t, int64(0), stats.SessionsThisMonth)
+}
+
+func TestAdminRoutes_GetTimeseries(t *testing.T) {
+	router, db, _ := setupAdminTestRouter(t)
+
+	now := time.Now()
+	snapshot := models.MetricSnapshot{
+		Timestamp:     now.Add(-5 * time.Minute),
+		RequestCount:  100,
+		ErrorCount4xx: 2,
+		ErrorCount5xx: 1,
+		ActiveGames:   3,
+		MemoryUsageMb: 50,
+	}
+	err := db.Create(&snapshot).Error
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/api/v1/admin/timeseries?period=1h&granularity=5m", nil)
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var result services.TimeSeriesResponse
+	err = json.Unmarshal(recorder.Body.Bytes(), &result)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "1h", result.Period)
+	assert.Equal(t, "5m", result.Granularity)
+	assert.Len(t, result.Data, 1)
+	assert.Equal(t, int64(100), result.Data[0].RequestCount)
+}
+
+func TestAdminRoutes_GetTimeseries_InvalidPeriod(t *testing.T) {
+	router, _, _ := setupAdminTestRouter(t)
+
+	req, _ := http.NewRequest("GET", "/api/v1/admin/timeseries?period=invalid", nil)
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+
+	var errorResponse map[string]string
+	err := json.Unmarshal(recorder.Body.Bytes(), &errorResponse)
+	assert.NoError(t, err)
+	assert.Contains(t, errorResponse["error"], "invalid period")
+}
+
+func TestAdminRoutes_GetTimeseries_NoParams(t *testing.T) {
+	router, _, _ := setupAdminTestRouter(t)
+
+	req, _ := http.NewRequest("GET", "/api/v1/admin/timeseries", nil)
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	var result services.TimeSeriesResponse
+	err := json.Unmarshal(recorder.Body.Bytes(), &result)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "24h", result.Period)
 }

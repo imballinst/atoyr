@@ -59,7 +59,7 @@ export function ResultsScreen({
         Play Again
       </button>
 
-      <div className="mt-6 pt-6 border-t border-dark-border-secondary w-full">
+      <div className="mt-6 pt-6 border-t border-dark-border-secondary w-full min-h-[270px]">
         <Leaderboard limit={5} HeadingComponent="h2" />
       </div>
     </>
@@ -71,7 +71,7 @@ function Percentile({ value }: { value: number | undefined }) {
     return <span className="animate-pulse">--</span>;
   }
 
-  return <span className={`font-bold ${parseColor(value)}`}>{value}</span>;
+  return <span className={`font-bold ${parseColor(value)}`}>{value.toFixed(2)}</span>;
 }
 
 function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {

@@ -27,14 +27,14 @@ type GameService struct {
 }
 
 type SubmitAnswerResult struct {
-	Correct                  bool       `json:"correct"`
-	ScrambledWord            string     `json:"scrambledWord"`
-	ScrambledWordDefinition  string     `json:"scrambledWordDefinition"`
-	CorrectAttemptTimestamps [][]string `json:"correctAttemptTimestamps"`
-	Token                    string     `json:"token"`
-	Score                    int32      `json:"score"`
-	Attempts                 int32      `json:"attempts"`
-	DurationSeconds          int32      `json:"durationSeconds"`
+	Correct                  bool
+	ScrambledWord            string
+	ScrambledWordDefinition  string
+	CorrectAttemptTimestamps [][]string
+	Token                    string
+	Score                    int32
+	Attempts                 int32
+	DurationSeconds          int32
 }
 
 func NewGameService(
@@ -158,6 +158,7 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 	result.CorrectAttemptTimestamps = session.CorrectAttemptTimestamps
 	result.Token = session.CurrentWordToken
 	result.Score = session.Score
+	result.DurationSeconds = core.SessionDurationManager.Get(session.ID)
 
 	return result, nil
 }
@@ -185,27 +186,32 @@ func (g *GameService) FinishGame(sessionID string) error {
 }
 
 func (g *GameService) startTimer(session *domainmodels.SessionDomain) {
+	g.runTimer(session.ID, session.DurationSeconds)
+}
+
+func (g *GameService) RestoreTimer(sessionID string, remainingSeconds int32) {
+	g.runTimer(sessionID, remainingSeconds)
+}
+
+func (g *GameService) runTimer(sessionID string, initial int32) {
 	ticker := time.NewTicker(utils.ToDuration(g.sessionOptions.Tick))
 	defer ticker.Stop()
 
-	core.SessionDurationManager.Add(session.ID, session.DurationSeconds)
+	core.SessionDurationManager.Add(sessionID, initial)
 
 	for range ticker.C {
-		remainingSeconds := core.SessionDurationManager.Get(session.ID)
+		remainingSeconds := core.SessionDurationManager.Get(sessionID)
 		if remainingSeconds <= 0 {
 			return
 		}
 
-		newRemaining := core.SessionDurationManager.Decrement(session.ID)
+		newRemaining := core.SessionDurationManager.Decrement(sessionID)
 		if newRemaining <= 0 {
-			err := g.FinishGame(session.ID)
-			if err != nil {
+			if err := g.FinishGame(sessionID); err != nil {
 				log.Println("error when finishing game due to time is 0, ", err.Error())
 			}
-
 			return
 		}
-
 	}
 }
 
@@ -248,6 +254,7 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 
 	if !isCorrect {
 		core.SessionDurationManager.Decrement(session.ID)
+		session.EndsAt = session.EndsAt.Add(-1 * time.Second)
 
 		lastIdx := len(session.CorrectAttemptTimestamps) - 1
 		if lastIdx >= 0 && len(session.CorrectAttemptTimestamps[lastIdx]) > 0 {

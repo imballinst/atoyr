@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atoyr - Server Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+  </head>
+  <body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-8">Atoyr Server Dashboard</h1>
+
+      <!-- Time Period Selector -->
+      <div class="mb-6 flex gap-2">
+        <button
+          onclick="setTimePeriod('1h')"
+          class="period-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+          data-period="1h"
+        >
+          1 Hour
+        </button>
+        <button
+          onclick="setTimePeriod('24h')"
+          class="period-btn px-4 py-2 rounded bg-blue-600 hover:bg-blue-500"
+          data-period="24h"
+        >
+          24 Hours
+        </button>
+        <button
+          onclick="setTimePeriod('7d')"
+          class="period-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+          data-period="7d"
+        >
+          7 Days
+        </button>
+        <button
+          onclick="setTimePeriod('1M')"
+          class="period-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
+          data-period="1M"
+        >
+          1 Month
+        </button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Active Games</div>
+          <div id="activeGames" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Sessions Today</div>
+          <div id="sessionsToday" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Error Rate</div>
+          <div id="errorRate" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Avg Response Time</div>
+          <div id="avgResponseTime" class="text-2xl font-bold">-</div>
+        </div>
+      </div>
+
+      <!-- Time Series Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="bg-gray-800 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-4">Throughput (req/min)</h3>
+          <div class="h-64"><canvas id="throughputChart"></canvas></div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-4">Response Time (ms)</h3>
+          <div class="h-64"><canvas id="responseTimeChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-gray-800 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-4">Error Rate (%)</h3>
+          <div class="h-64"><canvas id="errorRateChart"></canvas></div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <h3 class="text-lg font-semibold mb-4">Memory (MB)</h3>
+          <div class="h-64"><canvas id="resourcesChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Google OAuth configuration
+      const GOOGLE_CLIENT_ID =
+        "372608753987-bgh0sdcaducma3u7pkvkl23ajehlv9k9.apps.googleusercontent.com";
+      let accessToken = null;
+      let currentTimePeriod = "24h";
+
+      // Chart instances
+      let throughputChart, responseTimeChart, errorRateChart, resourcesChart;
+
+      // Initialize Google Sign-In
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+      });
+      google.accounts.id.prompt();
+
+      function handleCredentialResponse(response) {
+        accessToken = response.credential;
+        fetchStats();
+        fetchTimeSeries();
+      }
+
+      // Set time period
+      function setTimePeriod(period) {
+        currentTimePeriod = period;
+
+        // Update button styles
+        document.querySelectorAll(".period-btn").forEach((btn) => {
+          if (btn.dataset.period === period) {
+            btn.classList.remove("bg-gray-700");
+            btn.classList.add("bg-blue-600");
+          } else {
+            btn.classList.remove("bg-blue-600");
+            btn.classList.add("bg-gray-700");
+          }
+        });
+
+        fetchTimeSeries();
+      }
+
+      // Fetch current stats
+      async function fetchStats() {
+        if (!accessToken) return;
+
+        const response = await fetch("/api/v1/admin/stats", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const stats = await response.json();
+          updateStatsCards(stats);
+        }
+      }
+
+      // Fetch time series data
+      async function fetchTimeSeries() {
+        if (!accessToken) return;
+
+        const response = await fetch(
+          `/api/v1/admin/timeseries?period=${currentTimePeriod}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const timeseries = await response.json();
+          updateCharts(timeseries);
+        }
+      }
+
+      // Update stats cards
+      function updateStatsCards(stats) {
+        document.getElementById("activeGames").textContent = stats.activeGames;
+        document.getElementById("sessionsToday").textContent =
+          stats.sessionsToday;
+        document.getElementById("errorRate").textContent = stats.totalRequests
+          ? (
+              ((stats.errorRate4xx + stats.errorRate5xx) /
+                stats.totalRequests) *
+              100
+            ).toFixed(2) + "%"
+          : "-";
+        document.getElementById("avgResponseTime").textContent =
+          stats.responseTimeP50.toFixed(0) + "ms";
+      }
+
+      // Initialize charts
+      function initCharts() {
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: "#9CA3AF" },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: "#9CA3AF" },
+              grid: { color: "#374151" },
+            },
+            y: {
+              ticks: { color: "#9CA3AF" },
+              grid: { color: "#374151" },
+            },
+          },
+        };
+
+        throughputChart = new Chart(
+          document.getElementById("throughputChart"),
+          {
+            type: "line",
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  label: "Requests",
+                  data: [],
+                  borderColor: "#3B82F6",
+                  tension: 0.4,
+                },
+              ],
+            },
+            options: chartOptions,
+          },
+        );
+
+        responseTimeChart = new Chart(
+          document.getElementById("responseTimeChart"),
+          {
+            type: "line",
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  label: "P50",
+                  data: [],
+                  borderColor: "#10B981",
+                  tension: 0.4,
+                },
+                {
+                  label: "P95",
+                  data: [],
+                  borderColor: "#F59E0B",
+                  tension: 0.4,
+                },
+              ],
+            },
+            options: chartOptions,
+          },
+        );
+
+        errorRateChart = new Chart(document.getElementById("errorRateChart"), {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Error Rate %",
+                data: [],
+                borderColor: "#EF4444",
+                tension: 0.4,
+              },
+            ],
+          },
+          options: chartOptions,
+        });
+
+        resourcesChart = new Chart(document.getElementById("resourcesChart"), {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Memory MB",
+                data: [],
+                borderColor: "#EC4899",
+                tension: 0.4,
+              },
+            ],
+          },
+          options: chartOptions,
+        });
+      }
+
+      // Update charts with time series data
+      function updateCharts(timeseries) {
+        const labels = timeseries.data.map((d) =>
+          new Date(d.timestamp).toLocaleTimeString(),
+        );
+
+        throughputChart.data.labels = labels;
+        throughputChart.data.datasets[0].data = timeseries.data.map(
+          (d) => d.requestCount,
+        );
+        throughputChart.update();
+
+        responseTimeChart.data.labels = labels;
+        responseTimeChart.data.datasets[0].data = timeseries.data.map(
+          (d) => d.responseTimeP50,
+        );
+        responseTimeChart.data.datasets[1].data = timeseries.data.map(
+          (d) => d.responseTimeP95,
+        );
+        responseTimeChart.update();
+
+        errorRateChart.data.labels = labels;
+        errorRateChart.data.datasets[0].data = timeseries.data.map(
+          (d) => d.errorRate * 100,
+        );
+        errorRateChart.update();
+
+        resourcesChart.data.labels = labels;
+        resourcesChart.data.datasets[0].data = timeseries.data.map(
+          (d) => d.memoryUsage,
+        );
+        resourcesChart.update();
+      }
+
+      // Initialize on load
+      document.addEventListener("DOMContentLoaded", initCharts);
+
+      // Poll for updates every 5 seconds
+      setInterval(fetchStats, 5000);
+    </script>
+  </body>
+</html>

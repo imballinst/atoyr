@@ -114,7 +114,33 @@ func (gr *Server) PostApiV1GameSubmit(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	timeGroups := make([][]time.Time, len(result.CorrectAttemptTimestamps))
+	for i, tsGroup := range result.CorrectAttemptTimestamps {
+		timeGroup := []time.Time{}
+
+		for _, ts := range tsGroup {
+			parseResult, err := time.Parse(time.RFC3339, ts)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			timeGroup = append(timeGroup, parseResult)
+		}
+
+		timeGroups[i] = timeGroup
+	}
+
+	c.JSON(http.StatusOK, SubmitAnswerResponse{
+		Attempts:                 result.Attempts,
+		Correct:                  result.Correct,
+		CorrectAttemptTimestamps: timeGroups,
+		RemainingSeconds:         result.DurationSeconds,
+		Score:                    result.Score,
+		ScrambledWord:            result.ScrambledWord,
+		ScrambledWordDefinition:  result.ScrambledWordDefinition,
+		Token:                    result.Token,
+	})
 }
 
 func (gr *Server) GetApiV1GameSse(c *gin.Context) {
@@ -144,7 +170,6 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "*")
 
 	c.Stream(func(w io.Writer) bool {
-		// fmt.Println("Streaming data...")
 		time.Sleep(utils.ToDuration(gr.sessionOptions.Tick))
 
 		remainingSeconds := core.SessionDurationManager.Get(sessionId)
@@ -168,8 +193,6 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 				"lastWordAnswer": session.CurrentWord,
 			})
 		}
-
-		fmt.Println("closing SSE connection...")
 
 		return false
 	})

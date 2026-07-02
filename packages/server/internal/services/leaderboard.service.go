@@ -74,7 +74,7 @@ func (l *LeaderboardService) GetPercentile(score int32) (float32, error) {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score <= ?;", core.SessionPhaseFinished, score).Find(&totalBelowCurrentScore).Error; err != nil {
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score < ?;", core.SessionPhaseFinished, score).Find(&totalBelowCurrentScore).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 

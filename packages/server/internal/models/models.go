@@ -10,6 +10,24 @@ import (
 	"github.com/lib/pq"
 )
 
+// MetricSnapshot stores time-series metrics data
+type MetricSnapshot struct {
+	ID              uint      `gorm:"primaryKey"`
+	Timestamp       time.Time `gorm:"index"`
+	RequestCount    int64     `gorm:"column:request_count;not null;default:0"`
+	ErrorCount4xx   int64     `gorm:"column:error_count_4xx;not null;default:0"`
+	ErrorCount5xx   int64     `gorm:"column:error_count_5xx;not null;default:0"`
+	ActiveGames     int64     `gorm:"column:active_games;not null;default:0"`
+	ResponseTimeP50 int64     `gorm:"column:response_time_p50;not null;default:0"` // milliseconds
+	ResponseTimeP95 int64     `gorm:"column:response_time_p95;not null;default:0"` // milliseconds
+	ResponseTimeP99 int64     `gorm:"column:response_time_p99;not null;default:0"` // milliseconds
+	MemoryUsageMb   float64   `gorm:"column:memory_usage_mb;not null;default:0"`
+}
+
+func (MetricSnapshot) TableName() string {
+	return "metrics_snapshots"
+}
+
 type JSON json.RawMessage
 
 // Scan scan value into Jsonb, implements sql.Scanner interface

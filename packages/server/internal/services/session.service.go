@@ -88,3 +88,20 @@ func (s *SessionService) EndSession(sessionID string) error {
 	}
 	return nil
 }
+
+func (s *SessionService) FindPlaying() ([]*domainmodels.SessionDomain, error) {
+	var entities []models.SessionEntity
+	if err := s.db.Where("phase = ?", core.SessionPhasePlaying).Find(&entities).Error; err != nil {
+		return nil, fmt.Errorf("failed to find playing sessions: %w", err)
+	}
+
+	domains := make([]*domainmodels.SessionDomain, len(entities))
+	for i, e := range entities {
+		d, err := domainmodels.ConvertSessionDBToDomain(&e)
+		if err != nil {
+			return nil, err
+		}
+		domains[i] = d
+	}
+	return domains, nil
+}
