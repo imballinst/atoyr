@@ -14,9 +14,12 @@ import (
 
 func RunMigrations(db *gorm.DB) error {
 	migrationsDir := os.Getenv("MIGRATIONS_PATH")
-	if migrationsDir == "" && os.Getenv("ENV") == "production" {
-		panic("MIGRATIONS_PATH should be provided in production mode")
-	} else {
+
+	if migrationsDir == "" {
+		if os.Getenv("ENV") == "production" {
+			panic("MIGRATIONS_PATH should be provided in production mode")
+		}
+
 		migrationsDir = "migrations"
 	}
 
@@ -40,6 +43,8 @@ func runMigrationsWithSQLDB(sqlDB *sql.DB, migrationsDir string) error {
 	}
 
 	// Create file source
+	fmt.Println("migrations dir: ", migrationsDir, absPath)
+
 	sourceDriver := &file.File{}
 	source, err := sourceDriver.Open(fmt.Sprintf("file://%s", absPath))
 	if err != nil {

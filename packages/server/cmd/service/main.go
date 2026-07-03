@@ -26,14 +26,16 @@ var GitHash = "unknown"
 func main() {
 	log.Println("Starting server...")
 
-	err := godotenv.Load(".env.local")
-	if err != nil {
-		log.Println("Error loading .env.local file")
-	}
-
 	// Set environment
 	if os.Getenv("ENV") == "" {
 		os.Setenv("ENV", "development")
+	}
+
+	if os.Getenv("ENV") == "development" {
+		err := godotenv.Load(".env.local")
+		if err != nil {
+			log.Println("Error loading .env.local file")
+		}
 	}
 
 	log.Println("Initializing database...")
