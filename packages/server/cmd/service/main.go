@@ -21,6 +21,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var GitHash = "unknown"
+
 func main() {
 	log.Println("Starting server...")
 
@@ -66,6 +68,7 @@ func main() {
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, sessionOptions)
 	statsService := services.NewStatsService(db, metricsCollector)
+	healthService := services.NewHealthService(db, "atoyr", GitHash)
 
 	restoreActiveSessions(gameService, sessionService)
 
@@ -80,6 +83,8 @@ func main() {
 
 	// Apply middleware
 	router.Use(middleware.CORSMiddleware())
+
+	api.RegisterHealthRoutes(router, healthService)
 	api.RegisterAdminRoutes(router, statsService, authMiddleware)
 
 	router.Use(middleware.Metrics(metricsCollector))

@@ -59,6 +59,19 @@ The server has a monitoring dashboard at `/dashboard` with Google OAuth authenti
 
 Key files: `packages/server/cmd/main.go`, `packages/server/internal/services/game.service.go`, `packages/server/internal/services/session.service.go`, `packages/server/internal/middleware/metrics.go`, `packages/server/internal/middleware/auth.go`, `packages/server/internal/services/stats.service.go`, `packages/server/internal/api/admin_routes.go`, `packages/server/web/static/dashboard.html`.
 
+### Healthcheck Endpoint
+
+The server exposes `GET /api/v1/health` (unauthenticated) returning build info and dependency status:
+
+- **Build info**: `name` is hardcoded (`"atoyr"`), `gitHash` is injected via `-ldflags -X main.GitHash=...` at build time.
+- **Dependency caching**: `HealthService` (`internal/services/health.service.go`) runs a background goroutine that refreshes every 30s. The handler reads cached values under `sync.RWMutex`.
+- **Database check**: calls `db.DB().Ping()`.
+- **UI check**: only in production (`ENV == "production"`); does `http.Get("http://localhost:80/")` with 2s timeout. In development, always `true`.
+- **HTTP status**: 200 if all dependencies healthy, 500 if any are unhealthy.
+- **Build integration**: `GIT_HASH=$(git rev-parse HEAD)` in `packages/server/Makefile`, passed as ldflags to `build`. Dockerfile uses `ARG GIT_HASH=unknown` with ldflags. CI passes `GIT_HASH=${{ github.sha }}` as a Docker build arg.
+
+Key files: `packages/server/internal/services/health.service.go`, `packages/server/internal/api/health_routes.go`, `packages/server/cmd/service/main.go`.
+
 ### Deployment & CI/CD
 
 The project uses GitHub Actions → GHCR (private) → Coolify pull pattern:

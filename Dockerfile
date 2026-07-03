@@ -24,7 +24,8 @@ RUN go mod download
 COPY packages/server/ .
 
 RUN apk add --no-cache build-base
-RUN CGO_ENABLED=1 go build -o /app/server ./cmd/main.go
+ARG GIT_HASH=unknown
+RUN CGO_ENABLED=1 go build -ldflags "-X main.GitHash=${GIT_HASH}" -o /app/server ./cmd/service
 
 # ---- Production ----
 FROM nginx:1.27-alpine
