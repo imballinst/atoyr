@@ -89,6 +89,16 @@ func (m *MetricsCollector) StartSnapshotWorker(db *gorm.DB, interval time.Durati
 	}()
 }
 
+func (m *MetricsCollector) CleanupOldSnapshots(db *gorm.DB, retention time.Duration) {
+	cutoff := time.Now().UTC().Add(-retention)
+	result := db.Where("timestamp < ?", cutoff).Delete(&models.MetricSnapshot{})
+	if result.Error != nil {
+		fmt.Printf("error when cleaning up old metric snapshots: %+v\n", result.Error)
+	} else if result.RowsAffected > 0 {
+		fmt.Printf("cleaned up %d metric snapshots older than %s\n", result.RowsAffected, retention)
+	}
+}
+
 func (m *MetricsCollector) addResponseTime(d time.Duration) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

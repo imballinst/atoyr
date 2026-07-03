@@ -72,6 +72,9 @@ func main() {
 	// Start metrics snapshot worker (writes to DB every 60s for time series)
 	metricsCollector.StartSnapshotWorker(db, 60*time.Second)
 
+	// Clean up snapshots older than 3 months on startup
+	metricsCollector.CleanupOldSnapshots(db, 3*30*24*time.Hour)
+
 	// Initialize Gin
 	router := gin.Default()
 
