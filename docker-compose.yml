@@ -10,8 +10,9 @@ services:
       - packages/server/.env.production
     environment:
       PORT: 3000
-      WORDS_PATH: data/words.json
-      DATABASE_PATH: data/db.sqlite3
+      WORDS_PATH: /app/server/data/words.json
+      DATABASE_PATH: /app/server/data/db.sqlite3
+      MIGRATIONS_PATH: /app/server/migrations
       ENV: production
     volumes:
       - ./packages/server/data:/app/server/data

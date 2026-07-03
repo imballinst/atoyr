@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -12,7 +13,14 @@ import (
 )
 
 func RunMigrations(db *gorm.DB) error {
-	return RunMigrationsWithPath(db, "migrations")
+	migrationsDir := os.Getenv("MIGRATIONS_DIR")
+	if migrationsDir == "" && os.Getenv("ENV") == "production" {
+		panic("MIGRATIONS_DIR should be provided in production mode")
+	} else {
+		migrationsDir = "migrations"
+	}
+
+	return RunMigrationsWithPath(db, migrationsDir)
 }
 
 func RunMigrationsWithPath(db *gorm.DB, migrationsDir string) error {

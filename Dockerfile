@@ -32,7 +32,8 @@ FROM nginx:1.27-alpine
 
 # Go server
 COPY --from=server-build /app/server /app/server/server
-COPY packages/server/data/words.json /app/server/data/words.json
+COPY packages/server/data /app/server/data
+COPY packages/server/migrations /app/server/migrations
 COPY packages/server/web/static/ /app/server/web/static/
 
 # Client SPA
