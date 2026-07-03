@@ -13,9 +13,9 @@ import (
 )
 
 func RunMigrations(db *gorm.DB) error {
-	migrationsDir := os.Getenv("MIGRATIONS_DIR")
+	migrationsDir := os.Getenv("MIGRATIONS_PATH")
 	if migrationsDir == "" && os.Getenv("ENV") == "production" {
-		panic("MIGRATIONS_DIR should be provided in production mode")
+		panic("MIGRATIONS_PATH should be provided in production mode")
 	} else {
 		migrationsDir = "migrations"
 	}
