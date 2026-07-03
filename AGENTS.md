@@ -17,6 +17,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - Always implement unit/component tests (for UI) and unit/integration tests (for server).
 - Always double verify the current implementation and convention in the codebase. Never hallucinate.
 - When writing a plan in .opencode/specs, be as detailed as possible.
+- ALWAYS ask if you are about to build Docker images. Doing builds alone is okay, but doing builds for Docker images should never be done automatically unless explicitly mentioned.
 
 ## Structure
 

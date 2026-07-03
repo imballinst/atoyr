@@ -1,0 +1,8 @@
+node_modules
+.git
+.gitignore
+.yarn/cache
+packages/client/build
+packages/server/bin
+.env.local
+README.md
