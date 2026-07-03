@@ -16,7 +16,7 @@ func TestGameService_StartGame(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
-	assert.Equal(t, int32(1), session.DurationSeconds)
+	assert.Equal(t, int32(6), session.DurationSeconds)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
 }
@@ -29,7 +29,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
-	assert.Equal(t, int32(1), session.DurationSeconds)
+	assert.Equal(t, int32(6), session.DurationSeconds)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
 
