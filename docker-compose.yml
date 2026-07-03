@@ -13,6 +13,7 @@ services:
       WORDS_PATH: /app/server/data/words.json
       DATABASE_PATH: /app/server/data/db.sqlite3
       MIGRATIONS_PATH: /app/server/migrations
+      STATIC_FILES_PATH: /app/server/web/static
       ENV: production
     volumes:
       - ./packages/server/data:/app/server/data

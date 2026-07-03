@@ -94,7 +94,12 @@ func main() {
 	server := api.NewServer(gameService, sessionService, leaderboardService, sessionOptions)
 	api.RegisterHandlers(router, server)
 
-	router.Static("/dashboard", "./web/static")
+	staticFilesPath := os.Getenv("STATIC_FILES_PATH")
+	if staticFilesPath == "" {
+		staticFilesPath = "./web/static"
+	}
+
+	router.Static("/dashboard", staticFilesPath)
 
 	// Start server
 	port := os.Getenv("PORT")
