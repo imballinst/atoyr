@@ -67,7 +67,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	return router, sessionService
 }
 
-func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService) {
+func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService, *services.StatsService) {
 	gin.SetMode(gin.TestMode)
 
 	db := testutils.SetupTestDB(t)
@@ -106,7 +106,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	RegisterHandlers(router, server)
 	RegisterAdminRoutes(router, statsService, middleware.NewNoopAuthMiddleware())
 
-	return router, db, sessionService
+	return router, db, sessionService, statsService
 }
 
 func TestGameRoutes_StartGame(t *testing.T) {
@@ -400,7 +400,7 @@ func TestLeaderboardRoutes_Pagination(t *testing.T) {
 }
 
 func TestAdminRoutes_GetStats(t *testing.T) {
-	router, _, sessionService := setupAdminTestRouter(t)
+	router, _, sessionService, _ := setupAdminTestRouter(t)
 
 	// Create sessions
 	session, err := sessionService.Create(false, []string{}, testutils.TestSessionOptions.Duration)
@@ -434,7 +434,7 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 }
 
 func TestAdminRoutes_GetStats_Empty(t *testing.T) {
-	router, _, _ := setupAdminTestRouter(t)
+	router, _, _, _ := setupAdminTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/v1/admin/stats", nil)
 	recorder := testutils.CreateTestResponseRecorder()
@@ -452,9 +452,9 @@ func TestAdminRoutes_GetStats_Empty(t *testing.T) {
 }
 
 func TestAdminRoutes_GetTimeseries(t *testing.T) {
-	router, db, _ := setupAdminTestRouter(t)
+	router, db, _, statsService := setupAdminTestRouter(t)
 
-	now := time.Now()
+	now := statsService.Now()
 	snapshot := models.MetricSnapshot{
 		Timestamp:     now.Add(-5 * time.Minute),
 		RequestCount:  100,
@@ -478,12 +478,12 @@ func TestAdminRoutes_GetTimeseries(t *testing.T) {
 
 	assert.Equal(t, "1h", result.Period)
 	assert.Equal(t, "5m", result.Granularity)
-	assert.Len(t, result.Data, 1)
-	assert.Equal(t, int64(100), result.Data[0].RequestCount)
+	assert.Len(t, result.Data, 12)
+	assert.Equal(t, int64(100), result.Data[11].RequestCount)
 }
 
 func TestAdminRoutes_GetTimeseries_InvalidPeriod(t *testing.T) {
-	router, _, _ := setupAdminTestRouter(t)
+	router, _, _, _ := setupAdminTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/v1/admin/timeseries?period=invalid", nil)
 	recorder := testutils.CreateTestResponseRecorder()
@@ -498,7 +498,7 @@ func TestAdminRoutes_GetTimeseries_InvalidPeriod(t *testing.T) {
 }
 
 func TestAdminRoutes_GetTimeseries_NoParams(t *testing.T) {
-	router, _, _ := setupAdminTestRouter(t)
+	router, _, _, _ := setupAdminTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/v1/admin/timeseries", nil)
 	recorder := testutils.CreateTestResponseRecorder()
