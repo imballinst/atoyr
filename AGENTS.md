@@ -59,6 +59,16 @@ The server has a monitoring dashboard at `/dashboard` with Google OAuth authenti
 
 Key files: `packages/server/cmd/main.go`, `packages/server/internal/services/game.service.go`, `packages/server/internal/services/session.service.go`, `packages/server/internal/middleware/metrics.go`, `packages/server/internal/middleware/auth.go`, `packages/server/internal/services/stats.service.go`, `packages/server/internal/api/admin_routes.go`, `packages/server/web/static/dashboard.html`.
 
+### Deployment & CI/CD
+
+The project uses GitHub Actions → GHCR (private) → Coolify pull pattern:
+
+- **Why not local builds**: The production VM (4GB/2vCPU) risks OOM with on-server Docker builds. GitHub runners handle compilation instead.
+- **GHCR for image registry**: Private images are free on GHCR. `GITHUB_TOKEN` authenticates the push in Actions; a PAT with `read:packages` + `repo` scopes is used for `docker login` on the VM for pulls.
+- **Single Dockerfile**: Multi-stage build at project root — node:24-alpine for client SPA, golang:1.25-alpine for Go server, nginx:1.27-alpine as the final runtime. nginx reverse-proxies `/api/` and `/dashboard` to the Go server on port 3000.
+- **Deploy workflow** (`.github/workflows/deploy.yml`): Triggered on push to `main`. Builds and pushes to `ghcr.io/<repo>:latest` with GitHub Actions cache (`type=gha`), then curls the Coolify deploy webhook.
+- **Key files**: `Dockerfile`, `.dockerignore`, `nginx.conf`, `docker-entrypoint.sh`, `docker-compose.yml`, `.github/workflows/deploy.yml`.
+
 ## Tests
 
 Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
