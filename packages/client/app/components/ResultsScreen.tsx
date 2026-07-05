@@ -35,7 +35,7 @@ export function ResultsScreen({
 
       <div className="flex flex-col gap-2 mb-3 w-full text-center">
         <div className="border-dark-bg-tertiary text-dark-text-primary p-2 sm:p-4 rounded-lg col-span-5 text-sm">
-          Your performance is above <Percentile value={data?.percentile} />% of other players!
+          Your result was better than <Percentile value={data?.percentile} />% other players!
         </div>
         <div className="grid grid-cols-6 gap-2">
           <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-3 md:col-span-2">
@@ -72,7 +72,7 @@ function Percentile({ value }: { value: number | undefined }) {
   }
 
   const formatted = value === Math.trunc(value) ? value : value.toFixed(2);
-  return <span className={`font-bold ${parseColor(value)}`}>{formatted}</span>;
+  return <span className={`font-bold tabular-nums ${parseColor(value)}`}>{formatted}</span>;
 }
 
 function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {

@@ -51,7 +51,6 @@ export function Keyboard({
           <button
             className="aspect-square bg-dark-bg-primary border-2 border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onBackspace}
-            disabled={answer.length >= 5}
             aria-label="Backspace"
           >
             ←

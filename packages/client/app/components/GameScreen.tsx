@@ -77,7 +77,7 @@ export function GameScreen({
   }, [scrambled, definition, autoVoice]);
 
   useEffect(() => {
-    function onKeyPress(e: KeyboardEvent) {
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Enter') {
         return handleSubmit();
       } else if (e.key === 'Backspace') {
@@ -90,8 +90,8 @@ export function GameScreen({
       }
     }
 
-    window.addEventListener('keypress', onKeyPress);
-    return () => window.removeEventListener('keypress', onKeyPress);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [handleSubmit]);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
@@ -156,7 +156,7 @@ export function GameScreen({
             key={i}
             className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
           >
-            {letter}
+            {letter.toUpperCase()}
           </div>
         ))}
         {answer.length < 5 &&

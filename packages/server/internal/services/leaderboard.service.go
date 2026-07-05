@@ -32,7 +32,7 @@ func (l *LeaderboardService) GetLeaderboard(limit, offset int) ([]LeaderboardEnt
 
 	if err := l.db.
 		Where("phase = ? AND score > 0", core.SessionPhaseFinished).
-		Order("score DESC, accuracy DESC").
+		Order("score DESC, accuracy DESC, ends_at ASC").
 		Limit(limit).
 		Offset(offset).
 		Find(&results).Error; err != nil {
@@ -70,11 +70,11 @@ func (l *LeaderboardService) GetPercentile(score int32) (float32, error) {
 	var totalBelowCurrentScore int32
 
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0;", core.SessionPhaseFinished).Find(&totalEligible).Error; err != nil {
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 ORDER BY score DESC, accuracy DESC, ends_at ASC;", core.SessionPhaseFinished).Find(&totalEligible).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score < ?;", core.SessionPhaseFinished, score).Find(&totalBelowCurrentScore).Error; err != nil {
+		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score < ? ORDER BY score DESC, accuracy DESC, ends_at ASC;", core.SessionPhaseFinished, score).Find(&totalBelowCurrentScore).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 
