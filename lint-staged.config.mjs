@@ -3,5 +3,5 @@
  * @type {import('lint-staged').Configuration}
  */
 export default {
-  "*.{ts,tsx}": ["oxfmt", "oxlint"],
+  "*.{ts,tsx}": ["oxfmt", "oxlint --fix --fix-suggestions"],
 };

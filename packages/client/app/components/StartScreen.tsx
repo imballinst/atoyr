@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+
 interface StartScreenProps {
   onStart: (autoVoice: boolean) => void;
 }
@@ -44,10 +45,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
           <li className="flex gap-2">
             <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
             <span>Type using external keyboard or on-screen buttons</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
-            <span>Press Enter or click Submit to guess</span>
           </li>
         </ul>
       </div>

@@ -67,11 +67,12 @@ export function ResultsScreen({
 }
 
 function Percentile({ value }: { value: number | undefined }) {
-  if (!value) {
+  if (value === undefined) {
     return <span className="animate-pulse">--</span>;
   }
 
-  return <span className={`font-bold ${parseColor(value)}`}>{value.toFixed(2)}</span>;
+  const formatted = value === Math.trunc(value) ? value : value.toFixed(2);
+  return <span className={`font-bold ${parseColor(value)}`}>{formatted}</span>;
 }
 
 function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {

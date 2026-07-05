@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
   --color-dark-bg-primary: #0f172a;
@@ -23,11 +23,11 @@
 html,
 body,
 #root {
-  height: 100vh;
+  @apply h-dvh;
 }
 
 body {
-  font-family: 'Merriweather', serif;
+  font-family: "Merriweather", serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: rgba(0, 0, 0, 0.85);
