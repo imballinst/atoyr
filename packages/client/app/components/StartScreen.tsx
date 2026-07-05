@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-
 interface StartScreenProps {
   onStart: (autoVoice: boolean) => void;
 }
