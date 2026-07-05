@@ -10,7 +10,7 @@ export function Keyboard({
   onSubmit: () => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       <div className="w-full flex flex-col gap-2">
         <div className="grid grid-cols-10 gap-1 w-full">
           {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((key) => (

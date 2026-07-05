@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import type { GameSessionState } from '~/lib/game';
 
@@ -24,9 +24,8 @@ export function GameScreen({
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
-  const textInputRef = useRef<HTMLInputElement>(null);
 
-  const speakLetters = useCallback((letters: string, definition: string) => {
+  const speakLetters = (letters: string, definition: string) => {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
@@ -38,42 +37,20 @@ export function GameScreen({
       const utterance = new SpeechSynthesisUtterance(letter);
       window.speechSynthesis.speak(utterance);
     });
-  }, []);
-
-  useEffect(() => {
-    textInputRef.current?.focus();
-
-    // Small delay to ensure focus is set before speaking
-    const speakTimeout = setTimeout(() => {
-      if (autoVoice) {
-        speakLetters(scrambled, definition);
-      }
-    }, 50);
-    return () => clearTimeout(speakTimeout);
-  }, [scrambled, definition, speakLetters, autoVoice]);
-
-  useEffect(() => {
-    function handleClick() {
-      textInputRef.current?.focus();
-    }
-
-    window.addEventListener('click', handleClick);
-    return () => {
-      window.removeEventListener('click', handleClick);
-    };
-  }, []);
+  };
 
   const handleLetterClick = (letter: string) => {
-    if (answer.length < 5) {
-      setAnswer(answer + letter);
-    }
+    setAnswer((prev) => {
+      if (prev.length === 5) return prev;
+      return answer + letter;
+    });
   };
 
   const handleBackspace = () => {
-    setAnswer(answer.slice(0, -1));
+    setAnswer((prev) => prev.slice(0, -1));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (answer.trim().length === 0) return;
     setFeedback(null);
     onSubmit(answer, token, {
@@ -87,16 +64,35 @@ export function GameScreen({
       },
     });
     setAnswer('');
-  };
+  }, [answer, token]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSubmit();
-    } else if (e.key === 'Backspace') {
-      e.preventDefault();
-      handleBackspace();
+  useEffect(() => {
+    // Small delay to ensure focus is set before speaking
+    const speakTimeout = setTimeout(() => {
+      if (autoVoice) {
+        speakLetters(scrambled, definition);
+      }
+    }, 50);
+    return () => clearTimeout(speakTimeout);
+  }, [scrambled, definition, autoVoice]);
+
+  useEffect(() => {
+    function onKeyPress(e: KeyboardEvent) {
+      if (e.key === 'Enter') {
+        return handleSubmit();
+      } else if (e.key === 'Backspace') {
+        return handleBackspace();
+      }
+
+      const lowerCased = e.key.toLowerCase();
+      if (/[a-z]/.test(lowerCased)) {
+        handleLetterClick(lowerCased);
+      }
     }
-  };
+
+    window.addEventListener('keypress', onKeyPress);
+    return () => window.removeEventListener('keypress', onKeyPress);
+  }, [handleSubmit]);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
@@ -168,18 +164,6 @@ export function GameScreen({
             <div key={`empty-${i}`} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />
           ))}
       </div>
-
-      <input
-        ref={textInputRef}
-        type="text"
-        value={answer}
-        onChange={(e) => setAnswer(e.target.value.toUpperCase())}
-        onKeyDown={handleKeyDown}
-        maxLength={5}
-        autoComplete="off"
-        className="absolute opacity-0 pointer-events-none"
-        aria-label="Answer input"
-      />
 
       <Keyboard answer={answer} onBackspace={handleBackspace} onClick={handleLetterClick} onSubmit={handleSubmit} />
 
