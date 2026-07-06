@@ -1,7 +1,7 @@
 import { Leaderboard } from '~/components/Leaderboard';
 
 export function meta() {
-  return [{ title: 'Leaderboard | atoyr' }, { name: 'description', content: 'Welcome to React Router!' }];
+  return [{ title: 'Leaderboard | atoyr' }, { name: 'description', content: 'Leaderboard of the atoyr game.' }];
 }
 
 export default function LeaderboardPage() {
