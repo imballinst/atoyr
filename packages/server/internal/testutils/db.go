@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func SetupTestDB(t *testing.T) *gorm.DB {
+func SetupTestDB(t testing.TB) *gorm.DB {
 	gormConfig := gorm.Config{}
 
 	if os.Getenv("GORM_DEBUG") == "true" {

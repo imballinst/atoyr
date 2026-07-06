@@ -1,7 +1,9 @@
 package services
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
@@ -222,5 +224,45 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		percentile, err := service.GetPercentile(id, score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
+	}
+}
+
+func BenchmarkLeaderboardService(b *testing.B) {
+	db := testutils.SetupTestDB(b)
+	service := NewLeaderboardService(db)
+
+	sqlDB, _ := db.DB()
+	txn, _ := sqlDB.Begin()
+	stmt, _ := txn.Prepare(`INSERT INTO session_entities 
+		(id, score, total_attempts, accuracy, correct_attempt_timestamps, used_words, word_definitions, used_item_ids, phase)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+
+	var firstID string
+	var firstScore int32
+	for i := range 50_000 {
+		id := utils.GenerateUUID()
+		score := int32(rand.Intn(100))
+		stmt.Exec(id, score, rand.Intn(100), rand.Float32()*100, "[]", "{}", "{}", "{}", core.SessionPhaseFinished)
+		if i == 0 {
+			firstID = id
+			firstScore = score
+		}
+	}
+	stmt.Close()
+	txn.Commit()
+
+	b.ResetTimer() // only times what's below
+
+	for b.Loop() {
+		start := time.Now()
+
+		_, err := service.GetPercentile(firstID, firstScore)
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		if elapsed := time.Since(start); elapsed > 10*time.Millisecond {
+			b.Fatalf("too slow: %s, want < 100ms", elapsed)
+		}
 	}
 }

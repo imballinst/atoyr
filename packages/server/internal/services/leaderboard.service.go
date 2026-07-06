@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"time"
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
@@ -66,16 +67,48 @@ func (l *LeaderboardService) GetTotalEntries() (int64, error) {
 }
 
 func (l *LeaderboardService) GetPercentile(sessionId string, score int32) (float32, error) {
-	var totalEligible int32
-	var totalBelowCurrentScore int32
-
+	// 1. Fetch the current session's tiebreaker fields
+	type sessionMeta struct {
+		Accuracy float32
+		EndsAt   time.Time
+	}
+	var meta sessionMeta
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND id != ? ORDER BY score DESC, accuracy DESC, ends_at ASC;", core.SessionPhaseFinished, sessionId).Find(&totalEligible).Error; err != nil {
+		Raw("SELECT accuracy, ends_at FROM session_entities WHERE id = ?", sessionId).
+		Scan(&meta).Error; err != nil {
+		return 0, fmt.Errorf("failed to fetch session meta: %w", err)
+	}
+
+	// 2. Total eligible (unchanged)
+	var totalEligible int32
+	if err := l.db.
+		Raw(`SELECT COUNT(*) FROM session_entities
+             WHERE phase = ? AND score > 0 AND id != ?`,
+			core.SessionPhaseFinished, sessionId).
+		Scan(&totalEligible).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
+
+	// 3. Count sessions that rank WORSE than the current one
+	var totalBelowCurrentScore int32
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE phase = ? AND score > 0 AND score < ? AND id != ? ORDER BY score DESC, accuracy DESC, ends_at ASC;", core.SessionPhaseFinished, score, sessionId).Find(&totalBelowCurrentScore).Error; err != nil {
+		Raw(`SELECT COUNT(*) FROM session_entities
+             WHERE phase = ? AND score > 0 AND id != ?
+               AND (
+                     score < ?
+                     OR (score = ? AND accuracy < ?)
+                     OR (score = ? AND accuracy = ? AND ends_at > ?)
+               )`,
+			core.SessionPhaseFinished, sessionId,
+			score,
+			score, meta.Accuracy,
+			score, meta.Accuracy, meta.EndsAt).
+		Scan(&totalBelowCurrentScore).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
+	}
+
+	if totalEligible == 0 {
+		return 0, nil
 	}
 
 	percentile := (float32(totalBelowCurrentScore) / float32(totalEligible)) * 100
