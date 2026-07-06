@@ -8,7 +8,7 @@ import { StartScreen } from '~/components/StartScreen';
 import { hasGameEnded } from '~/lib/game';
 
 export function meta() {
-  return [{ title: 'Game | atoyr' }, { name: 'description', content: 'Test your reflexes, climb the leaderboard.' }];
+  return [{ title: 'Game | Atoyr' }, { name: 'description', content: 'Test your reflexes, climb the leaderboard.' }];
 }
 
 export function clientLoader() {
