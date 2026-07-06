@@ -4,5 +4,6 @@ node_modules
 .yarn/cache
 packages/client/build
 packages/server/bin
+packages/server/db.sqlite
 .env.local
 README.md
