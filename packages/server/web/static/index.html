@@ -317,7 +317,10 @@
       document.addEventListener("DOMContentLoaded", initCharts);
 
       // Poll for updates every 5 seconds
-      setInterval(fetchStats, 5000);
+      setInterval(() => {
+        fetchStats();
+        fetchTimeSeries();
+      }, 30_000);
     </script>
   </body>
 </html>
