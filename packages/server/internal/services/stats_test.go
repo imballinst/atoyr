@@ -19,8 +19,9 @@ func TestStatsService_GetStats(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	metricsCollector := middleware.NewMetricsCollector()
 	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
 
-	now := time.Now()
+	now := service.Now()
 	today := now.Truncate(24 * time.Hour)
 
 	sessions := []models.SessionEntity{
@@ -35,12 +36,12 @@ func TestStatsService_GetStats(t *testing.T) {
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
-			ID: "session-yesterday", CreatedAt: today.AddDate(0, 0, -1).Add(12 * time.Hour), UpdatedAt: today.AddDate(0, 0, -1).Add(12 * time.Hour), EndsAt: today.AddDate(0, 0, -1).Add(13 * time.Hour),
+			ID: "session-tomorrow", CreatedAt: today.AddDate(0, 0, 1).Add(12 * time.Hour), UpdatedAt: today.AddDate(0, 0, 1).Add(12 * time.Hour), EndsAt: today.AddDate(0, 0, 1).Add(13 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
-			ID: "session-last-week", CreatedAt: today.AddDate(0, 0, -8), UpdatedAt: today.AddDate(0, 0, -8), EndsAt: today.AddDate(0, 0, -8).Add(1 * time.Hour),
+			ID: "session-next-week", CreatedAt: today.AddDate(0, 0, 8), UpdatedAt: today.AddDate(0, 0, 8), EndsAt: today.AddDate(0, 0, 8).Add(1 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 25, TotalAttempts: 3, DurationSeconds: 60,
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
@@ -64,7 +65,7 @@ func TestStatsService_GetStats(t *testing.T) {
 
 	assert.Equal(t, int64(2), stats.SessionsToday)
 	assert.Equal(t, int64(3), stats.SessionsThisWeek)
-	assert.Equal(t, int64(3), stats.SessionsThisMonth)
+	assert.Equal(t, int64(4), stats.SessionsThisMonth)
 	assert.Equal(t, int64(1), stats.ActiveGames)
 
 	assert.Equal(t, int64(42), stats.TotalRequests)
@@ -81,6 +82,7 @@ func TestStatsService_GetStats_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	metricsCollector := middleware.NewMetricsCollector()
 	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
 
 	stats, err := service.GetStats()
 	assert.NoError(t, err)
@@ -99,8 +101,9 @@ func TestStatsService_GetTimeSeries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	metricsCollector := middleware.NewMetricsCollector()
 	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
 
-	now := time.Now()
+	now := service.Now()
 	snapshots := []models.MetricSnapshot{
 		{Timestamp: now.Add(-30 * time.Minute).UTC(), RequestCount: 100, ErrorCount4xx: 2, ErrorCount5xx: 1, ResponseTimeP50: 50, ResponseTimeP95: 100, ResponseTimeP99: 200, MemoryUsageMb: 3.1},
 		{Timestamp: now.Add(-20 * time.Minute).UTC(), RequestCount: 200, ErrorCount4xx: 1, ErrorCount5xx: 0, ResponseTimeP50: 60, ResponseTimeP95: 110, ResponseTimeP99: 210, MemoryUsageMb: 3.2},
@@ -154,6 +157,7 @@ func TestStatsService_GetTimeSeries_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	metricsCollector := middleware.NewMetricsCollector()
 	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
 
 	result, err := service.GetTimeSeries("1h", "5m")
 	assert.NoError(t, err)
@@ -188,6 +192,7 @@ func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	metricsCollector := middleware.NewMetricsCollector()
 	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
 
 	_, err := service.GetTimeSeries("invalid", "5m")
 	assert.Error(t, err)

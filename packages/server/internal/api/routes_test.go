@@ -92,11 +92,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	metricsCollector := middleware.NewMetricsCollector()
 	statsService := services.NewStatsService(db, metricsCollector)
 
-	nowFn := func() time.Time {
-		now := time.Now().UTC()
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	}
-	statsService.Now = nowFn
+	statsService.Now = testutils.NowMockFn
 
 	router := gin.New()
 	router.Use(middleware.CORSMiddleware())

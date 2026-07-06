@@ -1,5 +1,7 @@
 package core
 
+import "sync"
+
 const (
 	SessionPhasePlaying  = "playing"
 	SessionPhaseFinished = "finished"
@@ -22,18 +24,23 @@ func GetSessionPhase(remainingSeconds int32) string {
 
 // Session duration manager.
 type sessionDurationManager struct {
+	mu     sync.RWMutex
 	record map[string]int32
 }
 
-var SessionDurationManager = sessionDurationManager{
+var SessionDurationManager = &sessionDurationManager{
 	record: map[string]int32{},
 }
 
-func (t sessionDurationManager) Add(sessionID string, duration int32) {
+func (t *sessionDurationManager) Add(sessionID string, duration int32) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.record[sessionID] = duration
 }
 
-func (t sessionDurationManager) Extend(sessionID string, value int32) int32 {
+func (t *sessionDurationManager) Extend(sessionID string, value int32) int32 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	val, ok := t.record[sessionID]
 	if !ok {
 		return 0
@@ -45,7 +52,9 @@ func (t sessionDurationManager) Extend(sessionID string, value int32) int32 {
 	return newRemaining
 }
 
-func (t sessionDurationManager) Decrement(sessionID string) int32 {
+func (t *sessionDurationManager) Decrement(sessionID string) int32 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	val, ok := t.record[sessionID]
 	if !ok {
 		return 0
@@ -57,7 +66,9 @@ func (t sessionDurationManager) Decrement(sessionID string) int32 {
 	return newRemaining
 }
 
-func (t sessionDurationManager) Get(sessionID string) int32 {
+func (t *sessionDurationManager) Get(sessionID string) int32 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	val, ok := t.record[sessionID]
 	if !ok {
 		return 0
@@ -66,6 +77,8 @@ func (t sessionDurationManager) Get(sessionID string) int32 {
 	return val
 }
 
-func (t sessionDurationManager) Clean(sessionID string) {
+func (t *sessionDurationManager) Clean(sessionID string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	delete(t.record, sessionID)
 }
