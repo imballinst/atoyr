@@ -59,7 +59,18 @@ body {
 }
 
 @layer utilities {
-  .animate-fade-in-out {
-    animation: fadeInOut 0.6s ease-in-out;
+  .animate-float-up-fade {
+    animation: floatUpFade 1s ease-in-out forwards;
+  }
+}
+
+@keyframes floatUpFade {
+  0% {
+    top: 50%;
+    opacity: 1;
+  }
+  100% {
+    top: 20%;
+    opacity: 0;
   }
 }

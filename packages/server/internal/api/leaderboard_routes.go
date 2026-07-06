@@ -79,7 +79,7 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
 		return
 	}
 
-	percentile, err := gr.leaderboardService.GetPercentile(session.Score)
+	percentile, err := gr.leaderboardService.GetPercentile(sessionId, session.Score)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard percentile"})
 		return

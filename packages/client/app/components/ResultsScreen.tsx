@@ -29,7 +29,7 @@ export function ResultsScreen({
     <>
       <h1 className="text-4xl font-bold mb-2 text-dark-text-primary">Game Over!</h1>
 
-      <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm mb-6">
+      <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm mb-4">
         Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
       </div>
 
@@ -54,12 +54,12 @@ export function ResultsScreen({
 
       <button
         onClick={onPlayAgain}
-        className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow mb-6 hover:bg-dark-interactive-hover"
+        className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
       >
         Play Again
       </button>
 
-      <div className="mt-6 pt-6 border-t border-dark-border-secondary w-full min-h-[270px]">
+      <div className="pt-6 w-full min-h-[270px]">
         <Leaderboard limit={5} HeadingComponent="h2" />
       </div>
     </>

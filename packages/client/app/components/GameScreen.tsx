@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { nanoid } from 'nanoid';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import type { GameSessionState } from '~/lib/game';
 
@@ -23,7 +24,7 @@ export function GameScreen({
   onSubmit,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
-  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [feedback, setFeedback] = useState<Array<{ id: string; isCorrect: boolean; classNames: [string, string, string] }>>([]);
 
   const speakLetters = (letters: string, definition: string) => {
     if (!('speechSynthesis' in window)) return;
@@ -52,15 +53,19 @@ export function GameScreen({
 
   const handleSubmit = useCallback(() => {
     if (answer.trim().length === 0) return;
-    setFeedback(null);
+
     onSubmit(answer, token, {
       onSuccess: () => {
-        setFeedback('correct');
-        setTimeout(() => setFeedback(null), 1000);
+        const id = nanoid();
+
+        setFeedback((prev) => prev.concat({ id, isCorrect: true, classNames: getClassNames() }));
+        setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
       },
       onError: () => {
-        setFeedback('incorrect');
-        setTimeout(() => setFeedback(null), 1000);
+        const id = nanoid();
+
+        setFeedback((prev) => prev.concat({ id, isCorrect: false, classNames: getClassNames() }));
+        setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
       },
     });
     setAnswer('');
@@ -85,7 +90,7 @@ export function GameScreen({
       }
 
       const lowerCased = e.key.toLowerCase();
-      if (/[a-z]/.test(lowerCased)) {
+      if (/^[a-z]$/.test(lowerCased)) {
         handleLetterClick(lowerCased);
       }
     }
@@ -167,15 +172,24 @@ export function GameScreen({
 
       <Keyboard answer={answer} onBackspace={handleBackspace} onClick={handleLetterClick} onSubmit={handleSubmit} />
 
-      {feedback && (
-        <div
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl animate-fade-in-out z-50 ${
-            feedback === 'correct' ? 'text-green-500' : 'text-red-500'
-          }`}
-        >
-          {feedback === 'correct' ? '✓' : '✗'}
-        </div>
-      )}
+      {feedback.map(({ id, isCorrect, classNames }) => {
+        const className =
+          'absolute px-4 py-2 rounded-full bg-black text-white text-sm font-medium pointer-events-none animate-float-up-fade';
+        const rendered = isCorrect ? '🎉' : '❌';
+
+        return (
+          <Fragment key={id}>
+            <div className={'-translate-x-40 ' + className + ` ${classNames[0]}`}>{rendered}</div>
+            <div className={className + ` ${classNames[1]}`}>{rendered}</div>
+            <div className={'translate-x-40 ' + className + ` ${classNames[2]}`}>{rendered}</div>
+          </Fragment>
+        );
+      })}
     </div>
   );
+}
+
+function getClassNames() {
+  const translates = ['translate-y-10', 'translate-y-20', 'translate-y-30'];
+  return Array.from({ length: 3 }, () => translates[Math.floor(Math.random() * translates.length)]) as [string, string, string];
 }

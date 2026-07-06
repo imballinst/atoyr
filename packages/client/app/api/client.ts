@@ -101,7 +101,9 @@ function initSSE(onEvent: (data: Record<string, unknown>) => void, onReconnect: 
   }, HEARTBEAT_INTERVAL);
 
   const handleEvent = (event: MessageEvent) => {
-    console.info('SSE message received:', event.type, event.data);
+    if (import.meta.env.DEV) {
+      console.info('SSE message received:', event.type, event.data);
+    }
 
     lastMessageReceived = event.type;
     lastEventTime = Date.now();

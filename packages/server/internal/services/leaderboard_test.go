@@ -6,6 +6,7 @@ import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/testutils"
+	"atoyr/server/internal/utils"
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -192,10 +193,11 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
-	// Add 25 results
+	results := []models.SessionEntity{}
+
 	for i := range 10 {
 		result := models.SessionEntity{
-			ID:                       "session" + string(rune(i)),
+			ID:                       utils.GenerateUUID(),
 			Score:                    int32(i * 10),
 			TotalAttempts:            int32(10),
 			Accuracy:                 float32(100 - (i * 10)),
@@ -206,16 +208,18 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 			Phase:                    core.SessionPhaseFinished,
 		}
 		db.Create(&result)
+		results = append(results, result)
 	}
 
 	for i := 1; i < 10; i++ {
 		// 0 is not eligible in the code, so we start from 1 to 10.
-		score := int32(i * 10)
-		totalEligible := float32(9)
+		id := results[i].ID
+		score := results[i].Score
+		totalEligible := float32(8)
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-		percentile, err := service.GetPercentile(score)
+		percentile, err := service.GetPercentile(id, score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
