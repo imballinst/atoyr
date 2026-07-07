@@ -31,7 +31,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
                 side="bottom"
                 align="end"
               >
-                {import.meta.env.PROD
+                {import.meta.env.DEV
                   ? 'Dev'
                   : (() => {
                       const [client, server] = import.meta.env.VERSION.split('-');
