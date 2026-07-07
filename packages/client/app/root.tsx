@@ -1,9 +1,23 @@
+import * as Sentry from '@sentry/browser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
-import type { Route } from './+types/root';
-
 import './app.css';
+import type { Route } from './+types/root';
+import { PageLayout } from './components/PageLayout';
+
+const SHOULD_CAPTURE_EXCEPTION = import.meta.env.PROD;
+if (SHOULD_CAPTURE_EXCEPTION) {
+  Sentry.init({
+    dsn: 'https://a4702da842b9dda584868472f90f2b87@o4511691687591936.ingest.de.sentry.io/4511691694145616',
+    dataCollection: {
+      // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
+      // https://docs.sentry.io/platforms/javascript/configuration/options/#dataCollection
+      userInfo: false,
+      httpBodies: [],
+    },
+  });
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -47,24 +61,9 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex flex-col max-w-screen sm:max-w-[430px] w-full h-full">
-        <div className="bg-dark-bg-primary text-dark-text-primary text-sm w-full">
-          <nav className="mx-auto px-4 py-2 border-b border-gray-700">
-            <ul className="flex gap-4">
-              <li>
-                <a href="/">Play</a>
-              </li>
-              <li>
-                <a href="/leaderboard">Leaderboard</a>
-              </li>
-            </ul>
-          </nav>
-        </div>
-
-        <main className="flex flex-col items-center justify-center p-4 bg-dark-bg-primary w-full flex-1">
-          <Outlet />
-        </main>
-      </div>
+      <PageLayout>
+        <Outlet />
+      </PageLayout>
     </QueryClientProvider>
   );
 }
@@ -77,9 +76,15 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? '404' : 'Error';
     details = error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else {
+    if (import.meta.env.DEV && error && error instanceof Error) {
+      details = error.message;
+      stack = error.stack;
+    }
+
+    if (SHOULD_CAPTURE_EXCEPTION && error && error instanceof Error) {
+      Sentry.captureException(error);
+    }
   }
 
   return (

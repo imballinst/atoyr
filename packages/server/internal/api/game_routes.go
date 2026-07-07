@@ -32,6 +32,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		log.Println("Failed to create session:", err)
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session, " + err.Error()})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 
@@ -41,6 +42,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		log.Println("Failed to start game:", err)
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to start game, " + err.Error()})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 
@@ -72,6 +74,9 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		status := http.StatusInternalServerError
 		if err == services.ErrSessionNotPlayingYet || err == services.ErrSessionAlreadyFinished {
 			status = http.StatusBadRequest
+		} else {
+			// Server-side error.
+			utils.SendExceptionToSentry(err)
 		}
 
 		c.JSON(status, gin.H{"error": "failed to continue game, " + err.Error()})
@@ -160,6 +165,7 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 

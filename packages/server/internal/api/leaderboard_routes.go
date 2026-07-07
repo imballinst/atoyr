@@ -2,6 +2,7 @@ package api
 
 import (
 	"atoyr/server/internal/core"
+	"atoyr/server/internal/utils"
 	"log"
 	"net/http"
 
@@ -33,6 +34,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	total, err := gr.leaderboardService.GetTotalEntries()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 
@@ -40,6 +42,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	entries, err := gr.leaderboardService.GetLeaderboard(limit, (page-1)*limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 
@@ -71,6 +74,7 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 
@@ -82,6 +86,7 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
 	percentile, err := gr.leaderboardService.GetPercentile(sessionId, session.Score)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard percentile"})
+		utils.SendExceptionToSentry(err)
 		return
 	}
 

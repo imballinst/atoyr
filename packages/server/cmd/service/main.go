@@ -17,6 +17,7 @@ import (
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -25,6 +26,13 @@ var GitHash = "unknown"
 
 func main() {
 	log.Println("Starting server...")
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: "https://a4702da842b9dda584868472f90f2b87@o4511691687591936.ingest.de.sentry.io/4511691694145616",
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
 
 	// Set environment
 	if os.Getenv("ENV") == "" {

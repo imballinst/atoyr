@@ -12,6 +12,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	ErrorInvalidPeriod = "invalid period"
+)
+
 type StatsService struct {
 	db        *gorm.DB
 	metrics   *middleware.MetricsCollector
@@ -162,7 +166,7 @@ func (s *StatsService) parseTimeRange(period, granularity string) (time.Time, ti
 	case "1M":
 		startTime = now.AddDate(0, -1, 0)
 	default:
-		return time.Time{}, time.Time{}, 0, fmt.Errorf("invalid period: %s", period)
+		return time.Time{}, time.Time{}, 0, fmt.Errorf("%s: %s", ErrorInvalidPeriod, period)
 	}
 
 	var interval time.Duration

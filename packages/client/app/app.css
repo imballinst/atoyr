@@ -74,3 +74,15 @@ body {
     opacity: 0;
   }
 }
+
+a.navigation {
+  font-weight: normal;
+  &::before {
+    content: attr(data-text);
+    display: block;
+    font-weight: bold;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+}

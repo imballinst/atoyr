@@ -3,6 +3,8 @@ package api
 import (
 	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/services"
+	"atoyr/server/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +17,7 @@ func RegisterAdminRoutes(rg *gin.Engine, statsService *services.StatsService, au
 			stats, err := statsService.GetStats()
 			if err != nil {
 				c.JSON(500, gin.H{"error": "failed to get stats"})
+				utils.SendExceptionToSentry(err)
 				return
 			}
 			c.JSON(200, stats)
@@ -26,7 +29,13 @@ func RegisterAdminRoutes(rg *gin.Engine, statsService *services.StatsService, au
 
 			timeseries, err := statsService.GetTimeSeries(period, granularity)
 			if err != nil {
-				c.JSON(400, gin.H{"error": err.Error()})
+				if strings.Contains(err.Error(), services.ErrorInvalidPeriod) {
+					c.JSON(400, gin.H{"error": err.Error()})
+					return
+				}
+
+				c.JSON(500, gin.H{"error": err.Error()})
+				utils.SendExceptionToSentry(err)
 				return
 			}
 			c.JSON(200, timeseries)

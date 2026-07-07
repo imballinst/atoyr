@@ -78,8 +78,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
 }
 
 function Title() {
-  const aTest = 'A test of your reflexes'.split(' ').map(titleMapper);
-  const ofYourReflexes = ''.split(' ').map(titleMapper);
+  const aTest = 'A test of your reflexes'.split(' ').map((word) => <TitleSegment key={word} word={word} />);
+  const ofYourReflexes = ''.split(' ').map((word) => <TitleSegment key={word} word={word} />);
 
   return (
     <span className="flex flex-col gap-x-2 font-semibold">
@@ -89,7 +89,7 @@ function Title() {
   );
 }
 
-function titleMapper(word: string) {
+function TitleSegment({ word }: { word: string }) {
   const firstChar = <span>{word.charAt(0)}</span>;
   if (word.length === 1) return firstChar;
 
