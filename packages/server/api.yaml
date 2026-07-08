@@ -25,6 +25,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StartGameResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/game/continue:
     post:
       tags:
@@ -38,6 +50,16 @@ paths:
                 $ref: '#/components/schemas/StartGameResponse'
         '404':
           description: Game session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/game/submit:
     post:
       tags:
@@ -55,8 +77,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmitAnswerResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Game session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/game/sse:
     get:
       tags:
@@ -68,6 +106,18 @@ paths:
             text/event-stream:
               schema:
                 type: string
+        '404':
+          description: Game session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/leaderboard:
     get:
       tags:
@@ -90,6 +140,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetLeaderboardResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/leaderboard/percentile:
     get:
       tags:
@@ -101,8 +163,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetLeaderboardPercentileResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          additionalProperties: true
     StartGameRequest:
       type: object
       required:

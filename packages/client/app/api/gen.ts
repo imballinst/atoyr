@@ -35,6 +35,24 @@ export interface paths {
             'application/json': components['schemas']['StartGameResponse'];
           };
         };
+        /** @description Bad request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
       };
     };
     delete?: never;
@@ -75,7 +93,18 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
         };
       };
     };
@@ -116,12 +145,32 @@ export interface paths {
             'application/json': components['schemas']['SubmitAnswerResponse'];
           };
         };
+        /** @description Bad request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
         /** @description Game session not found */
         404: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
         };
       };
     };
@@ -154,6 +203,24 @@ export interface paths {
           };
           content: {
             'text/event-stream': string;
+          };
+        };
+        /** @description Game session not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
           };
         };
       };
@@ -194,6 +261,24 @@ export interface paths {
             'application/json': components['schemas']['GetLeaderboardResponse'];
           };
         };
+        /** @description Bad request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
       };
     };
     put?: never;
@@ -229,6 +314,33 @@ export interface paths {
             'application/json': components['schemas']['GetLeaderboardPercentileResponse'];
           };
         };
+        /** @description Bad request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Game session not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
+        /** @description Internal server error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ErrorResponse'];
+          };
+        };
       };
     };
     put?: never;
@@ -243,6 +355,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    ErrorResponse: {
+      error: {
+        [key: string]: unknown;
+      };
+    };
     StartGameRequest: {
       autoVoice?: boolean;
       itemsUsed: string[];
@@ -340,6 +457,7 @@ export interface components {
   headers: never;
   pathItems: never;
 }
+export type ErrorResponse = components['schemas']['ErrorResponse'];
 export type StartGameRequest = components['schemas']['StartGameRequest'];
 export type StartGameResponse = components['schemas']['StartGameResponse'];
 export type SubmitAnswerRequest = components['schemas']['SubmitAnswerRequest'];

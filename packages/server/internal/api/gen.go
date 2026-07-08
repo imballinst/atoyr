@@ -12,6 +12,11 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Error map[string]interface{} `json:"error"`
+}
+
 // GetLeaderboardPercentileResponse defines model for GetLeaderboardPercentileResponse.
 type GetLeaderboardPercentileResponse struct {
 	Percentile float32 `json:"percentile"`

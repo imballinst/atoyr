@@ -4,7 +4,6 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
@@ -29,6 +28,7 @@ const INITIAL_STATE: GameState = {
   usedWords: [],
   autoVoice: false,
 };
+const QUERY_OPTS = { retry: import.meta.env.DEV ? 0 : 3 };
 
 const TickEventSchema = z.object({ type: z.literal('tick'), remainingSeconds: z.number() });
 const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string() });
@@ -117,10 +117,6 @@ export function useGame(shouldContinueGame: boolean) {
         },
       );
     } catch (err) {
-      if (isAxiosError(err) && err.response && err.response.status >= 400 && err.response.status < 500) {
-        return;
-      }
-
       console.error(`Failed to ${action} game:`, err);
 
       if (action === 'start') {
@@ -213,16 +209,21 @@ export function useGame(shouldContinueGame: boolean) {
 }
 
 export function useLeaderboard(page = 1, limit = 10) {
-  return apiQuery.useQuery('get', '/api/v1/leaderboard', {
-    params: {
-      query: {
-        page,
-        limit,
+  return apiQuery.useQuery(
+    'get',
+    '/api/v1/leaderboard',
+    {
+      params: {
+        query: {
+          page,
+          limit,
+        },
       },
     },
-  });
+    QUERY_OPTS,
+  );
 }
 
 export function useLeaderboardPercentile() {
-  return apiQuery.useQuery('get', '/api/v1/leaderboard/percentile');
+  return apiQuery.useQuery('get', '/api/v1/leaderboard/percentile', undefined, QUERY_OPTS);
 }
