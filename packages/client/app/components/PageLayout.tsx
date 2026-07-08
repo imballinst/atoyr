@@ -53,12 +53,12 @@ export function PageLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function PathAwareLink({ href, children }: { href: string; children: ReactNode }) {
+function PathAwareLink({ href, children }: { href: string; children: string }) {
   const { pathname } = useLocation();
   const additionalClass = pathname === href ? 'font-bold!' : '';
 
   return (
-    <a href={href} className={'navigation ' + additionalClass} data-text={children}>
+    <a href={href} className={'navigation ' + additionalClass} data-ga-value={children} data-ga-label="ga-navbar-link">
       {children}
     </a>
   );

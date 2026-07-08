@@ -78,7 +78,7 @@ body {
 a.navigation {
   font-weight: normal;
   &::before {
-    content: attr(data-text);
+    content: attr(data-ga-value);
     display: block;
     font-weight: bold;
     height: 0;
