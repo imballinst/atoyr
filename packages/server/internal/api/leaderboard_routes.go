@@ -78,7 +78,8 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
 		return
 	}
 
-	if session.Phase != core.SessionPhaseFinished {
+	sessionDuration := core.SessionDurationManager.Get(sessionId)
+	if session.Phase != core.SessionPhaseFinished && core.GetSessionPhase(sessionDuration) != core.SessionPhaseFinished {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "session not finished yet"})
 		return
 	}

@@ -190,10 +190,6 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 
 		if currentPhase == core.SessionPhaseFinished {
 			session, err := gr.sessionService.FindByID(sessionId)
-			for i := 0; i < 50 && (err != nil || session.Phase != core.SessionPhaseFinished); i++ {
-				time.Sleep(100 * time.Millisecond)
-				session, err = gr.sessionService.FindByID(sessionId)
-			}
 			if err != nil {
 				fmt.Println(fmt.Errorf("error when retrieving session after session finished: %v", err))
 				return false
