@@ -94,9 +94,10 @@ describe('GameScreen', () => {
     renderScreen();
 
     expect(screen.getByText('A thin, flat cake made from batter.')).toBeInTheDocument();
-    expect(screen.getByText('20s')).toBeInTheDocument();
-    expect(screen.getByText('2/4 correct')).toBeInTheDocument();
-    expect(screen.getByText('50.0%')).toBeInTheDocument();
+    expect(within(screen.getByRole('heading', { name: 'Remaining seconds' }).closest('section')!).getByText('20s')).toBeInTheDocument();
+    const scoreSection = screen.getByRole('heading', { name: 'Score' }).closest('section')!;
+    expect(within(scoreSection).getByText('2/4 correct')).toBeInTheDocument();
+    expect(within(scoreSection).getByText('50.0%')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Streak' })).toBeInTheDocument();
   });
 

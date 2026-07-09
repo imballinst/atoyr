@@ -84,3 +84,13 @@ The project uses GitHub Actions → GHCR (private) → Coolify pull pattern:
 ## Tests
 
 Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
+
+### Test Query Conventions
+
+When writing tests, prefer queries in this order:
+
+1. **`getByRole`** — for interactive elements (`button`, `textbox`) and landmark/heading roles (`heading`, `section`). Use this whenever the element has an implicit or explicit role.
+2. **`within(section).getByText(...)`** — for content scoped to a semantic parent. Always scope queries to the relevant `<section>` or container (e.g., `within(getByRole('heading', { name: 'Score' }).closest('section')!).getByText('2/4 correct')`).
+3. **`getByTestId`** — only as a last resort when no semantic query is possible.
+
+Avoid bare `getByText` for stat values or labels that belong to a specific region — scope them with `within()` instead.
