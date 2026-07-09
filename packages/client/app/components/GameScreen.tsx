@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import type { GameSessionState } from '~/lib/game';
 
@@ -41,18 +41,15 @@ export function GameScreen({
   };
 
   const handleLetterClick = (letter: string) => {
-    setAnswer((prev) => {
-      if (prev.length === 5) return prev;
-      return answer + letter;
-    });
+    setAnswer((prev) => prev + letter);
   };
 
   const handleBackspace = () => {
     setAnswer((prev) => prev.slice(0, -1));
   };
 
-  const handleSubmit = useCallback(() => {
-    if (answer.trim().length === 0) return;
+  useEffect(() => {
+    if (answer.trim().length !== 5) return;
 
     onSubmit(answer, token, {
       onSuccess: () => {
@@ -83,9 +80,7 @@ export function GameScreen({
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Enter') {
-        return handleSubmit();
-      } else if (e.key === 'Backspace') {
+      if (e.key === 'Backspace') {
         return handleBackspace();
       }
 
@@ -97,7 +92,7 @@ export function GameScreen({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleSubmit]);
+  }, []);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
@@ -170,7 +165,7 @@ export function GameScreen({
           ))}
       </div>
 
-      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={handleLetterClick} onSubmit={handleSubmit} />
+      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={handleLetterClick} />
 
       {feedback.map(({ id, isCorrect, classNames }) => {
         const className =

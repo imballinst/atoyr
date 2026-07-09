@@ -1,14 +1,4 @@
-export function Keyboard({
-  answer,
-  onBackspace,
-  onClick,
-  onSubmit,
-}: {
-  answer: string;
-  onClick: (letter: string) => void;
-  onBackspace: () => void;
-  onSubmit: () => void;
-}) {
+export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onClick: (letter: string) => void; onBackspace: () => void }) {
   return (
     <div className="space-y-2 w-full">
       <div className="w-full flex flex-col gap-2">
@@ -63,14 +53,6 @@ export function Keyboard({
           </button>
         </div>
       </div>
-
-      <button
-        onClick={onSubmit}
-        disabled={answer.length === 0}
-        className="w-full py-3 bg-dark-interactive-success text-white font-semibold text-sm rounded transition duration-200 hover:bg-green-600 hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Submit
-      </button>
     </div>
   );
 }

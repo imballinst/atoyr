@@ -7,7 +7,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col max-w-screen sm:max-w-[430px] w-full h-full">
       <div className="bg-dark-bg-primary text-dark-text-primary text-sm w-full">
-        <nav className="flex px-4 py-2 border-b border-gray-700 justify-between items-center">
+        <nav className="flex p-2 border-b border-gray-700 justify-between items-center">
           <ul className="flex gap-4">
             <li>
               <PathAwareLink href="/">Play</PathAwareLink>
@@ -48,7 +48,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      <main className="flex flex-col items-center justify-center p-4 bg-dark-bg-primary w-full flex-1">{children}</main>
+      <main className="flex flex-col items-center justify-center p-2 bg-dark-bg-primary w-full flex-1">{children}</main>
     </div>
   );
 }

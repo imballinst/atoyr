@@ -13,7 +13,6 @@ packages/server/bin/
 *.exe
 *.dll
 
-*.sqlite3
 .env.local
 .env.production
 tmp
