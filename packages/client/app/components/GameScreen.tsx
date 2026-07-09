@@ -5,6 +5,8 @@ import type { GameSessionState } from '~/lib/game';
 
 import { Keyboard } from './Keyboard';
 
+const ORDINAL_LABELS = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
+
 interface GameScreenProps extends GameSessionState {
   scrambled: string;
   definition: string;
@@ -100,22 +102,24 @@ export function GameScreen({
   return (
     <div className="w-full h-full flex flex-col gap-4 justify-end items-center">
       <div className="w-full flex flex-col gap-2">
-        <div
+        <section
           className={`text-4xl font-mono font-bold bg-dark-bg-tertiary p-3 rounded-lg text-center ${remainingSeconds <= 5 ? 'text-red-500' : 'text-dark-text-primary'} w-full`}
         >
+          <h3 className="sr-only">Remaining seconds</h3>
           {remainingSeconds}s
-        </div>
+        </section>
         <div className="flex gap-2 flex-1 w-full">
-          <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
+          <section className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
+            <h3 className="sr-only">Score</h3>
             <div className="text-xs text-dark-text-tertiary">
               {score}/{totalAttempts} correct
             </div>
             <div className="text-sm font-semibold text-dark-text-primary">{accuracy}%</div>
-          </div>
-          <div className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
-            <div className="text-xs text-dark-text-tertiary">Streak</div>
+          </section>
+          <section className="flex-1 bg-dark-bg-tertiary p-3 rounded-lg text-center">
+            <h3 className="text-xs text-dark-text-tertiary">Streak</h3>
             <div className="text-sm font-semibold text-dark-text-primary">{currentStreak.length}</div>
-          </div>
+          </section>
         </div>
       </div>
 
@@ -136,6 +140,7 @@ export function GameScreen({
               key={i}
               className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow uppercase"
             >
+              <div className="sr-only">{ORDINAL_LABELS[i]} char: </div>
               {letter}
             </div>
           ))
@@ -150,12 +155,13 @@ export function GameScreen({
         🔊
       </button>
 
-      <div className="flex gap-2 justify-center w-full">
+      <div className="flex gap-2 justify-center w-full" data-testid="answer-slots">
         {answer.split('').map((letter, i) => (
           <div
             key={i}
             className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
           >
+            <div className="sr-only">{ORDINAL_LABELS[i]} char: </div>
             {letter.toUpperCase()}
           </div>
         ))}

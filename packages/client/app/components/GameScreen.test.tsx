@@ -97,7 +97,7 @@ describe('GameScreen', () => {
     expect(screen.getByText('20s')).toBeInTheDocument();
     expect(screen.getByText('2/4 correct')).toBeInTheDocument();
     expect(screen.getByText('50.0%')).toBeInTheDocument();
-    expect(screen.getByText('Streak')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Streak' })).toBeInTheDocument();
   });
 
   it('renders 5 scrambled letter tiles when autoVoice is off', () => {
@@ -126,6 +126,9 @@ describe('GameScreen', () => {
     await user.click(screen.getByRole('button', { name: 'P' }));
 
     expect(emptyAnswerSlotCount(container)).toBe(4);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
   });
 
   it('removes the last letter when backspace is clicked', async () => {
@@ -136,6 +139,9 @@ describe('GameScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Backspace' }));
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
   });
 
   it('does not submit before 5 letters are typed', async () => {
@@ -149,6 +155,13 @@ describe('GameScreen', () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(emptyAnswerSlotCount(container)).toBe(2);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('Second char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('L')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('Third char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('E')).toBeInTheDocument();
   });
 
   it('auto-submits when 5 letters are typed and shows success feedback on onSuccess', async () => {
@@ -167,6 +180,9 @@ describe('GameScreen', () => {
     expect(await screen.findAllByText('🎉')).toHaveLength(3);
 
     await waitFor(() => expect(screen.queryAllByText('🎉')).toHaveLength(0), { timeout: 3000 });
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
   });
 
   it('shows error feedback when onError is invoked', async () => {
@@ -195,6 +211,9 @@ describe('GameScreen', () => {
     }
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
   });
 
   it('speaks letters and definition when the speak button is clicked', async () => {
@@ -231,6 +250,11 @@ describe('GameScreen', () => {
     fireEvent.keyDown(window, { key: 'l' });
 
     expect(emptyAnswerSlotCount(container)).toBe(3);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('Second char:')).toBeInTheDocument();
+    expect(within(answerSlots).getByText('L')).toBeInTheDocument();
   });
 
   it('ignores non-letter keys on the physical keyboard', () => {
@@ -249,6 +273,9 @@ describe('GameScreen', () => {
     fireEvent.keyDown(window, { key: 'Backspace' });
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
   });
 
   it('keeps the streak display in sync with the last correct attempt group', () => {
@@ -256,7 +283,7 @@ describe('GameScreen', () => {
       correctAttemptTimestamps: [['2024-01-01T00:00:00Z'], ['2024-01-01T00:00:10Z', '2024-01-01T00:00:15Z', '2024-01-01T00:00:20Z']],
     });
 
-    const streakCard = screen.getByText('Streak').closest('div')!.parentElement!;
-    expect(within(streakCard).getByText('3')).toBeInTheDocument();
+    const streakSection = screen.getByRole('heading', { name: 'Streak' }).closest('section')!;
+    expect(within(streakSection).getByText('3')).toBeInTheDocument();
   });
 });
