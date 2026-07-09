@@ -12,7 +12,7 @@ func RegisterHealthRoutes(rg *gin.Engine, healthService *services.HealthService)
 		health := healthService.GetHealth()
 
 		status := http.StatusOK
-		if !health.Dependencies.Database || !health.Dependencies.UI {
+		if !health.Dependencies.Database {
 			status = http.StatusInternalServerError
 		}
 

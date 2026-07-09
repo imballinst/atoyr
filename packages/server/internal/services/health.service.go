@@ -1,8 +1,6 @@
 package services
 
 import (
-	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -16,7 +14,6 @@ type HealthService struct {
 
 	mu         sync.RWMutex
 	databaseOK bool
-	uiOK       bool
 	cachedAt   time.Time
 }
 
@@ -29,7 +26,6 @@ type HealthResponse struct {
 
 type HealthDependencies struct {
 	Database bool `json:"database"`
-	UI       bool `json:"ui"`
 }
 
 func NewHealthService(db *gorm.DB, name, gitHash string) *HealthService {
@@ -39,14 +35,13 @@ func NewHealthService(db *gorm.DB, name, gitHash string) *HealthService {
 		db:      db,
 	}
 
+	hs.refresh()
 	go hs.refreshLoop()
 
 	return hs
 }
 
 func (hs *HealthService) refreshLoop() {
-	hs.refresh()
-
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
@@ -57,26 +52,15 @@ func (hs *HealthService) refreshLoop() {
 
 func (hs *HealthService) refresh() {
 	databaseOK := false
-	sqlDB, err := hs.db.DB()
-	if err == nil {
-		databaseOK = sqlDB.Ping() == nil
-	}
-
-	uiOK := true
-	if os.Getenv("ENV") == "production" {
-		client := &http.Client{Timeout: 2 * time.Second}
-		resp, err := client.Get("http://localhost:80/")
+	if hs.db != nil {
+		sqlDB, err := hs.db.DB()
 		if err == nil {
-			resp.Body.Close()
-			uiOK = resp.StatusCode < 500
-		} else {
-			uiOK = false
+			databaseOK = sqlDB.Ping() == nil
 		}
 	}
 
 	hs.mu.Lock()
 	hs.databaseOK = databaseOK
-	hs.uiOK = uiOK
 	hs.cachedAt = time.Now()
 	hs.mu.Unlock()
 }
@@ -90,7 +74,6 @@ func (hs *HealthService) GetHealth() *HealthResponse {
 		GitHash: hs.gitHash,
 		Dependencies: HealthDependencies{
 			Database: hs.databaseOK,
-			UI:       hs.uiOK,
 		},
 		CachedAt: hs.cachedAt,
 	}
