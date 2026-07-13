@@ -59,10 +59,11 @@ func TestStatsService_GetStats(t *testing.T) {
 		100*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond,
 	)
 
-	stats, err := service.GetStats()
+	stats, err := service.GetStats(false)
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
 
+	assert.Equal(t, int64(-1), stats.TotalSessions)
 	assert.Equal(t, int64(2), stats.SessionsToday)
 	assert.Equal(t, int64(3), stats.SessionsThisWeek)
 	assert.Equal(t, int64(4), stats.SessionsThisMonth)
@@ -84,10 +85,11 @@ func TestStatsService_GetStats_Empty(t *testing.T) {
 	service := NewStatsService(db, metricsCollector)
 	service.Now = testutils.NowMockFn
 
-	stats, err := service.GetStats()
+	stats, err := service.GetStats(false)
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
 
+	assert.Equal(t, int64(-1), stats.TotalSessions)
 	assert.Equal(t, int64(0), stats.SessionsToday)
 	assert.Equal(t, int64(0), stats.SessionsThisWeek)
 	assert.Equal(t, int64(0), stats.SessionsThisMonth)
@@ -95,6 +97,39 @@ func TestStatsService_GetStats_Empty(t *testing.T) {
 	assert.Equal(t, int64(0), stats.TotalRequests)
 	assert.Equal(t, float32(0), stats.ErrorRate4xx)
 	assert.Equal(t, float32(0), stats.ErrorRate5xx)
+}
+
+func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	metricsCollector := middleware.NewMetricsCollector()
+	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
+
+	now := service.Now()
+	today := now.Truncate(24 * time.Hour)
+
+	sessions := []models.SessionEntity{
+		{
+			ID: "session-1", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
+			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+		{
+			ID: "session-2", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
+			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+	}
+
+	for _, s := range sessions {
+		err := db.Create(&s).Error
+		assert.NoError(t, err)
+	}
+
+	stats, err := service.GetStats(true)
+	assert.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Equal(t, int64(2), stats.TotalSessions)
 }
 
 func TestStatsService_GetTimeSeries(t *testing.T) {
@@ -197,6 +232,33 @@ func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 	_, err := service.GetTimeSeries("invalid", "5m")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid period")
+}
+
+func TestStatsService_GetTimeSeries_AutoGranularity(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	metricsCollector := middleware.NewMetricsCollector()
+	service := NewStatsService(db, metricsCollector)
+	service.Now = testutils.NowMockFn
+
+	cases := []struct {
+		period        string
+		expected      string
+		dataCountMin  int
+		dataCountMax  int
+	}{
+		{"1h", "1m", 60, 60},
+		{"24h", "1h", 24, 24},
+		{"7d", "1d", 7, 7},
+		{"30d", "1d", 30, 30},
+	}
+
+	for _, tc := range cases {
+		result, err := service.GetTimeSeries(tc.period, "")
+		assert.NoError(t, err)
+		assert.Equal(t, tc.expected, result.Granularity, "period=%s", tc.period)
+		assert.GreaterOrEqual(t, len(result.Data), tc.dataCountMin, "period=%s", tc.period)
+		assert.LessOrEqual(t, len(result.Data), tc.dataCountMax, "period=%s", tc.period)
+	}
 }
 
 func TestAggregateSnapshots(t *testing.T) {

@@ -69,7 +69,7 @@ func NewStatsService(db *gorm.DB, metricsCollector *middleware.MetricsCollector)
 	}
 }
 
-func (s *StatsService) GetStats() (*StatsResponse, error) {
+func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, error) {
 	now := s.Now().UTC()
 	today := now.Truncate(24 * time.Hour)
 	tomorrow := now.Add(24 * time.Hour).Truncate(24 * time.Hour)
@@ -78,6 +78,16 @@ func (s *StatsService) GetStats() (*StatsResponse, error) {
 	nextMonthStart := monthStart.AddDate(0, 1, 0)
 
 	var stats StatsResponse
+
+	// Total sessions (all time) -- expensive, only on demand.
+	if includeTotalSessions {
+		result := s.db.Model(&models.SessionEntity{}).Count(&stats.TotalSessions)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+	} else {
+		stats.TotalSessions = -1
+	}
 
 	// Sessions today
 	result := s.db.Model(&models.SessionEntity{}).
@@ -124,8 +134,7 @@ func (s *StatsService) GetStats() (*StatsResponse, error) {
 }
 
 func (s *StatsService) GetTimeSeries(period, granularity string) (*TimeSeriesResponse, error) {
-	// Parse period and granularity
-	startTime, endTime, interval, err := s.parseTimeRange(period, granularity)
+	startTime, endTime, interval, effectiveGranularity, err := s.parseTimeRange(period, granularity)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +147,6 @@ func (s *StatsService) GetTimeSeries(period, granularity string) (*TimeSeriesRes
 		return nil, err
 	}
 
-	// Aggregate snapshots into time series points
 	data, err := aggregateSnapshots(snapshots, startTime, endTime, interval)
 	if err != nil {
 		return nil, err
@@ -146,12 +154,12 @@ func (s *StatsService) GetTimeSeries(period, granularity string) (*TimeSeriesRes
 
 	return &TimeSeriesResponse{
 		Period:      period,
-		Granularity: granularity,
+		Granularity: effectiveGranularity,
 		Data:        data,
 	}, nil
 }
 
-func (s *StatsService) parseTimeRange(period, granularity string) (time.Time, time.Time, time.Duration, error) {
+func (s *StatsService) parseTimeRange(period, granularity string) (time.Time, time.Time, time.Duration, string, error) {
 	now := s.Now().UTC()
 
 	var startTime time.Time
@@ -163,13 +171,15 @@ func (s *StatsService) parseTimeRange(period, granularity string) (time.Time, ti
 		startTime = now.Add(-24 * time.Hour)
 	case "7d":
 		startTime = now.AddDate(0, 0, -7)
-	case "1M":
-		startTime = now.AddDate(0, -1, 0)
+	case "30d":
+		startTime = now.AddDate(0, 0, -30)
 	default:
-		return time.Time{}, time.Time{}, 0, fmt.Errorf("%s: %s", ErrorInvalidPeriod, period)
+		return time.Time{}, time.Time{}, 0, "", fmt.Errorf("%s: %s", ErrorInvalidPeriod, period)
 	}
 
 	var interval time.Duration
+	effectiveGranularity := granularity
+
 	switch granularity {
 	case "1m":
 		interval = time.Minute
@@ -177,19 +187,24 @@ func (s *StatsService) parseTimeRange(period, granularity string) (time.Time, ti
 		interval = 5 * time.Minute
 	case "1h":
 		interval = time.Hour
+	case "1d":
+		interval = 24 * time.Hour
 	default:
 		// Auto-select based on period
 		switch period {
 		case "1h":
 			interval = time.Minute
+			effectiveGranularity = "1m"
 		case "24h":
 			interval = time.Hour
-		case "7d", "1M":
+			effectiveGranularity = "1h"
+		case "7d", "30d":
 			interval = 24 * time.Hour
+			effectiveGranularity = "1d"
 		}
 	}
 
-	return startTime, now, interval, nil
+	return startTime, now, interval, effectiveGranularity, nil
 }
 
 func aggregateSnapshots(snapshots []models.MetricSnapshot, startTime, endTime time.Time, interval time.Duration) ([]TimeSeriesPoint, error) {

@@ -10,9 +10,68 @@
   </head>
   <body class="bg-gray-900 text-white min-h-screen">
     <div class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold mb-8">Atoyr Server Dashboard</h1>
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold">Atoyr Server Dashboard</h1>
+        <div id="gAuth" class="flex items-center gap-3">
+          <div id="gSignIn"></div>
+          <span id="signedInAs" class="text-sm text-gray-400 hidden"></span>
+        </div>
+      </div>
 
-      <!-- Time Period Selector -->
+      <!-- Scalar Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Sessions Today</div>
+          <div id="sessionsToday" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Sessions This Week</div>
+          <div id="sessionsThisWeek" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Sessions This Month</div>
+          <div id="sessionsThisMonth" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-400 text-sm">Active Games</div>
+          <div id="activeGames" class="text-2xl font-bold">-</div>
+        </div>
+        <div class="bg-gray-800 rounded-lg p-4">
+          <div class="flex items-center justify-between">
+            <div class="text-gray-400 text-sm">Total Sessions</div>
+            <button
+              id="syncTotalSessionsBtn"
+              onclick="fetchTotalSessions()"
+              title="Compute total session count"
+              class="text-gray-400 hover:text-white disabled:opacity-50"
+            >
+              <svg
+                id="syncTotalSessionsIcon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                <path d="M16 16h5v5" />
+              </svg>
+            </button>
+          </div>
+          <div id="totalSessions" class="text-2xl font-bold">-</div>
+        </div>
+      </div>
+
+      <!-- Time Series Section -->
+      <h2 class="text-xl font-semibold mb-4">Time Series</h2>
+
+      <!-- Time Period Selector (only affects charts) -->
       <div class="mb-6 flex gap-2">
         <button
           onclick="setTimePeriod('1h')"
@@ -36,38 +95,18 @@
           7 Days
         </button>
         <button
-          onclick="setTimePeriod('1M')"
+          onclick="setTimePeriod('30d')"
           class="period-btn px-4 py-2 rounded bg-gray-700 hover:bg-gray-600"
-          data-period="1M"
+          data-period="30d"
         >
-          1 Month
+          30 Days
         </button>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Active Games</div>
-          <div id="activeGames" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Sessions Today</div>
-          <div id="sessionsToday" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Error Rate</div>
-          <div id="errorRate" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Avg Response Time</div>
-          <div id="avgResponseTime" class="text-2xl font-bold">-</div>
-        </div>
       </div>
 
       <!-- Time Series Charts -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div class="bg-gray-800 rounded-lg p-4">
-          <h3 class="text-lg font-semibold mb-4">Throughput (req/min)</h3>
+          <h3 class="text-lg font-semibold mb-4">Throughput</h3>
           <div class="h-64"><canvas id="throughputChart"></canvas></div>
         </div>
         <div class="bg-gray-800 rounded-lg p-4">
@@ -103,15 +142,30 @@
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
       });
+      google.accounts.id.renderButton(
+        document.getElementById("gSignIn"),
+        { theme: "filled_black", size: "medium", text: "signin" },
+      );
       google.accounts.id.prompt();
 
       function handleCredentialResponse(response) {
         accessToken = response.credential;
+        try {
+          const payload = JSON.parse(
+            atob(response.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
+          );
+          const emailEl = document.getElementById("signedInAs");
+          emailEl.textContent = "Signed in as " + payload.email;
+          emailEl.classList.remove("hidden");
+          document.getElementById("gSignIn").classList.add("hidden");
+        } catch (e) {
+          console.warn("Failed to parse credential payload:", e);
+        }
         fetchStats();
         fetchTimeSeries();
       }
 
-      // Set time period
+      // Set time period (only affects time series charts)
       function setTimePeriod(period) {
         currentTimePeriod = period;
 
@@ -166,18 +220,46 @@
 
       // Update stats cards
       function updateStatsCards(stats) {
-        document.getElementById("activeGames").textContent = stats.activeGames;
         document.getElementById("sessionsToday").textContent =
           stats.sessionsToday;
-        document.getElementById("errorRate").textContent = stats.totalRequests
-          ? (
-              ((stats.errorRate4xx + stats.errorRate5xx) /
-                stats.totalRequests) *
-              100
-            ).toFixed(2) + "%"
-          : "-";
-        document.getElementById("avgResponseTime").textContent =
-          stats.responseTimeP50.toFixed(0) + "ms";
+        document.getElementById("sessionsThisWeek").textContent =
+          stats.sessionsThisWeek;
+        document.getElementById("sessionsThisMonth").textContent =
+          stats.sessionsThisMonth;
+        document.getElementById("activeGames").textContent = stats.activeGames;
+        if (stats.totalSessions != null && stats.totalSessions >= 0) {
+          document.getElementById("totalSessions").textContent =
+            stats.totalSessions;
+        }
+      }
+
+      // Fetch total session count (expensive, on demand via the sync button)
+      async function fetchTotalSessions() {
+        if (!accessToken) return;
+
+        const btn = document.getElementById("syncTotalSessionsBtn");
+        const icon = document.getElementById("syncTotalSessionsIcon");
+        btn.disabled = true;
+        icon.classList.add("animate-spin");
+
+        try {
+          const response = await fetch(
+            "/api/v1/admin/stats?includeStat=alltimecountsessions",
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          );
+
+          if (response.ok) {
+            const stats = await response.json();
+            updateStatsCards(stats);
+          }
+        } finally {
+          btn.disabled = false;
+          icon.classList.remove("animate-spin");
+        }
       }
 
       // Initialize charts
@@ -279,10 +361,27 @@
         });
       }
 
+      // Format a point's timestamp according to the granularity returned by the API.
+      // For 7d / 30d (granularity "1d"), show the date, otherwise the time of day.
+      function formatLabel(timestamp, granularity) {
+        const date = new Date(timestamp);
+        if (granularity === "1d") {
+          return date.toLocaleDateString(undefined, {
+            month: "2-digit",
+            day: "2-digit",
+          });
+        }
+        return date.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
       // Update charts with time series data
       function updateCharts(timeseries) {
+        const granularity = timeseries.granularity || "";
         const labels = timeseries.data.map((d) =>
-          new Date(d.timestamp).toLocaleTimeString(),
+          formatLabel(d.timestamp, granularity),
         );
 
         throughputChart.data.labels = labels;
