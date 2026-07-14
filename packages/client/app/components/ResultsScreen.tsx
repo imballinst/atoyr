@@ -10,6 +10,7 @@ interface ResultsScreenProps extends Pick<
   'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer'
 > {
   onPlayAgain: () => void;
+  onBackToHome: () => void;
 }
 
 export function ResultsScreen({
@@ -17,6 +18,7 @@ export function ResultsScreen({
   totalAttempts,
   correctAttemptTimestamps,
   onPlayAgain,
+  onBackToHome,
   currentWord,
   lastWordAnswer,
 }: ResultsScreenProps) {
@@ -33,7 +35,7 @@ export function ResultsScreen({
         Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
       </div>
 
-      <div className="flex flex-col gap-2 mb-3 w-full text-center">
+      <div className="flex flex-col gap-2 mb-6 w-full text-center">
         <div className="border-dark-bg-tertiary text-dark-text-primary p-2 sm:p-4 rounded-lg col-span-5 text-sm">
           Your result was better than <Percentile value={data?.percentile} />% other players!
         </div>
@@ -52,14 +54,24 @@ export function ResultsScreen({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onPlayAgain}
-        className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
-        data-ga-label="ga-play-again-button"
-      >
-        Play Again
-      </button>
+      <div className="grid grid-cols-6 gap-2 w-full">
+        <button
+          type="button"
+          onClick={onBackToHome}
+          className="col-span-2 py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
+          data-ga-label="ga-back-to-home-button"
+        >
+          Back to home
+        </button>
+        <button
+          type="button"
+          onClick={onPlayAgain}
+          className="col-span-4 py-3 px-4 text-sm font-semibold bg-dark-interactive-primary text-white rounded transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
+          data-ga-label="ga-play-again-button"
+        >
+          Play Again
+        </button>
+      </div>
 
       <div className="pt-6 w-full min-h-[270px]">
         <Leaderboard limit={5} HeadingComponent="h2" />

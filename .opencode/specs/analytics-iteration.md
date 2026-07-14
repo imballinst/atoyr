@@ -4,13 +4,21 @@
 
 Increase the replay rate by removing friction from the "Play again" flow, and improve first-time conversion by making the landing screen more compact while keeping the rules discoverable.
 
+## Progress
+
+- **Instant replay**: implemented and tested. See `packages/client/app/routes/home.test.tsx` for the route-level lifecycle coverage.
+- **How to play modal**: pending.
+- **Settings modal**: pending.
+- **Shared Dialog wrapper**: pending.
+
 ## Scope
 
-Three UI/UX changes in the client only:
+Three UI/UX changes in the client only, plus a shared component backing two of them:
 
 1. **Instant replay**: clicking "Play again" immediately starts a new game.
 2. **How to play modal**: move the rules list from the landing screen into a modal.
 3. **Settings modal**: move the auto-voice option off the landing screen into a modal that will host game settings (e.g. mode selection in the future).
+4. **Shared Dialog wrapper**: one `radix-ui`-based wrapper reused by both modals (see section 4).
 
 ## 1. Instant Replay
 
@@ -67,7 +75,7 @@ This pushes the "Start Game" button and auto-voice option below the fold on smal
 
 - Remove the inline rules list from `StartScreen`.
 - Add a "How to play" button/link on the landing screen.
-- Implement a modal component for the rules. The project already uses `radix-ui`, so use the same primitive family already used elsewhere.
+- Implement the modal using the shared Dialog wrapper described in section 4.
 - The modal content must include the existing rules.
 - The modal must be accessible: focus trap, close on Escape, close on overlay click, and a visible close button.
 - The "Start Game" button remains the primary call to action and must not be visually competing with the modal trigger.
@@ -97,7 +105,7 @@ The `StartScreen` renders the auto-voice checkbox inline, alongside a footnote e
 
 - Remove the inline auto-voice checkbox and footnote from `StartScreen`.
 - Add a "Settings" trigger on the landing screen (next to "Start Game") and on the results screen (next to "Play again"). The settings modal component is shared between both screens.
-- Implement a settings modal using the same `radix-ui` primitive family already used elsewhere in the project.
+- Implement the settings modal using the shared Dialog wrapper described in section 4.
 - The modal must be accessible: focus trap, close on Escape, close on overlay click, and a visible close button.
 - The auto-voice toggle still reads from and writes to `localStorage`, and the values passed to `onStart` and `onPlayAgain` reflect the current persisted/toggled value.
 - The "Start Game" button and "Play again" button remain the primary calls to action and must not visually compete with the "Settings" trigger.
@@ -122,6 +130,28 @@ New tracking labels are added for the new interactive elements. The existing lab
 - `ga-back-to-home-button` on the "Back to home" button on the results screen.
 
 After deployment, verify in GA4 that the funnel `ga-start-game-button` → `ga-play-again-button` improves or stays stable, and that `ga-back-to-home-button` usage is low relative to `ga-play-again-button` (indicating the instant-replay flow is preferred).
+
+## 4. Shared Dialog Wrapper
+
+Both the "How to play" and "Settings" modals share one Dialog wrapper component built on the `radix-ui` `Dialog` primitive (the same family already used in `PageLayout.tsx`). The wrapper owns the cross-cutting behavior so the two consumers only provide content.
+
+### Responsibilities
+
+- Render `Dialog.Root` (controlled by the consumer via `open` / `onOpenChange`), `Dialog.Portal`, `Dialog.Overlay`, and `Dialog.Content`.
+- Overlay styling: dim backdrop, centered panel, consistent padding/radius/shadow matching the existing Tailwind conventions.
+- Accessibility: radix-ui already provides focus trap, Escape-to-close, and scroll lock; the wrapper must not disable them and must render a visible close button (`Dialog.Close` with an icon).
+- Animation: optional enter/exit transition via Tailwind classes on overlay + content. If it adds complexity, defer animation and ship a static fade-in only.
+
+### Consumers
+
+- "How to play": wraps the existing rules list as the only child.
+- "Settings": wraps a settings body that initially only contains the auto-voice toggle and its footnote. The body is shaped so a future mode selector can be added without touching the wrapper.
+
+### Non-goals
+
+- No new dependencies (`cva`, `clsx`, `tailwind-merge`, shadcn). Styling is plain Tailwind classes on the radix primitives.
+- No generic design-system layer beyond this single wrapper; if more primitives are needed later, revisit then.
+- The wrapper does not own modal-specific state (auto-voice, open-state); that lives in the consumer.
 
 ## Out of scope
 

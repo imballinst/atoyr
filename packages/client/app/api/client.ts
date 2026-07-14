@@ -116,7 +116,7 @@ function initSSE(onEvent: (data: Record<string, unknown>) => void, onReconnect: 
 
   const handleEvent = (event: MessageEvent) => {
     if (import.meta.env.DEV) {
-      console.info('SSE message received:', event.type, event.data);
+      console.debug('SSE message received:', event.type, event.data);
     }
 
     lastMessageReceived = event.type;

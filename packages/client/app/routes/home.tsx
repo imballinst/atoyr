@@ -17,7 +17,7 @@ export function clientLoader() {
 
 export default function Home() {
   const { shouldFetch } = useLoaderData<typeof clientLoader>();
-  const { state, startGame, submitAnswer, resetGame } = useGame(shouldFetch);
+  const { state, startGame, submitAnswer, playAgain, resetGame } = useGame(shouldFetch);
 
   if (state.phase === 'resuming') {
     return (
@@ -53,7 +53,8 @@ export default function Home() {
         totalAttempts={state.totalAttempts}
         currentWord={state.currentWord}
         lastWordAnswer={state.lastWordAnswer}
-        onPlayAgain={resetGame}
+        onPlayAgain={playAgain}
+        onBackToHome={resetGame}
         correctAttemptTimestamps={state.correctAttemptTimestamps}
       />
     );

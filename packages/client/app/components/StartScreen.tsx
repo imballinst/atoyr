@@ -1,38 +1,9 @@
 import React, { useState } from 'react';
 
+import { readStoredAutoVoice, writeStoredAutoVoice } from '~/lib/auto-voice';
+
 interface StartScreenProps {
   onStart: (autoVoice: boolean) => void;
-}
-
-const STORAGE_KEY = 'atoyr_auto_voice:v1';
-const LEGACY_STORAGE_KEY = 'atoyr_auto_voice';
-
-function parseAutoVoice(value: string | null): boolean {
-  if (value === null) return false;
-
-  try {
-    const parsed = JSON.parse(value);
-    return typeof parsed === 'boolean' ? parsed : false;
-  } catch {
-    return false;
-  }
-}
-
-function readStoredAutoVoice(): boolean {
-  if (typeof window === 'undefined') return false;
-
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored !== null) {
-    return parseAutoVoice(stored);
-  }
-
-  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-  const value = parseAutoVoice(legacy);
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  localStorage.removeItem(LEGACY_STORAGE_KEY);
-
-  return value;
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
@@ -41,7 +12,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
   const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
     setAutoVoice(newValue);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newValue));
+    writeStoredAutoVoice(newValue);
   };
 
   const handleStart = () => {

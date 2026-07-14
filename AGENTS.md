@@ -12,6 +12,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - For static content pages (e.g. `about.tsx`), author in Markdown and render with `marked`. Inject via `dangerouslySetInnerHTML` — the source is a static string in the repo, not user/db-derived content. See `.config/opencode/AGENTS.md` for the policy.
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
+- Colocate module-level helper functions at the bottom of the file when they do not close over component state (function declarations are hoisted). Prefer this over nesting them inside the component.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
 - DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
 - DO NOT create additional Markdown files in `.opencode` folder unless otherwise stated.
@@ -104,3 +105,7 @@ When writing tests, prefer queries in this order:
 Avoid bare `getByText` for stat values or labels that belong to a specific region — scope them with `within()` instead.
 
 For elements whose visible text is split across siblings (e.g. an `sr-only` label + a visible value rendered in the same slot), prefer a single `getByText((_, node) => ...)` custom matcher over two separate assertions on the label and the value. The matcher should (a) compare `node.textContent` to the combined text and (b) constrain the node structurally so the matcher doesn't also match ancestor containers — e.g. `node.parentElement?.dataset.testid === 'answer-slots'`. One assertion that captures intent ("the first slot renders 'P'") is better than two that recheck the same DOM node.
+
+### Avoid Testing Implementation Details in Component Tests
+
+Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.

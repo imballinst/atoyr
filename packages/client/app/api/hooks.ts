@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-//
+import { readStoredAutoVoice } from '../lib/auto-voice';
 import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
 
@@ -46,15 +46,6 @@ export function useGame(shouldContinueGame: boolean) {
   const isBeforeUnloadRef = useRef(false);
 
   const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
-    setState((prev) => ({
-      ...prev,
-      score: 0,
-      totalAttempts: 0,
-      remainingSeconds: autoVoice ? GAME_DURATION_SECONDS + 5 : GAME_DURATION_SECONDS,
-      usedWords: [],
-      autoVoice,
-    }));
-
     try {
       const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
       setGameEndsAt(response.remainingSeconds);
@@ -75,7 +66,13 @@ export function useGame(shouldContinueGame: boolean) {
       setState((prev) => ({
         ...prev,
         phase: 'playing',
+        score: 0,
+        totalAttempts: 0,
+        correctAttemptTimestamps: [],
         remainingSeconds: response.remainingSeconds,
+        usedWords: [],
+        autoVoice,
+        lastWordAnswer: null,
         currentWord: {
           scrambled: response.scrambledWord,
           definition: response.scrambledWordDefinition,
@@ -168,6 +165,11 @@ export function useGame(shouldContinueGame: boolean) {
     [state.phase],
   );
 
+  const playAgain = useCallback(() => {
+    const autoVoice = readStoredAutoVoice();
+    void startGame(autoVoice, 'start');
+  }, [startGame]);
+
   const resetGame = useCallback(() => {
     if (sseUnsubscribeRef.current) {
       sseUnsubscribeRef.current();
@@ -207,6 +209,7 @@ export function useGame(shouldContinueGame: boolean) {
     state,
     startGame,
     submitAnswer,
+    playAgain,
     resetGame,
   };
 }
