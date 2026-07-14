@@ -44,6 +44,7 @@ export function GameScreen({
       onSuccess: () => showFeedback(true),
       onError: () => showFeedback(false),
     });
+    answerRef.current = '';
     setAnswer('');
   };
 
@@ -51,6 +52,7 @@ export function GameScreen({
     if (answerRef.current.length >= 5) return;
 
     const next = answerRef.current + letter;
+    console.info('next', next);
     answerRef.current = next;
     setAnswer(next);
     submitIfComplete(next, token);
@@ -64,6 +66,7 @@ export function GameScreen({
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      console.info(e.key);
       if (e.key === 'Backspace') return handleBackspace();
 
       const lowerCased = e.key.toLowerCase();
@@ -71,7 +74,11 @@ export function GameScreen({
     }
 
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    console.info('add');
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      console.info('remove');
+    };
     // handleLetterClick/handleBackspace read answerRef.current (always latest);
     // submitIfComplete closes over onSubmit/token from this render.
     // Re-bind only when onSubmit/token change (rare: phase change / new word).

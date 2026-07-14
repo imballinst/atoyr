@@ -82,6 +82,14 @@ function scrambledTileCount(container: HTMLElement): number {
   return container.querySelectorAll('div.bg-dark-interactive-primary').length;
 }
 
+// Matches an answer slot whose text is split across an sr-only label + a visible letter.
+// Constraint: the slot is a direct child of [data-testid="answer-slots"], disambiguating
+// from the container whose textContent also aggregates the slot's value.
+function answerSlotMatcher(text: string) {
+  return (_content: string, node: Element | null) =>
+    !!node && node.parentElement?.dataset.testid === 'answer-slots' && node.textContent === text;
+}
+
 describe('GameScreen', () => {
   beforeEach(() => {
     mockSpeechSynthesis();
@@ -128,8 +136,7 @@ describe('GameScreen', () => {
 
     expect(emptyAnswerSlotCount(container)).toBe(4);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('First char: P'))).toBeInTheDocument();
   });
 
   it('removes the last letter when backspace is clicked', async () => {
@@ -141,8 +148,7 @@ describe('GameScreen', () => {
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
-    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText(answerSlotMatcher('First char: P'))).not.toBeInTheDocument();
   });
 
   it('does not submit before 5 letters are typed', async () => {
@@ -157,12 +163,9 @@ describe('GameScreen', () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(emptyAnswerSlotCount(container)).toBe(2);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('Second char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('L')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('Third char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('E')).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('First char: P'))).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('Second char: L'))).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('Third char: E'))).toBeInTheDocument();
   });
 
   it('auto-submits when 5 letters are typed and shows success feedback on onSuccess', async () => {
@@ -182,8 +185,7 @@ describe('GameScreen', () => {
 
     await waitFor(() => expect(screen.queryAllByText('🎉')).toHaveLength(0), { timeout: 3000 });
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
-    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText(answerSlotMatcher('First char: P'))).not.toBeInTheDocument();
   });
 
   it('shows error feedback when onError is invoked', async () => {
@@ -213,8 +215,25 @@ describe('GameScreen', () => {
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
-    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText(answerSlotMatcher('First char: P'))).not.toBeInTheDocument();
+  });
+
+  it('accepts new letters after an auto-submitted answer (answerRef is cleared)', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn<SubmitFn>();
+    onSubmit.mockImplementation((_answer, _token, { onSuccess }) => onSuccess?.());
+    const { container } = renderScreen({ onSubmit });
+
+    for (const letter of ['P', 'L', 'E', 'P', 'A']) {
+      await user.click(screen.getByRole('button', { name: letter }));
+    }
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'P' }));
+
+    expect(emptyAnswerSlotCount(container)).toBe(4);
+    const answerSlots = screen.getByTestId('answer-slots');
+    expect(within(answerSlots).getByText(answerSlotMatcher('First char: P'))).toBeInTheDocument();
   });
 
   it('speaks letters and definition when the speak button is clicked', async () => {
@@ -252,10 +271,8 @@ describe('GameScreen', () => {
 
     expect(emptyAnswerSlotCount(container)).toBe(3);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).getByText('First char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('P')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('Second char:')).toBeInTheDocument();
-    expect(within(answerSlots).getByText('L')).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('First char: P'))).toBeInTheDocument();
+    expect(within(answerSlots).getByText(answerSlotMatcher('Second char: L'))).toBeInTheDocument();
   });
 
   it('ignores non-letter keys on the physical keyboard', () => {
@@ -275,8 +292,7 @@ describe('GameScreen', () => {
 
     expect(emptyAnswerSlotCount(container)).toBe(5);
     const answerSlots = screen.getByTestId('answer-slots');
-    expect(within(answerSlots).queryByText('First char:')).not.toBeInTheDocument();
-    expect(within(answerSlots).queryByText('P')).not.toBeInTheDocument();
+    expect(within(answerSlots).queryByText(answerSlotMatcher('First char: P'))).not.toBeInTheDocument();
   });
 
   it('keeps the streak display in sync with the last correct attempt group', () => {

@@ -102,3 +102,5 @@ When writing tests, prefer queries in this order:
 3. **`getByTestId`** — only as a last resort when no semantic query is possible.
 
 Avoid bare `getByText` for stat values or labels that belong to a specific region — scope them with `within()` instead.
+
+For elements whose visible text is split across siblings (e.g. an `sr-only` label + a visible value rendered in the same slot), prefer a single `getByText((_, node) => ...)` custom matcher over two separate assertions on the label and the value. The matcher should (a) compare `node.textContent` to the combined text and (b) constrain the node structurally so the matcher doesn't also match ancestor containers — e.g. `node.parentElement?.dataset.testid === 'answer-slots'`. One assertion that captures intent ("the first slot renders 'P'") is better than two that recheck the same DOM node.
