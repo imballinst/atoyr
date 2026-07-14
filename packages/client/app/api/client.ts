@@ -70,11 +70,6 @@ export async function apiSubmitAnswer(token: string, answer: string) {
   return response.data!;
 }
 
-export async function apiGetPercentile() {
-  const response = await apiClient.GET('/api/v1/leaderboard/percentile');
-  return response.data!;
-}
-
 const EVENT_SOURCE_URL: keyof paths = '/api/v1/game/sse';
 const HEARTBEAT_TIMEOUT = 5000;
 const HEARTBEAT_INTERVAL = 1000;

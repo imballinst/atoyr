@@ -4,21 +4,44 @@ interface StartScreenProps {
   onStart: (autoVoice: boolean) => void;
 }
 
+const STORAGE_KEY = 'atoyr_auto_voice:v1';
+const LEGACY_STORAGE_KEY = 'atoyr_auto_voice';
+
+function parseAutoVoice(value: string | null): boolean {
+  if (value === null) return false;
+
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'boolean' ? parsed : false;
+  } catch {
+    return false;
+  }
+}
+
+function readStoredAutoVoice(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored !== null) {
+    return parseAutoVoice(stored);
+  }
+
+  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+  const value = parseAutoVoice(legacy);
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+
+  return value;
+}
+
 export function StartScreen({ onStart }: StartScreenProps) {
-  const [autoVoice, setAutoVoice] = useState(() => {
-    if (typeof window === 'undefined') return false;
-
-    const stored = localStorage.getItem('atoyr_auto_voice');
-    if (stored === null) return false;
-
-    const value = JSON.parse(stored);
-    return typeof value === 'boolean' ? value : false;
-  });
+  const [autoVoice, setAutoVoice] = useState(readStoredAutoVoice);
 
   const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
     setAutoVoice(newValue);
-    localStorage.setItem('atoyr_auto_voice', JSON.stringify(newValue));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newValue));
   };
 
   const handleStart = () => {
@@ -61,6 +84,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
       </div>
 
       <button
+        type="button"
         onClick={handleStart}
         className="w-full py-3 px-6 text-base font-semibold bg-dark-interactive-primary text-white rounded-lg transition duration-200 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
         data-ga-label="ga-start-game-button"

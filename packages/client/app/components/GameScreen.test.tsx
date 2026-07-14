@@ -61,16 +61,17 @@ function mockSpeechSynthesis() {
 
 function renderScreen(overrides: RenderOverrides = {}) {
   const { onSubmit = vi.fn(), scrambled, definition, token, ...stateOverrides } = overrides;
-  const props = {
-    ...baseState,
-    ...stateOverrides,
-    scrambled: scrambled ?? DEFAULT_SCRAMBLED,
-    definition: definition ?? DEFAULT_DEFINITION,
-    token: token ?? DEFAULT_TOKEN,
-    onSubmit,
-  };
 
-  return render(<GameScreen {...props} />);
+  return render(
+    <GameScreen
+      {...baseState}
+      {...stateOverrides}
+      scrambled={scrambled ?? DEFAULT_SCRAMBLED}
+      definition={definition ?? DEFAULT_DEFINITION}
+      token={token ?? DEFAULT_TOKEN}
+      onSubmit={onSubmit}
+    />,
+  );
 }
 
 function emptyAnswerSlotCount(container: HTMLElement): number {
@@ -105,11 +106,10 @@ describe('GameScreen', () => {
     const { container } = renderScreen({ scrambled: 'plepa' });
 
     expect(scrambledTileCount(container)).toBe(5);
-    expect(screen.queryByRole('status', { name: /letters to unscramble/i })).not.toBeInTheDocument();
   });
 
-  it('renders an sr-only status with the scrambled letters when autoVoice is on', () => {
-    renderScreen({ autoVoice: true, scrambled: 'plepa' });
+  it('announces the scrambled letters via a live status region', () => {
+    renderScreen({ scrambled: 'plepa' });
 
     expect(screen.getByRole('status', { name: 'Letters to unscramble: plepa' })).toBeInTheDocument();
   });

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 
 import type { GameSessionState } from '~/lib/game';
 
@@ -28,50 +28,57 @@ export function GameScreen({
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<Array<{ id: string; isCorrect: boolean; classNames: [string, string, string] }>>([]);
 
-  const speakLetters = (letters: string, definition: string) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
+  const answerRef = useRef(answer);
 
-    const definitionUtterance = new SpeechSynthesisUtterance(definition);
-    definitionUtterance.rate = 0.75;
-    window.speechSynthesis.speak(definitionUtterance);
+  const showFeedback = (isCorrect: boolean) => {
+    const id = nanoid();
 
-    letters.split('').forEach((letter) => {
-      const utterance = new SpeechSynthesisUtterance(letter);
-      window.speechSynthesis.speak(utterance);
-    });
+    setFeedback((prev) => prev.concat({ id, isCorrect, classNames: getClassNames() }));
+    setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
   };
 
-  const handleLetterClick = (letter: string) => {
-    setAnswer((prev) => prev + letter);
+  const submitIfComplete = (nextAnswer: string, token: string) => {
+    if (nextAnswer.trim().length !== 5) return;
+
+    onSubmit(nextAnswer, token, {
+      onSuccess: () => showFeedback(true),
+      onError: () => showFeedback(false),
+    });
+    setAnswer('');
+  };
+
+  const handleLetterClick = (letter: string, token: string) => {
+    if (answerRef.current.length >= 5) return;
+
+    const next = answerRef.current + letter;
+    answerRef.current = next;
+    setAnswer(next);
+    submitIfComplete(next, token);
   };
 
   const handleBackspace = () => {
-    setAnswer((prev) => prev.slice(0, -1));
+    const next = answerRef.current.slice(0, -1);
+    answerRef.current = next;
+    setAnswer(next);
   };
 
   useEffect(() => {
-    if (answer.trim().length !== 5) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Backspace') return handleBackspace();
 
-    onSubmit(answer, token, {
-      onSuccess: () => {
-        const id = nanoid();
+      const lowerCased = e.key.toLowerCase();
+      if (/^[a-z]$/.test(lowerCased)) handleLetterClick(lowerCased, token);
+    }
 
-        setFeedback((prev) => prev.concat({ id, isCorrect: true, classNames: getClassNames() }));
-        setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
-      },
-      onError: () => {
-        const id = nanoid();
-
-        setFeedback((prev) => prev.concat({ id, isCorrect: false, classNames: getClassNames() }));
-        setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
-      },
-    });
-    setAnswer('');
-  }, [answer, token]);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+    // handleLetterClick/handleBackspace read answerRef.current (always latest);
+    // submitIfComplete closes over onSubmit/token from this render.
+    // Re-bind only when onSubmit/token change (rare: phase change / new word).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSubmit, token]);
 
   useEffect(() => {
-    // Small delay to ensure focus is set before speaking
     const speakTimeout = setTimeout(() => {
       if (autoVoice) {
         speakLetters(scrambled, definition);
@@ -79,22 +86,6 @@ export function GameScreen({
     }, 50);
     return () => clearTimeout(speakTimeout);
   }, [scrambled, definition, autoVoice]);
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Backspace') {
-        return handleBackspace();
-      }
-
-      const lowerCased = e.key.toLowerCase();
-      if (/^[a-z]$/.test(lowerCased)) {
-        handleLetterClick(lowerCased);
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
@@ -127,27 +118,34 @@ export function GameScreen({
         {definition}
       </div>
 
-      <div className="flex gap-2 justify-center w-full">
+      <div
+        className="flex gap-2 justify-center w-full"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label={`Letters to unscramble: ${scrambled}`}
+      >
         {autoVoice ? (
-          <div className="sr-only" role="status" aria-live="polite" aria-label={`Letters to unscramble: ${scrambled}`}>
-            {scrambled.split('').map((letter, i) => (
-              <span key={i}>{letter}</span>
+          <div className="sr-only">
+            {ORDINAL_LABELS.map((label, i) => (
+              <span key={label}>{scrambled[i]}</span>
             ))}
           </div>
         ) : (
-          scrambled.split('').map((letter, i) => (
+          ORDINAL_LABELS.map((label, i) => (
             <div
-              key={i}
+              key={label}
               className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow uppercase"
             >
-              <div className="sr-only">{ORDINAL_LABELS[i]} char: </div>
-              {letter}
+              <div className="sr-only">{label} char: </div>
+              {scrambled[i]}
             </div>
           ))
         )}
       </div>
 
       <button
+        type="button"
         onClick={() => speakLetters(scrambled, definition)}
         className="bg-dark-interactive-primary text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-dark-interactive-hover hover:scale-110 active:scale-95"
         aria-label="Speak letters"
@@ -156,22 +154,22 @@ export function GameScreen({
       </button>
 
       <div className="flex gap-2 justify-center w-full" data-testid="answer-slots">
-        {answer.split('').map((letter, i) => (
+        {ORDINAL_LABELS.slice(0, answer.length).map((label, i) => (
           <div
-            key={i}
+            key={label}
             className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
           >
-            <div className="sr-only">{ORDINAL_LABELS[i]} char: </div>
-            {letter.toUpperCase()}
+            <div className="sr-only">{label} char: </div>
+            {answer[i].toUpperCase()}
           </div>
         ))}
         {answer.length < 5 &&
-          Array.from({ length: 5 - answer.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />
+          ORDINAL_LABELS.slice(answer.length).map((label) => (
+            <div key={label} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />
           ))}
       </div>
 
-      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={handleLetterClick} />
+      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={(letter) => handleLetterClick(letter, token)} />
 
       {feedback.map(({ id, isCorrect, classNames }) => {
         const className =
@@ -188,6 +186,20 @@ export function GameScreen({
       })}
     </div>
   );
+}
+
+function speakLetters(letters: string, definition: string) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  const definitionUtterance = new SpeechSynthesisUtterance(definition);
+  definitionUtterance.rate = 0.75;
+  window.speechSynthesis.speak(definitionUtterance);
+
+  letters.split('').forEach((letter) => {
+    const utterance = new SpeechSynthesisUtterance(letter);
+    window.speechSynthesis.speak(utterance);
+  });
 }
 
 function getClassNames() {

@@ -6,12 +6,6 @@ export interface WordEntry {
 }
 
 export const GAME_DURATION_SECONDS = 30;
-export const AUTO_VOICE_EXTRA_SECONDS = 5;
-export const WRONG_ANSWER_PENALTY_SECONDS = 1;
-export const WORD_LENGTH = 5;
-export const SCRAMBLE_ATTEMPTS = 10;
-export const LEADERBOARD_COOKIE_NAME = 'atoyr_leaderboard';
-export const LEADERBOARD_COOKIE_EXPIRY_DAYS = 7;
 
 export type GamePhase = 'resuming' | 'idle' | 'playing' | 'finished';
 
@@ -61,14 +55,6 @@ export interface APIError {
   statusCode: number;
 }
 
-export const ERROR_MESSAGES: Record<ErrorCode, string> = {
-  SESSION_NOT_FOUND: 'Game session not found',
-  SESSION_EXPIRED: 'Game session has expired',
-  INVALID_TOKEN: 'Invalid word token',
-  GAME_NOT_STARTED: 'Game has not been started',
-  GAME_ALREADY_FINISHED: 'Game has already finished',
-  INVALID_REQUEST: 'Invalid request format',
-};
 const LOCAL_STORAGE_GAME_ENDS_AT = 'session-ends-at';
 
 export function getFinalScore(score: number, totalAttempts: number): string {

@@ -40,7 +40,6 @@ export function useGame(shouldContinueGame: boolean) {
     ...INITIAL_STATE,
     phase: shouldContinueGame ? 'resuming' : 'idle',
   });
-
   const sessionRef = useRef<ServerGameSession | null>(null);
   const sseUnsubscribeRef = useRef<(() => void) | null>(null);
   const isBeforeUnloadFnRef = useRef<(() => void) | null>(null);
@@ -59,6 +58,10 @@ export function useGame(shouldContinueGame: boolean) {
     try {
       const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
       setGameEndsAt(response.remainingSeconds);
+
+      if (isBeforeUnloadFnRef.current) {
+        window.removeEventListener('beforeunload', isBeforeUnloadFnRef.current);
+      }
 
       isBeforeUnloadFnRef.current = () => {
         isBeforeUnloadRef.current = true;

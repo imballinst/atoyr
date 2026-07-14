@@ -9,6 +9,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - Use oxfmt for formatting and oxlint for linting
 - Use Yarn Modern with nodeLinker node_modules
 - Use latest React, no need for useCallback and useMemo
+- For static content pages (e.g. `about.tsx`), author in Markdown and render with `marked`. Inject via `dangerouslySetInnerHTML` — the source is a static string in the repo, not user/db-derived content. See `.config/opencode/AGENTS.md` for the policy.
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
@@ -26,7 +27,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 
 ## Lifecycle
 
-- Specs live in `.opencode/specs` as markdown files describing *what* to build, not *how*.
+- Specs live in `.opencode/specs` as markdown files describing _what_ to build, not _how_.
 - When a spec is implemented, summarize the key decisions and patterns in this file so future sessions have context. The spec file should be removed.
 - Keep this file updated as the source of truth for project conventions and architecture.
 
@@ -80,6 +81,13 @@ The project uses GitHub Actions → GHCR (private) → Coolify pull pattern:
 - **Single Dockerfile**: Multi-stage build at project root — node:24-alpine for client SPA, golang:1.25-alpine for Go server, nginx:1.27-alpine as the final runtime. nginx reverse-proxies `/api/` and `/dashboard` to the Go server on port 3000.
 - **Deploy workflow** (`.github/workflows/deploy.yml`): Triggered on push to `main`. Builds and pushes to `ghcr.io/<repo>:latest` with GitHub Actions cache (`type=gha`), then curls the Coolify deploy webhook.
 - **Key files**: `Dockerfile`, `.dockerignore`, `nginx.conf`, `docker-entrypoint.sh`, `docker-compose.yml`, `.github/workflows/deploy.yml`.
+
+### Client Dependency Notes
+
+A few `packages/client` dependencies are kept even though no application source file imports them directly:
+
+- **`@react-router/node`** and **`isbot`** are required by React Router's framework runtime (`@react-router/dev` / `@react-router/serve`). Removing them breaks `react-router typegen` and the server build. They appear as "unused" in static dependency scans because the framework loads them at runtime rather than through a static import in app code.
+- The client package is kept free of dead dependencies otherwise; any future dependency that is only needed transitively by the framework should also be retained as a direct dependency so production installs remain reliable.
 
 ## Tests
 

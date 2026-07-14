@@ -6,6 +6,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
           {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((key) => (
             <button
               key={key}
+              type="button"
               className="aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
               disabled={answer.length >= 5}
@@ -20,6 +21,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
           {['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].map((key) => (
             <button
               key={key}
+              type="button"
               className="col-span-2 aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
               disabled={answer.length >= 5}
@@ -36,6 +38,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
           {['Z', 'X', 'C', 'V', 'B', 'N', 'M'].map((key) => (
             <button
               key={key}
+              type="button"
               className="col-span-2 aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
               disabled={answer.length >= 5}
@@ -45,6 +48,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
           ))}
 
           <button
+            type="button"
             className="col-span-3 bg-dark-bg-primary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onBackspace}
             aria-label="Backspace"
