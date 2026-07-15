@@ -5,6 +5,7 @@ import { useGame } from '~/api/hooks';
 import { GameScreen } from '~/components/GameScreen';
 import { ResultsScreen } from '~/components/ResultsScreen';
 import { StartScreen } from '~/components/StartScreen';
+import { readStoredAutoVoice } from '~/lib/auto-voice';
 import { hasGameEnded } from '~/lib/game';
 
 export function meta() {
@@ -29,7 +30,7 @@ export default function Home() {
   }
 
   if (state.phase === 'idle') {
-    return <StartScreen onStart={startGame} />;
+    return <StartScreen onStart={() => startGame(readStoredAutoVoice())} />;
   }
 
   const { currentWord, currentWordToken } = state;

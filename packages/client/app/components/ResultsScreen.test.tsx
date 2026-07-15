@@ -1,6 +1,6 @@
-import { screen, render, cleanup } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ResultsScreen } from './ResultsScreen';
 
@@ -34,6 +34,10 @@ function renderScreen(overrides: RenderOverrides = {}) {
 }
 
 describe('ResultsScreen', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -57,5 +61,26 @@ describe('ResultsScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Back to home' }));
 
     expect(onBackToHome).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a Settings trigger next to Play Again', () => {
+    renderScreen();
+
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('persists the auto-voice toggle across re-renders', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderScreen();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+
+    unmount();
+    renderScreen();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ })).toBeChecked();
   });
 });

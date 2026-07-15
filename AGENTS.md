@@ -29,7 +29,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 ## Lifecycle
 
 - Specs live in `.opencode/specs` as markdown files describing _what_ to build, not _how_.
-- When a spec is implemented, summarize the key decisions and patterns in this file so future sessions have context. The spec file should be removed.
+- When a spec is implemented, summarize the key decisions and patterns in this file so future sessions have context. The spec file should be removed. Confirm with the user before you remove it.
 - Keep this file updated as the source of truth for project conventions and architecture.
 
 ## Implemented Architecture Decisions
@@ -89,6 +89,19 @@ A few `packages/client` dependencies are kept even though no application source 
 
 - **`@react-router/node`** and **`isbot`** are required by React Router's framework runtime (`@react-router/dev` / `@react-router/serve`). Removing them breaks `react-router typegen` and the server build. They appear as "unused" in static dependency scans because the framework loads them at runtime rather than through a static import in app code.
 - The client package is kept free of dead dependencies otherwise; any future dependency that is only needed transitively by the framework should also be retained as a direct dependency so production installs remain reliable.
+
+### Landing & Results Screen Modals
+
+The landing and results screens use a shared `radix-ui` Dialog wrapper for "How to play" and "Settings" modals:
+
+- **Shared wrapper** (`packages/client/app/components/Dialog.tsx`): Owns `Dialog.Root`, `Dialog.Portal`, `Dialog.Overlay`, `Dialog.Content`, close button, and focus-trap/Escape/scroll-lock behavior from `radix-ui`. Consumers pass only the title, trigger, and body content.
+- **How to play modal** (`packages/client/app/components/HowToPlayModal.tsx`): Contains the rules list. Trigger lives on the landing screen.
+- **Settings modal** (`packages/client/app/components/SettingsModal.tsx`): Contains the auto-voice toggle and its footnote. Triggers live on both the landing screen and the results screen next to "Play Again".
+- **Auto-voice persistence**: The toggle still reads from and writes to `localStorage` via `packages/client/app/lib/auto-voice.ts`. `StartScreen` and `useGame.playAgain` read the stored value at action time so the preference is available even when the modal is closed.
+- **Landing screen cleanup**: The inline rules list, inline auto-voice checkbox, and footnote were removed from `StartScreen` to keep the landing screen compact. The "Start Game" button remains the primary call to action.
+- **Results screen layout**: The settings trigger sits alongside "Back to home" and "Play Again".
+
+Key files: `packages/client/app/components/Dialog.tsx`, `packages/client/app/components/HowToPlayModal.tsx`, `packages/client/app/components/SettingsModal.tsx`, `packages/client/app/components/StartScreen.tsx`, `packages/client/app/components/ResultsScreen.tsx`.
 
 ## Tests
 

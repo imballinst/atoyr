@@ -45,7 +45,7 @@ export function useGame(shouldContinueGame: boolean) {
   const isBeforeUnloadFnRef = useRef<(() => void) | null>(null);
   const isBeforeUnloadRef = useRef(false);
 
-  const startGame = useCallback(async (autoVoice: boolean = false, action: 'start' | 'resume' = 'start') => {
+  const startGame = useCallback(async (autoVoice: boolean, action: 'start' | 'resume' = 'start') => {
     try {
       const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
       setGameEndsAt(response.remainingSeconds);

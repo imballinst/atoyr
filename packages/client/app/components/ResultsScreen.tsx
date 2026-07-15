@@ -4,6 +4,7 @@ import { useLeaderboardPercentile } from '~/api/hooks';
 
 import { type GameState } from '../lib/game';
 import { Leaderboard } from './Leaderboard';
+import { SettingsModal } from './SettingsModal';
 
 interface ResultsScreenProps extends Pick<
   GameState,
@@ -63,14 +64,19 @@ export function ResultsScreen({
         >
           Back to home
         </button>
-        <button
-          type="button"
-          onClick={onPlayAgain}
-          className="col-span-4 py-3 px-4 text-sm font-semibold bg-dark-interactive-primary text-white rounded transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
-          data-ga-label="ga-play-again-button"
-        >
-          Play Again
-        </button>
+        <div className="col-span-4 flex gap-2">
+          <div className="flex-1">
+            <SettingsModal />
+          </div>
+          <button
+            type="button"
+            onClick={onPlayAgain}
+            className="flex-1 py-3 px-4 text-sm font-semibold bg-dark-interactive-primary text-white rounded transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 shadow hover:bg-dark-interactive-hover"
+            data-ga-label="ga-play-again-button"
+          >
+            Play Again
+          </button>
+        </div>
       </div>
 
       <div className="pt-6 w-full min-h-[270px]">

@@ -123,6 +123,28 @@ describe('Home — game lifecycle', () => {
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
+
+  it('uses the updated persisted auto-voice value when replaying after toggling in settings', async () => {
+    vi.mocked(apiStartGame)
+      .mockResolvedValueOnce(mockStartResponse1)
+      .mockResolvedValueOnce({ ...mockStartResponse2, autoVoice: true });
+    renderHome();
+
+    await startGame();
+    await finishCurrentGame();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
+
+    expect(apiStartGame).toHaveBeenCalledTimes(2);
+    expect(apiStartGame).toHaveBeenNthCalledWith(1, false, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(2, true, []);
+  });
 });
 
 function mockSpeechSynthesis() {
