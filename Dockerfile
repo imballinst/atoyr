@@ -3,7 +3,7 @@ FROM node:24-alpine AS client-build
 
 WORKDIR /app
 
-COPY package.json yarn.lock tsconfig.json .yarnrc.yml ./
+COPY CHANGELOG.md package.json yarn.lock tsconfig.json .yarnrc.yml ./
 COPY packages/client/package.json packages/client/package.json
 COPY packages/server/package.json packages/server/package.json
 
