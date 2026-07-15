@@ -16,7 +16,7 @@ export function SharedDialog({ open, onOpenChange, title, trigger, children }: S
       <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60" data-testid="dialog-overlay" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-dark-bg-secondary text-dark-text-primary rounded-lg shadow-lg p-6 max-w-[420px] max-h-[90vh] overflow-y-auto">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-dark-bg-secondary text-dark-text-primary rounded-lg shadow-lg p-6 w-full max-w-[420px] max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between gap-4 mb-4">
             <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
             <Dialog.Close asChild>
