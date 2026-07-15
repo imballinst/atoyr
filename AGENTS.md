@@ -122,3 +122,16 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 ### Avoid Testing Implementation Details in Component Tests
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
+
+### Changelog Page & Version Indicator
+
+The navbar shows a combined version chip (client + server semver added component-wise) instead of the `?` icon:
+
+- **Version calculation** (`packages/client/app/lib/version.ts`): `computeCombinedVersion` parses `import.meta.env.VERSION` (format `client-server`), adds each semver component arithmetically, and returns `v{major}.{minor}.{patch}`. Falls back to the raw `VERSION` string if parsing fails.
+- **Version chip** (`packages/client/app/components/VersionHoverCard.tsx`): Uses Radix `HoverCard`. Hover shows client/server version breakdown and a link to `/changelog`. Opening the hover panel dismisses the "New" badge and writes `lastSeen`/`dismissedAt` to localStorage.
+- **"New" badge**: Shown when `lastSeen !== currentVersion`, OR when `lastSeen === currentVersion` but the player hasn't dismissed the badge yet and the current date is at least one week after the latest release date.
+- **Changelog page** (`packages/client/app/routes/changelog.tsx`): Renders markdown from `packages/client/app/lib/changelog.ts` using `marked`, following the same pattern as `about.tsx`.
+- **Changelog markdown** (`packages/client/app/lib/changelog.ts`): Uses `# Month Year` for h1 and `## Week N` (N=1-5) for h2. The changelog is ordered newest-first (descending by month/week). The first h1/h2 pair derives the latest release date for the badge logic. Changelog entries must be user-facing and essential. Do not log internal refactors or dependency-only changes.
+- **Navbar hover**: All navbar links (`Play`, `Leaderboard`, `About`) have `hover:text-dark-interactive-primary transition duration-200` for consistent hover feedback.
+
+Key files: `packages/client/app/components/VersionHoverCard.tsx`, `packages/client/app/lib/version.ts`, `packages/client/app/lib/changelog.ts`, `packages/client/app/routes/changelog.tsx`, `packages/client/app/components/PageLayout.tsx`, `CHANGELOG.md`.

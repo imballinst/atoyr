@@ -1,7 +1,7 @@
-import { InfoIcon } from 'lucide-react';
-import { Popover } from 'radix-ui';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
+
+import { VersionHoverCard } from '~/components/VersionHoverCard';
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
@@ -20,31 +20,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
             </li>
           </ul>
 
-          <Popover.Root>
-            <Popover.Trigger asChild>
-              <InfoIcon aria-label="Version" size={16} />
-            </Popover.Trigger>
-            <Popover.Portal>
-              <Popover.Content
-                className="bg-dark-bg-primary border border-dark-border-light px-1.5 py-1 rounded text-sm text-dark-text-primary outline-0 shadow"
-                sideOffset={5}
-                side="bottom"
-                align="end"
-              >
-                {import.meta.env.DEV
-                  ? 'Dev'
-                  : (() => {
-                      const [client, server] = import.meta.env.VERSION.split('-');
-                      return (
-                        <ul>
-                          <li>Client version: {client}</li>
-                          <li>Server version: {server}</li>
-                        </ul>
-                      );
-                    })()}
-              </Popover.Content>
-            </Popover.Portal>
-          </Popover.Root>
+          <VersionHoverCard />
         </nav>
       </div>
 
@@ -58,7 +34,12 @@ function PathAwareLink({ href, children }: { href: string; children: string }) {
   const additionalClass = pathname === href ? 'font-bold!' : '';
 
   return (
-    <a href={href} className={'navigation ' + additionalClass} data-ga-value={children} data-ga-label="ga-navbar-link">
+    <a
+      href={href}
+      className={'navigation hover:text-dark-interactive-primary transition duration-200 ' + additionalClass}
+      data-ga-value={children}
+      data-ga-label="ga-navbar-link"
+    >
       {children}
     </a>
   );

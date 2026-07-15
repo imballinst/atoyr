@@ -1,31 +1,10 @@
-import { marked, Renderer } from 'marked';
+import { marked } from 'marked';
+
+import { renderer } from '~/lib/markdown';
 
 export function meta() {
   return [{ title: 'About | Atoyr' }, { name: 'description', content: 'A page containing info about the Atoyr game.' }];
 }
-
-const renderer = new Renderer();
-renderer.heading = function ({ tokens, depth }) {
-  const text = renderer.parser.parseInline(tokens);
-  return `<h${depth} class="font-bold text-lg my-4 first:mt-0">${text}</h${depth}>`;
-};
-renderer.paragraph = function ({ tokens }) {
-  const text = renderer.parser.parseInline(tokens);
-  return `<p class="text-sm mb-3">${text}</p>`;
-};
-renderer.link = function ({ tokens, href, title }) {
-  const text = renderer.parser.parseInline(tokens);
-  const attrs: Record<string, string | undefined | null> = {
-    title,
-    href,
-  };
-  const attrStringified = Object.entries(attrs)
-    .filter(([, val]) => !!val)
-    .map(([key, value]) => `${key}="${value}"`)
-    .join(' ');
-
-  return `<a class="underline decoration-dotted" ${attrStringified}>${text}</a>`;
-};
 
 export default function LeaderboardPage() {
   const html = marked(getAboutPageMarkdown(), {

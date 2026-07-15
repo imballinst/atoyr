@@ -6,6 +6,8 @@ import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration }
 
 import type { Route } from './+types/root';
 import { PageLayout } from './components/PageLayout';
+import { deriveReleaseDate, changelogMarkdown } from './lib/changelog';
+import { computeCombinedVersion, readStoredVersionInfo, shouldShowBadge } from './lib/version';
 
 const SHOULD_CAPTURE_EXCEPTION = import.meta.env.PROD;
 if (SHOULD_CAPTURE_EXCEPTION) {
@@ -64,6 +66,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </body>
     </html>
   );
+}
+
+const VERSION = import.meta.env.VERSION;
+const COMBINED_VERSION = computeCombinedVersion(VERSION);
+
+export function clientLoader() {
+  const { lastSeen, dismissedAt } = readStoredVersionInfo();
+  const releaseDate = deriveReleaseDate(changelogMarkdown);
+
+  return { showBadge: shouldShowBadge(COMBINED_VERSION, lastSeen, dismissedAt, new Date(), releaseDate) };
 }
 
 const queryClient = new QueryClient({

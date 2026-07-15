@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VERSION: string;
+  readonly VITE_CHANGELOG: string;
 }
 
 interface ImportMeta {

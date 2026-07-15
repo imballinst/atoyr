@@ -8,15 +8,18 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 const PATH_TO_CLIENT_PACKAGE_JSON = path.join(process.cwd(), 'package.json');
 const PATH_TO_SERVER_PACKAGE_JSON = path.join(process.cwd(), '../server/package.json');
+const PATH_TO_ROOT_CHANGELOG = path.join(process.cwd(), '../../CHANGELOG.md');
 
 const { version: clientVersion } = JSON.parse(fs.readFileSync(PATH_TO_CLIENT_PACKAGE_JSON, 'utf-8'));
 const { version: serverVersion } = JSON.parse(fs.readFileSync(PATH_TO_SERVER_PACKAGE_JSON, 'utf-8'));
+const changelogContent = fs.readFileSync(PATH_TO_ROOT_CHANGELOG, 'utf-8');
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
   define: {
     'import.meta.env.VERSION': process.env.NODE_ENV === 'development' ? undefined : JSON.stringify(`${clientVersion}-${serverVersion}`),
+    'import.meta.env.VITE_CHANGELOG': JSON.stringify(changelogContent),
   },
   server: {
     host: '0.0.0.0',
