@@ -16,7 +16,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
         </p>
       </div>
 
-      <p className="text-sm text-dark-text-secondary mb-6 text-left">Unscramble 5-letter words as fast as you can!</p>
+      <p className="text-sm text-dark-text-secondary mb-6 text-center">Unscramble 5-letter words as fast as you can!</p>
 
       <button
         type="button"

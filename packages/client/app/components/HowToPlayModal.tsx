@@ -7,7 +7,7 @@ export function HowToPlayModal() {
       trigger={
         <button
           type="button"
-          className="w-full py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
+          className="py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
           data-ga-label="ga-how-to-play-button"
         >
           How to play

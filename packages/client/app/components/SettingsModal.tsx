@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { readStoredAutoVoice, writeStoredAutoVoice } from '~/lib/auto-voice';
 
 import { SharedDialog } from './Dialog';
 
-export function SettingsModal() {
+interface Props {
+  triggerText?: ReactNode;
+  triggerClassnames?: string;
+}
+
+export function SettingsModal({ triggerText = 'Settings', triggerClassnames = '' }: Props) {
   const [autoVoice, setAutoVoice] = useState(readStoredAutoVoice);
 
   const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,10 +24,14 @@ export function SettingsModal() {
       trigger={
         <button
           type="button"
-          className="w-full py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
+          aria-label="Settings"
+          className={
+            'h-full py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary ' +
+            triggerClassnames
+          }
           data-ga-label="ga-settings-button"
         >
-          Settings
+          {triggerText}
         </button>
       }
     >
@@ -34,7 +43,7 @@ export function SettingsModal() {
           </label>
         </div>
 
-        <p className="text-xs text-dark-text-secondary italic text-left">
+        <p className="text-xs text-dark-text-secondary text-left">
           Uses your browser's built-in text-to-speech functionality. You will get 5 extra seconds for each word, but the scrambled letters
           will only be shown for screen readers.
         </p>
