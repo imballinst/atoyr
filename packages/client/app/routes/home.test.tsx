@@ -5,8 +5,8 @@ import { type ReactNode } from 'react';
 import { createRoutesStub } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { apiStartGame } from '~/api/client';
-import type { StartGameResponse } from '~/api/gen';
+import { apiStartGame, apiSubmitAnswer } from '~/api/client';
+import type { StartGameResponse, SubmitAnswerResponse } from '~/api/gen';
 import { LATEST_STORAGE_KEY, readStoredSettings, type LatestSchema } from '~/lib/settings';
 import Home from '~/routes/home';
 
@@ -117,6 +117,41 @@ describe('Home — game lifecycle', () => {
     expect(screen.getByRole('heading', { name: 'Game Over!' })).toBeInTheDocument();
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+  });
+
+  it.each([
+    { mode: 'vanilla' as const, wordDefinition: mockStartResponse1.scrambledWordDefinition, bannerText: '' as const },
+    { mode: 'blind' as const, wordDefinition: '' as const, bannerText: '🚫 BLIND MODE 🚫' as const },
+  ])('shows feedback and updates the scrambled word after a correct answer in $mode mode', async ({ mode, wordDefinition, bannerText }) => {
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: false, mode } satisfies LatestSchema));
+    vi.mocked(apiStartGame).mockResolvedValue({
+      ...mockStartResponse1,
+      mode,
+      scrambledWordDefinition: wordDefinition,
+    });
+    vi.mocked(apiSubmitAnswer).mockResolvedValue({
+      correct: true,
+      scrambledWord: 'rahce',
+      scrambledWordDefinition: wordDefinition,
+      token: 'token-2',
+      score: 1,
+      attempts: 1,
+      remainingSeconds: 28,
+      correctAttemptTimestamps: [['2024-01-01T00:00:00Z']],
+    } satisfies SubmitAnswerResponse);
+    renderHome();
+
+    await startGame();
+
+    if (bannerText) expect(screen.getByText(bannerText)).toBeInTheDocument();
+
+    for (const letter of ['P', 'L', 'E', 'P', 'A']) {
+      await userEvent.click(screen.getByRole('button', { name: letter }));
+    }
+
+    await waitFor(() => expect(screen.getAllByText('🎉')).toHaveLength(3));
+
+    expect(screen.getByRole('status', { name: 'Letters to unscramble: rahce' })).toBeInTheDocument();
   });
 
   it('uses the updated persisted auto-voice value when replaying after toggling in settings', async () => {

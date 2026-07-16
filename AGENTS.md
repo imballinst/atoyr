@@ -104,6 +104,7 @@ Blind mode hides the word definition, increasing difficulty:
 - **Speech guard**: `speakLetters` in `GameScreen.tsx` only creates a definition utterance when the `definition` string is non-empty. Since the server omits the definition for Blind mode, no mode-specific branching is needed in the speech code.
 - **No analytics events**: Spec'd `ga-blind-mode-started`/`ga-blind-mode-finished` events were skipped because the existing `/dashboard` already tracks session data.
 - **No results screen mode indicator**: Skipped because the mode banner during gameplay provides sufficient context.
+- **Empty definition contract**: The server returns `scrambledWordDefinition: ""` in blind mode (not omitted). The client must not require this field in conditions gating state updates — `packages/client/app/api/hooks.ts` guards on `scrambledWord && token` only. If `scrambledWordDefinition` is added to the guard, blind mode will silently break (state won't update, `onSuccess` won't fire).
 
 Key files: `packages/server/internal/services/game.service.go`, `packages/client/app/components/ModeBanner.tsx`, `packages/client/app/routes/home.tsx`, `packages/client/app/lib/settings.ts`, `packages/server/internal/services/leaderboard.service.go`.
 
