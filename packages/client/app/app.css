@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-dark-bg-primary: #0f172a;
@@ -9,7 +9,7 @@
   --color-dark-text-secondary: #cbd5e1;
   --color-dark-text-tertiary: #94a3b8;
   --color-dark-text-muted: #64748b;
-  --color-dark-interactive-primary: #60a5fa;
+  --color-dark-interactive-primary: #4b82f6;
   --color-dark-interactive-hover: #3b82f6;
   --color-dark-interactive-success: #34d399;
   --color-dark-interactive-warning: #fbbf24;
@@ -27,7 +27,7 @@ body,
 }
 
 body {
-  font-family: "Merriweather", serif;
+  font-family: 'Merriweather', serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: rgba(0, 0, 0, 0.85);
