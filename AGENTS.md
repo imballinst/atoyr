@@ -13,6 +13,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 - Colocate module-level helper functions at the bottom of the file when they do not close over component state (function declarations are hoisted). Prefer this over nesting them inside the component.
+- Don't introduce intermediary variables for values used only once or that need no transformation. Read from the source directly.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
 - DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
 - DO NOT create additional Markdown files in `.opencode` folder unless otherwise stated.
@@ -89,6 +90,21 @@ A few `packages/client` dependencies are kept even though no application source 
 
 - **`@react-router/node`** and **`isbot`** are required by React Router's framework runtime (`@react-router/dev` / `@react-router/serve`). Removing them breaks `react-router typegen` and the server build. They appear as "unused" in static dependency scans because the framework loads them at runtime rather than through a static import in app code.
 - The client package is kept free of dead dependencies otherwise; any future dependency that is only needed transitively by the framework should also be retained as a direct dependency so production installs remain reliable.
+
+### Blind Mode
+
+Blind mode hides the word definition, increasing difficulty:
+
+- **Server-side definition stripping**: The service layer (`game.service.go`) is responsible for omitting the definition — `sessionWithVisibleDefinition()` clears `CurrentWordDefinition` for Blind mode in `StartGame`/`ContinueGame`, and `SubmitAnswer` only sets `ScrambledWordDefinition` when mode is `"vanilla"`. Routes do not filter the definition; the service guarantees it's absent.
+- **Mode banner** (`packages/client/app/components/ModeBanner.tsx`): A shared component rendered at the route level in `home.tsx` (right below the navbar). Shows `🚫 BLIND MODE 🚫` or `🍦 Vanilla mode 🍦`.
+- **Mode selector**: Lives inside the Settings modal (not a prominent landing-screen control — intentional deviation from the spec).
+- **Mode persistence**: Written to localStorage via `packages/client/app/lib/settings.ts` alongside auto-voice. The mode is passed to `POST /api/v1/game/start` as a required field.
+- **Leaderboard isolation**: `GetPercentile` now filters by `mode` in SQL so Blind and Vanilla scores are not compared against each other.
+- **Speech guard**: `speakLetters` in `GameScreen.tsx` only creates a definition utterance when the `definition` string is non-empty. Since the server omits the definition for Blind mode, no mode-specific branching is needed in the speech code.
+- **No analytics events**: Spec'd `ga-blind-mode-started`/`ga-blind-mode-finished` events were skipped because the existing `/dashboard` already tracks session data.
+- **No results screen mode indicator**: Skipped because the mode banner during gameplay provides sufficient context.
+
+Key files: `packages/server/internal/services/game.service.go`, `packages/client/app/components/ModeBanner.tsx`, `packages/client/app/routes/home.tsx`, `packages/client/app/lib/settings.ts`, `packages/server/internal/services/leaderboard.service.go`.
 
 ### Landing & Results Screen Modals
 

@@ -72,7 +72,7 @@ describe('StartScreen', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Disabled/ })).toBeInTheDocument();
   });
 
   it('uses the persisted auto-voice value in the settings modal', async () => {
@@ -82,7 +82,7 @@ describe('StartScreen', () => {
 
     await openSettings(user);
 
-    expect(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Enabled/ })).toBeChecked();
   });
 
   it('persists the auto-voice toggle across re-renders', async () => {
@@ -90,14 +90,14 @@ describe('StartScreen', () => {
     const { unmount } = renderScreen();
 
     await openSettings(user);
-    await user.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+    await user.click(screen.getByRole('checkbox', { name: /Disabled/ }));
 
     unmount();
     renderScreen();
 
     await openSettings(user);
 
-    expect(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Enabled/ })).toBeChecked();
   });
 
   it('starts the game when the Start Game button is clicked', async () => {

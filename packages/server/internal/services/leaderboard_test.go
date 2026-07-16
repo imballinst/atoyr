@@ -275,6 +275,21 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		results = append(results, result)
 	}
 
+	// Create a single blind session with a high score.
+	blindSession := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "blind",
+		Score:                    100,
+		TotalAttempts:            int32(10),
+		Accuracy:                 100,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		WordDefinitions:          pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	db.Create(&blindSession)
+
 	for i := 1; i < 10; i++ {
 		// 0 is not eligible in the code, so we start from 1 to 10.
 		id := results[i].ID
@@ -287,6 +302,11 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
+
+	// A blind session should only be compared against other blind sessions.
+	percentile, err := service.GetPercentile(blindSession.ID, "blind", blindSession.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, float32(0), percentile)
 }
 
 func BenchmarkLeaderboardService(b *testing.B) {

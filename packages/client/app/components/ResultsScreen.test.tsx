@@ -3,14 +3,14 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useGame } from '~/api/hooks';
+import { useGame, useLeaderboardPercentile } from '~/api/hooks';
 import { readStoredSettings } from '~/lib/settings';
 
 import { ResultsScreen } from './ResultsScreen';
 
 vi.mock('~/api/hooks', async (importOriginal) => ({
   ...((await importOriginal()) as any),
-  useLeaderboardPercentile: () => ({ data: undefined }),
+  useLeaderboardPercentile: vi.fn(() => ({ data: undefined })),
   useLeaderboard: () => ({ data: undefined, isFetching: false, error: null }),
 }));
 
@@ -93,13 +93,19 @@ describe('ResultsScreen', () => {
     const { unmount } = renderScreen();
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
-    await user.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+    await user.click(screen.getByRole('checkbox', { name: /Disabled/ }));
 
     unmount();
     renderScreen();
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
 
-    expect(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Enabled/ })).toBeChecked();
+  });
+
+  it('passes the current mode to useLeaderboardPercentile', () => {
+    renderScreen();
+
+    expect(useLeaderboardPercentile).toHaveBeenCalledWith('vanilla');
   });
 });

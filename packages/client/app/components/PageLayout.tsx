@@ -24,7 +24,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
         </nav>
       </div>
 
-      <main className="flex flex-col items-center justify-center p-2 bg-dark-bg-primary w-full flex-1">{children}</main>
+      <main className="relative flex flex-col items-center justify-center p-2 bg-dark-bg-primary w-full flex-1">{children}</main>
     </div>
   );
 }

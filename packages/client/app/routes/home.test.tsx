@@ -129,7 +129,7 @@ describe('Home — game lifecycle', () => {
     await finishCurrentGame();
 
     await userEvent.click(screen.getByRole('button', { name: 'Settings' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /Disabled/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 

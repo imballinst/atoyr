@@ -239,6 +239,17 @@ export function useLeaderboard(mode?: SessionMode, page = 1, limit = 10) {
   );
 }
 
-export function useLeaderboardPercentile() {
-  return apiQuery.useQuery('get', '/api/v1/leaderboard/percentile', undefined, QUERY_OPTS);
+export function useLeaderboardPercentile(mode?: SessionMode) {
+  return apiQuery.useQuery(
+    'get',
+    '/api/v1/leaderboard/percentile',
+    {
+      params: {
+        query: {
+          mode,
+        },
+      },
+    },
+    QUERY_OPTS,
+  );
 }

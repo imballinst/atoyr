@@ -16,9 +16,11 @@ func TestGameService_StartGame(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
+	assert.Equal(t, "vanilla", started.Mode)
 	assert.Equal(t, int32(6), session.DurationSeconds)
 	assert.NotEqual(t, "", started.CurrentWord)
 	assert.NotEqual(t, "", started.CurrentWordToken)
+	assert.NotEqual(t, "", started.CurrentWordDefinition)
 }
 
 func TestGameService_ContinueGame(t *testing.T) {
@@ -42,38 +44,55 @@ func TestGameService_ContinueGame(t *testing.T) {
 }
 
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
-	testServices := initTestServices(t)
+	for _, mode := range []string{"vanilla", "blind"} {
+		t.Run(mode, func(t *testing.T) {
+			testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID)
+			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
+			testServices.Game.StartGame(session.ID)
 
-	session, _ = testServices.Session.FindByID(session.ID)
-	word := session.CurrentWord
+			session, _ = testServices.Session.FindByID(session.ID)
+			word := session.CurrentWord
 
-	result, err := testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+			result, err := testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
 
-	assert.NoError(t, err)
-	assert.Equal(t, true, result.Correct)
-	assert.Equal(t, int32(1), result.Score)
-	assert.Len(t, result.CorrectAttemptTimestamps, 1)
-	assert.Len(t, result.CorrectAttemptTimestamps[0], 1)
-	assert.Equal(t, int32(1), result.Attempts)
+			assert.NoError(t, err)
+			assert.Equal(t, true, result.Correct)
+			assert.Equal(t, int32(1), result.Score)
+			assert.Len(t, result.CorrectAttemptTimestamps, 1)
+			assert.Len(t, result.CorrectAttemptTimestamps[0], 1)
+			assert.Equal(t, int32(1), result.Attempts)
+			if mode == "blind" {
+				assert.Equal(t, "", result.ScrambledWordDefinition)
+			} else {
+				assert.NotEqual(t, "", result.ScrambledWordDefinition)
+			}
+		})
+	}
 }
 
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
-	testServices := initTestServices(t)
+	for _, mode := range []string{"vanilla", "blind"} {
+		t.Run(mode, func(t *testing.T) {
+			testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID)
+			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
+			testServices.Game.StartGame(session.ID)
 
-	session, _ = testServices.Session.FindByID(session.ID)
-	result, err := testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
+			session, _ = testServices.Session.FindByID(session.ID)
+			originalEndsAt := session.EndsAt
+			result, err := testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 
-	assert.NoError(t, err)
-	assert.Equal(t, false, result.Correct)
-	assert.Equal(t, int32(0), result.Score)
-	assert.Len(t, result.CorrectAttemptTimestamps, 0)
-	assert.Equal(t, int32(1), result.Attempts)
+			assert.NoError(t, err)
+			assert.Equal(t, false, result.Correct)
+			assert.Equal(t, int32(0), result.Score)
+			assert.Len(t, result.CorrectAttemptTimestamps, 0)
+			assert.Equal(t, int32(1), result.Attempts)
+
+			session, _ = testServices.Session.FindByID(session.ID)
+			assert.True(t, session.EndsAt.Before(originalEndsAt))
+		})
+	}
 }
 
 func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
@@ -166,6 +185,33 @@ func TestGameService_FinishGame(t *testing.T) {
 	assert.Equal(t, int32(7), session.Score)
 	assert.Equal(t, int32(8), session.TotalAttempts)
 	assert.Equal(t, float32(87.5), session.Accuracy)
+}
+
+func TestGameService_StartGame_BlindMode(t *testing.T) {
+	testServices := initTestServices(t)
+
+	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
+	started, err := testServices.Game.StartGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
+	assert.Equal(t, "blind", started.Mode)
+	assert.NotEqual(t, "", started.CurrentWord)
+	assert.Equal(t, "", started.CurrentWordDefinition)
+}
+
+func TestGameService_ContinueGame_BlindMode(t *testing.T) {
+	testServices := initTestServices(t)
+
+	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
+	_, err := testServices.Game.StartGame(session.ID)
+	assert.NoError(t, err)
+
+	continued, err := testServices.Game.ContinueGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, core.SessionPhasePlaying, continued.Phase)
+	assert.Equal(t, "", continued.CurrentWordDefinition)
 }
 
 func TestGameService_TokenGeneration(t *testing.T) {

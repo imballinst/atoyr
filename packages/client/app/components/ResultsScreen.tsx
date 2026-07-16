@@ -27,7 +27,7 @@ export function ResultsScreen({
   settings,
   onUpdateSettings,
 }: ResultsScreenProps) {
-  const { data } = useLeaderboardPercentile();
+  const { data } = useLeaderboardPercentile(settings.mode);
 
   const accuracy = totalAttempts > 0 ? Math.trunc((score / totalAttempts) * 10000) / 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);

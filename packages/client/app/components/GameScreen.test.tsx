@@ -311,4 +311,21 @@ describe('GameScreen', () => {
     const streakSection = screen.getByRole('heading', { name: 'Streak' }).closest('section')!;
     expect(within(streakSection).getByText('3')).toBeInTheDocument();
   });
+
+  it('hides the definition in blind mode', () => {
+    renderScreen({ settings: { autoVoice: false, mode: 'blind' }, definition: DEFAULT_DEFINITION });
+
+    expect(screen.getByText(DEFAULT_DEFINITION)).toHaveAttribute('hidden');
+  });
+
+  it('speaks only letters when the definition is empty', async () => {
+    const user = userEvent.setup();
+    const { cancel, speak } = mockSpeechSynthesis();
+    renderScreen({ definition: '' });
+
+    await user.click(screen.getByRole('button', { name: 'Speak letters' }));
+
+    expect(cancel).toHaveBeenCalled();
+    expect(speak.mock.calls.map((c) => (c[0] as { text: string }).text)).toEqual(['p', 'l', 'e', 'p', 'a']);
+  });
 });

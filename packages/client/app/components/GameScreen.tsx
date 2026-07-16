@@ -198,9 +198,11 @@ function speakLetters(letters: string, definition: string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
-  const definitionUtterance = new SpeechSynthesisUtterance(definition);
-  definitionUtterance.rate = 0.75;
-  window.speechSynthesis.speak(definitionUtterance);
+  if (definition) {
+    const definitionUtterance = new SpeechSynthesisUtterance(definition);
+    definitionUtterance.rate = 0.75;
+    window.speechSynthesis.speak(definitionUtterance);
+  }
 
   letters.split('').forEach((letter) => {
     const utterance = new SpeechSynthesisUtterance(letter);

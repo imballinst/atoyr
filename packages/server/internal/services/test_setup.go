@@ -29,16 +29,16 @@ func initTestServices(t *testing.T) TestValues {
 func initTestWordService() *WordService {
 	return &WordService{
 		Words: []WordDefinition{
-			{Word: "hello"},
-			{Word: "world"},
-			{Word: "apple"},
-			{Word: "banana"},
-			{Word: "cherry"},
-			{Word: "dragon"},
-			{Word: "elephant"},
-			{Word: "forest"},
-			{Word: "guitar"},
-			{Word: "horizon"},
+			{Word: "hello", Definition: "a greeting"},
+			{Word: "world", Definition: "the earth"},
+			{Word: "apple", Definition: "a fruit"},
+			{Word: "banana", Definition: "a yellow fruit"},
+			{Word: "cherry", Definition: "a small red fruit"},
+			{Word: "dragon", Definition: "a mythical creature"},
+			{Word: "elephant", Definition: "a large mammal"},
+			{Word: "forest", Definition: "a wooded area"},
+			{Word: "guitar", Definition: "a stringed instrument"},
+			{Word: "horizon", Definition: "where earth meets sky"},
 		},
 	}
 }
