@@ -26,8 +26,13 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
+	if !req.Mode.Valid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, mode is invalid"})
+		return
+	}
+
 	// Create session
-	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, gr.sessionOptions.Duration)
+	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), gr.sessionOptions.Duration)
 	if err != nil {
 		log.Println("Failed to create session:", err)
 
@@ -51,6 +56,8 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		SessionId:               session.ID,
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
 		ScrambledWordDefinition: session.CurrentWordDefinition,
+		AutoVoice:               session.AutoVoice,
+		Mode:                    SessionMode(session.Mode),
 		Token:                   session.CurrentWordToken,
 		RemainingSeconds:        session.DurationSeconds,
 	})
@@ -94,6 +101,7 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		ScrambledWord:           utils.ScrambleWord(session.CurrentWord),
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		Token:                   session.CurrentWordToken,
+		Mode:                    SessionMode(session.Mode),
 		RemainingSeconds:        core.SessionDurationManager.Get(session.ID),
 		AutoVoice:               session.AutoVoice,
 	})

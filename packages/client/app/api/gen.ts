@@ -245,6 +245,7 @@ export interface paths {
         query?: {
           page?: number;
           limit?: number;
+          mode?: components['schemas']['SessionMode'];
         };
         header?: never;
         path?: never;
@@ -298,7 +299,9 @@ export interface paths {
     };
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          mode?: components['schemas']['SessionMode'];
+        };
         header?: never;
         path?: never;
         cookie?: never;
@@ -362,11 +365,13 @@ export interface components {
     };
     StartGameRequest: {
       autoVoice?: boolean;
+      mode: components['schemas']['SessionMode'];
       itemsUsed: string[];
     };
     StartGameResponse: {
       /** Format: uuid */
       sessionId: string;
+      mode: components['schemas']['SessionMode'];
       /** @example lpeap */
       scrambledWord: string;
       /** @example A fruit that is often red or green. */
@@ -450,6 +455,8 @@ export interface components {
        */
       timestamp: number;
     };
+    /** @enum {string} */
+    SessionMode: 'vanilla' | 'blind';
   };
   responses: never;
   parameters: never;
@@ -465,5 +472,6 @@ export type SubmitAnswerResponse = components['schemas']['SubmitAnswerResponse']
 export type GetLeaderboardResponse = components['schemas']['GetLeaderboardResponse'];
 export type GetLeaderboardPercentileResponse = components['schemas']['GetLeaderboardPercentileResponse'];
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
+export type SessionMode = components['schemas']['SessionMode'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

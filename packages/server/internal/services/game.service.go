@@ -70,7 +70,12 @@ func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, 
 	go g.startTimer(session)
 
 	session, err = g.sessionService.FindByID(sessionID)
-	return session, err
+	if err != nil {
+		return nil, err
+	}
+
+	session = g.sessionWithVisibleDefinition(session)
+	return session, nil
 }
 
 func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomain, error) {
@@ -106,6 +111,8 @@ func (g *GameService) ContinueGame(sessionID string) (*domainmodels.SessionDomai
 		return nil, nil
 	}
 
+	session = g.sessionWithVisibleDefinition(session)
+
 	// It would seem we can re-use the timer from the start game function.
 	return session, err
 }
@@ -131,7 +138,6 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		DurationSeconds:          session.DurationSeconds,
 		CorrectAttemptTimestamps: session.CorrectAttemptTimestamps,
 		Token:                    session.CurrentWordToken,
-		ScrambledWordDefinition:  session.CurrentWordDefinition,
 	}
 
 	if !isTokenCorrect {
@@ -154,7 +160,9 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 	}
 
 	result.ScrambledWord = session.CurrentScrambledWord
-	result.ScrambledWordDefinition = session.CurrentWordDefinition
+	if session.Mode == "vanilla" {
+		result.ScrambledWordDefinition = session.CurrentWordDefinition
+	}
 	result.CorrectAttemptTimestamps = session.CorrectAttemptTimestamps
 	result.Token = session.CurrentWordToken
 	result.Score = session.Score
@@ -305,4 +313,11 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 	}
 
 	return session, nil
+}
+
+func (g *GameService) sessionWithVisibleDefinition(session *domainmodels.SessionDomain) *domainmodels.SessionDomain {
+	if session.Mode == "blind" {
+		session.CurrentWordDefinition = ""
+	}
+	return session
 }

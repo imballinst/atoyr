@@ -1,13 +1,13 @@
 import { nanoid } from 'nanoid';
 import { Fragment, useEffect, useRef, useState } from 'react';
 
-import type { GameSessionState } from '~/lib/game';
+import type { GameState } from '~/lib/game';
 
 import { Keyboard } from './Keyboard';
 
 const ORDINAL_LABELS = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
 
-interface GameScreenProps extends GameSessionState {
+interface GameScreenProps extends GameState {
   scrambled: string;
   definition: string;
   token: string;
@@ -21,7 +21,7 @@ export function GameScreen({
   totalAttempts,
   correctAttemptTimestamps,
   remainingSeconds,
-  autoVoice,
+  settings,
   token,
   onSubmit,
 }: GameScreenProps) {
@@ -83,12 +83,12 @@ export function GameScreen({
 
   useEffect(() => {
     const speakTimeout = setTimeout(() => {
-      if (autoVoice) {
+      if (settings.autoVoice) {
         speakLetters(scrambled, definition);
       }
     }, 50);
     return () => clearTimeout(speakTimeout);
-  }, [scrambled, definition, autoVoice]);
+  }, [scrambled, definition, settings.autoVoice]);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
@@ -117,7 +117,10 @@ export function GameScreen({
         </div>
       </div>
 
-      <div className="border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 flex items-center justify-center w-full">
+      <div
+        className="border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 flex items-center justify-center w-full"
+        hidden={settings.mode === 'blind'}
+      >
         {definition}
       </div>
 
@@ -128,7 +131,7 @@ export function GameScreen({
         aria-atomic="true"
         aria-label={`Letters to unscramble: ${scrambled}`}
       >
-        {autoVoice ? (
+        {settings.autoVoice ? (
           <div className="sr-only">
             {ORDINAL_LABELS.map((label, i) => (
               <span key={label}>{scrambled[i]}</span>
@@ -195,9 +198,11 @@ function speakLetters(letters: string, definition: string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
-  const definitionUtterance = new SpeechSynthesisUtterance(definition);
-  definitionUtterance.rate = 0.75;
-  window.speechSynthesis.speak(definitionUtterance);
+  if (definition) {
+    const definitionUtterance = new SpeechSynthesisUtterance(definition);
+    definitionUtterance.rate = 0.75;
+    window.speechSynthesis.speak(definitionUtterance);
+  }
 
   letters.split('').forEach((letter) => {
     const utterance = new SpeechSynthesisUtterance(letter);

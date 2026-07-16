@@ -12,6 +12,7 @@ type SessionDomain struct {
 	UpdatedAt                time.Time
 	EndsAt                   time.Time
 	Phase                    string
+	Mode                     string
 	Score                    int32
 	TotalAttempts            int32
 	Accuracy                 float32
@@ -43,6 +44,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		UpdatedAt:                session.UpdatedAt,
 		EndsAt:                   session.EndsAt,
 		Phase:                    session.Phase,
+		Mode:                     session.Mode,
 		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
@@ -54,6 +56,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		WordDefinitions:          []string(session.WordDefinitions),
 		CurrentWord:              session.CurrentWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
+		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordToken:         session.CurrentWordToken,
 	}, nil
 }
@@ -75,6 +78,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		EndsAt:                   session.EndsAt,
 		Phase:                    session.Phase,
 		Score:                    session.Score,
+		Mode:                     session.Mode,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
 		DurationSeconds:          session.DurationSeconds,

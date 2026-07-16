@@ -13,12 +13,21 @@ import (
 func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1LeaderboardParams) {
 	page := 1
 	limit := 10
+	mode := "vanilla"
 
 	if params.Page != nil {
 		page = *params.Page
 	}
 	if params.Limit != nil {
 		limit = *params.Limit
+	}
+	if params.Mode != nil {
+		if !params.Mode.Valid() {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, mode is invalid"})
+			return
+		}
+
+		mode = string(*params.Mode)
 	}
 
 	if page < 1 {
@@ -31,7 +40,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	}
 
 	// Get total count
-	total, err := gr.leaderboardService.GetTotalEntries()
+	total, err := gr.leaderboardService.GetTotalEntries(mode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
 		utils.SendExceptionToSentry(err)
@@ -39,7 +48,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	}
 
 	// Get entries
-	entries, err := gr.leaderboardService.GetLeaderboard(limit, (page-1)*limit)
+	entries, err := gr.leaderboardService.GetLeaderboard(mode, limit, (page-1)*limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
 		utils.SendExceptionToSentry(err)
@@ -58,11 +67,21 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	})
 }
 
-func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
+func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context, params GetApiV1LeaderboardPercentileParams) {
 	sessionId, err := c.Cookie(sessionIdCookie)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch session ID from cookie"})
 		return
+	}
+
+	mode := "vanilla"
+	if params.Mode != nil {
+		if !params.Mode.Valid() {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, mode is invalid"})
+			return
+		}
+
+		mode = string(*params.Mode)
 	}
 
 	session, err := gr.sessionService.FindByID(sessionId)
@@ -84,7 +103,7 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context) {
 		return
 	}
 
-	percentile, err := gr.leaderboardService.GetPercentile(sessionId, session.Score)
+	percentile, err := gr.leaderboardService.GetPercentile(sessionId, mode, session.Score)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard percentile"})
 		utils.SendExceptionToSentry(err)

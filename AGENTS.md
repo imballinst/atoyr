@@ -13,6 +13,8 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 - Colocate module-level helper functions at the bottom of the file when they do not close over component state (function declarations are hoisted). Prefer this over nesting them inside the component.
+- Bug fixes for features still under active development (same branch/feature) should not be included in the changelog — they are part of the implementation process, not a user-facing change.
+- Don't introduce intermediary variables for values used only once or that need no transformation. Read from the source directly.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
 - DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
 - DO NOT create additional Markdown files in `.opencode` folder unless otherwise stated.
@@ -90,6 +92,21 @@ A few `packages/client` dependencies are kept even though no application source 
 - **`@react-router/node`** and **`isbot`** are required by React Router's framework runtime (`@react-router/dev` / `@react-router/serve`). Removing them breaks `react-router typegen` and the server build. They appear as "unused" in static dependency scans because the framework loads them at runtime rather than through a static import in app code.
 - The client package is kept free of dead dependencies otherwise; any future dependency that is only needed transitively by the framework should also be retained as a direct dependency so production installs remain reliable.
 
+### Blind Mode
+
+Blind mode hides the word definition, increasing difficulty:
+
+- **Server-side definition stripping**: The service layer (`game.service.go`) is responsible for omitting the definition — `sessionWithVisibleDefinition()` clears `CurrentWordDefinition` for Blind mode in `StartGame`/`ContinueGame`, and `SubmitAnswer` only sets `ScrambledWordDefinition` when mode is `"vanilla"`. Routes do not filter the definition; the service guarantees it's absent.
+- **Mode banner** (`packages/client/app/components/ModeBanner.tsx`): A shared component rendered at the route level in `home.tsx` (right below the navbar). Shows `🚫 BLIND MODE 🚫` or `🍦 Vanilla mode 🍦`.
+- **Mode selector**: Lives inside the Settings modal (not a prominent landing-screen control — intentional deviation from the spec).
+- **Mode persistence**: Written to localStorage via `packages/client/app/lib/settings.ts` alongside auto-voice. The mode is passed to `POST /api/v1/game/start` as a required field.
+- **Leaderboard isolation**: `GetPercentile` now filters by `mode` in SQL so Blind and Vanilla scores are not compared against each other.
+- **Speech guard**: `speakLetters` in `GameScreen.tsx` only creates a definition utterance when the `definition` string is non-empty. Since the server omits the definition for Blind mode, no mode-specific branching is needed in the speech code.
+- **No analytics events**: Spec'd `ga-blind-mode-started`/`ga-blind-mode-finished` events were skipped because the existing `/dashboard` already tracks session data.
+- **No results screen mode indicator**: Skipped because the mode banner during gameplay provides sufficient context.
+
+Key files: `packages/server/internal/services/game.service.go`, `packages/client/app/components/ModeBanner.tsx`, `packages/client/app/routes/home.tsx`, `packages/client/app/lib/settings.ts`, `packages/server/internal/services/leaderboard.service.go`.
+
 ### Landing & Results Screen Modals
 
 The landing and results screens use a shared `radix-ui` Dialog wrapper for "How to play" and "Settings" modals:
@@ -122,6 +139,14 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 ### Avoid Testing Implementation Details in Component Tests
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
+
+### Route-Level Tests: Assert Transitions, Not Rendering
+
+Route-level tests (e.g., `home.test.tsx`) orchestrate screen transitions. They should assert on **which screen is visible**, not on rendering details of the child component. Component-level tests (`StartScreen.test.tsx`, `GameScreen.test.tsx`) own the rendering assertions.
+
+- **Do**: assert on transition evidence — a heading or button unique to the target screen (e.g., `Remaining seconds` heading proves the playing screen rendered).
+- **Don't**: assert on specific values rendered by the child component (e.g., timer `"30s"`, score `"0/0 correct"`, definition text, or scrambled word). Those belong in the component's own tests.
+- **Why**: route test failures should indicate orchestration bugs (wrong screen shown, state not reset), not rendering bugs in a child component. This keeps test failures scoped and reduces brittle assertions.
 
 ### Changelog Page & Version Indicator
 

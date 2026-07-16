@@ -2,13 +2,13 @@ import { fireEvent, screen, render, waitFor, cleanup, within } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { GameSessionState } from '~/lib/game';
+import type { GameState } from '~/lib/game';
 
 import { GameScreen } from './GameScreen';
 
 type SubmitFn = (answer: string, token: string, callbacks: { onSuccess?: () => void; onError?: () => void }) => void;
 
-interface RenderOverrides extends Partial<GameSessionState> {
+interface RenderOverrides extends Partial<GameState> {
   scrambled?: string;
   definition?: string;
   token?: string;
@@ -19,7 +19,7 @@ const DEFAULT_SCRAMBLED = 'plepa';
 const DEFAULT_DEFINITION = 'A thin, flat cake made from batter.';
 const DEFAULT_TOKEN = 'token-1';
 
-const baseState: GameSessionState = {
+const baseState: GameState = {
   phase: 'playing',
   score: 2,
   totalAttempts: 4,
@@ -30,7 +30,15 @@ const baseState: GameSessionState = {
     ['2024-01-01T00:00:00Z', '2024-01-01T00:00:05Z'],
     ['2024-01-01T00:00:10Z', '2024-01-01T00:00:15Z'],
   ],
-  autoVoice: false,
+  currentWord: {
+    definition: 'example',
+    scrambled: 'example',
+  },
+  lastWordAnswer: null,
+  settings: {
+    autoVoice: false,
+    mode: 'vanilla',
+  },
 };
 
 function mockSpeechSynthesis() {
@@ -251,14 +259,14 @@ describe('GameScreen', () => {
 
   it('does not auto-speak on mount when autoVoice is off', () => {
     mockSpeechSynthesis();
-    renderScreen({ autoVoice: false });
+    renderScreen({ settings: { autoVoice: false, mode: 'vanilla' } });
 
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
   it('auto-speaks on mount when autoVoice is on', async () => {
     const { speak } = mockSpeechSynthesis();
-    renderScreen({ autoVoice: true });
+    renderScreen({ settings: { autoVoice: true, mode: 'vanilla' } });
 
     await waitFor(() => expect(speak).toHaveBeenCalled());
   });
@@ -302,5 +310,22 @@ describe('GameScreen', () => {
 
     const streakSection = screen.getByRole('heading', { name: 'Streak' }).closest('section')!;
     expect(within(streakSection).getByText('3')).toBeInTheDocument();
+  });
+
+  it('hides the definition in blind mode', () => {
+    renderScreen({ settings: { autoVoice: false, mode: 'blind' }, definition: DEFAULT_DEFINITION });
+
+    expect(screen.getByText(DEFAULT_DEFINITION)).toHaveAttribute('hidden');
+  });
+
+  it('speaks only letters when the definition is empty', async () => {
+    const user = userEvent.setup();
+    const { cancel, speak } = mockSpeechSynthesis();
+    renderScreen({ definition: '' });
+
+    await user.click(screen.getByRole('button', { name: 'Speak letters' }));
+
+    expect(cancel).toHaveBeenCalled();
+    expect(speak.mock.calls.map((c) => (c[0] as { text: string }).text)).toEqual(['p', 'l', 'e', 'p', 'a']);
   });
 });

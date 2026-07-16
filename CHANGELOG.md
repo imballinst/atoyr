@@ -1,5 +1,9 @@
 # July 2026
 
+## Week 4
+
+- New feature: Added Blind mode — a harder game mode that hides the word definition. A banner showing (Vanilla/Blind) below the navbar will show to indicate the game mode easily.
+
 ## Week 3
 
 - New feature: Added changelog page, version indicator, and "New" badge in the navbar.

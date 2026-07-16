@@ -1,11 +1,15 @@
+import type { GameState } from '~/lib/game';
+import type { LatestSchema } from '~/lib/settings';
+
 import { HowToPlayModal } from './HowToPlayModal';
 import { SettingsModal } from './SettingsModal';
 
-interface StartScreenProps {
+interface StartScreenProps extends Pick<GameState, 'settings'> {
   onStart: () => void;
+  updateSettings: (config: Partial<LatestSchema>) => void;
 }
 
-export function StartScreen({ onStart }: StartScreenProps) {
+export function StartScreen({ onStart, settings, updateSettings }: StartScreenProps) {
   return (
     <div className="rounded-2xl text-center w-full">
       <div className="w-full flex flex-col items-center mb-6">
@@ -29,7 +33,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
       <div className="grid grid-cols-2 gap-2 mt-3 w-full">
         <HowToPlayModal />
-        <SettingsModal />
+        <SettingsModal settings={settings} updateSettings={updateSettings} />
       </div>
     </div>
   );

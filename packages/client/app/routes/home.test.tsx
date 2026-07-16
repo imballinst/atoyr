@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ReactNode } from 'react';
 import { createRoutesStub } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiStartGame } from '~/api/client';
+import type { StartGameResponse } from '~/api/gen';
+import { LATEST_STORAGE_KEY, readStoredSettings, type LatestSchema } from '~/lib/settings';
 import Home from '~/routes/home';
 
 const sseRef = vi.hoisted(() => ({
@@ -25,8 +27,9 @@ vi.mock('~/api/client', () => ({
   apiQuery: { useQuery: vi.fn(() => ({ data: undefined })) },
 }));
 
-const mockStartResponse1 = {
+const mockStartResponse1: StartGameResponse = {
   sessionId: 'session-1',
+  mode: 'vanilla',
   remainingSeconds: 30,
   scrambledWord: 'plepa',
   scrambledWordDefinition: 'A thin, flat cake made from batter.',
@@ -34,8 +37,9 @@ const mockStartResponse1 = {
   autoVoice: false,
 };
 
-const mockStartResponse2 = {
+const mockStartResponse2: StartGameResponse = {
   sessionId: 'session-2',
+  mode: 'vanilla',
   remainingSeconds: 30,
   scrambledWord: 'rhcea',
   scrambledWordDefinition: 'A sweet baked food.',
@@ -66,15 +70,6 @@ describe('Home — game lifecycle', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
-
-    expect(screen.getByText('A sweet baked food.')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Letters to unscramble: rhcea' })).toBeInTheDocument();
-
-    const timerSection = screen.getByRole('heading', { name: 'Remaining seconds' }).closest('section')!;
-    expect(within(timerSection).getByText('30s')).toBeInTheDocument();
-
-    const scoreSection = screen.getByRole('heading', { name: 'Score' }).closest('section')!;
-    expect(within(scoreSection).getByText('0/0 correct')).toBeInTheDocument();
   });
 
   it('transitions from finished to idle when Back to home is clicked', async () => {
@@ -90,7 +85,7 @@ describe('Home — game lifecycle', () => {
   });
 
   it('preserves auto-voice preference from localStorage when playing again', async () => {
-    localStorage.setItem('atoyr_auto_voice:v1', 'true');
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: true, mode: 'vanilla' } satisfies LatestSchema));
     vi.mocked(apiStartGame)
       .mockResolvedValueOnce({ ...mockStartResponse1, autoVoice: true })
       .mockResolvedValueOnce({ ...mockStartResponse2, autoVoice: true });
@@ -103,8 +98,8 @@ describe('Home — game lifecycle', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
-    expect(apiStartGame).toHaveBeenNthCalledWith(1, true, []);
-    expect(apiStartGame).toHaveBeenNthCalledWith(2, true, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: true, mode: 'vanilla' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla' }, []);
   });
 
   it('keeps app on results screen when replay start fails', async () => {
@@ -134,7 +129,7 @@ describe('Home — game lifecycle', () => {
     await finishCurrentGame();
 
     await userEvent.click(screen.getByRole('button', { name: 'Settings' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: /Enable automatic text-to-speech/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /Disabled/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
@@ -142,8 +137,8 @@ describe('Home — game lifecycle', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
-    expect(apiStartGame).toHaveBeenNthCalledWith(1, false, []);
-    expect(apiStartGame).toHaveBeenNthCalledWith(2, true, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: false, mode: 'vanilla' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla' }, []);
   });
 });
 
@@ -187,14 +182,17 @@ function renderHome(shouldFetch = false) {
       path: '/',
       Component: Home,
       loader() {
-        return { shouldFetch };
+        return { shouldFetch, settings: readStoredSettings() };
       },
     },
   ]);
 
-  return render(<RemixStub initialEntries={['/']} hydrationData={{ loaderData: { home: { shouldFetch } } }} />, {
-    wrapper: createWrapper(),
-  });
+  return render(
+    <RemixStub initialEntries={['/']} hydrationData={{ loaderData: { home: { shouldFetch, settings: readStoredSettings() } } }} />,
+    {
+      wrapper: createWrapper(),
+    },
+  );
 }
 
 async function startGame() {

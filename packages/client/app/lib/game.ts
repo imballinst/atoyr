@@ -1,5 +1,7 @@
 import { addSeconds, isAfter } from 'date-fns';
 
+import type { LatestSchema } from './settings';
+
 export interface WordEntry {
   scrambled: string;
   definition: string;
@@ -9,27 +11,9 @@ export const GAME_DURATION_SECONDS = 30;
 
 export type GamePhase = 'resuming' | 'idle' | 'playing' | 'finished';
 
-export interface GameSession {
-  id: string; // UUID
-  createdAt: number; // Unix timestamp
-  expiresAt: number; // Unix timestamp
-  state: GameSessionState;
-  autoVoice: boolean;
-}
-
-export interface GameSessionState {
-  phase: GamePhase;
-  score: number;
-  totalAttempts: number;
-  remainingSeconds: number;
-  usedWords: string[]; // Array for JSON serialization
-  currentWordToken: string | null; // Token for current word validation
-  correctAttemptTimestamps: string[][];
-  autoVoice: boolean;
-}
-
 export interface GameState {
   phase: GamePhase;
+  settings: LatestSchema;
   currentWord: WordEntry | null;
   currentWordToken: string | null;
   lastWordAnswer: string | null;
@@ -38,7 +22,6 @@ export interface GameState {
   correctAttemptTimestamps: string[][];
   remainingSeconds: number;
   usedWords: string[];
-  autoVoice: boolean;
 }
 
 export type ErrorCode =

@@ -133,6 +133,10 @@ paths:
           schema:
             type: integer
             default: 10
+        - in: query
+          name: mode
+          schema:
+            $ref: "#/components/schemas/SessionMode"
       responses:
         '200':
           description: Leaderboard data retrieved successfully
@@ -154,6 +158,11 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/leaderboard/percentile:
     get:
+      parameters:
+        - in: query
+          name: mode
+          schema:
+            $ref: "#/components/schemas/SessionMode"
       tags:
         - leaderboard
       responses:
@@ -194,10 +203,13 @@ components:
     StartGameRequest:
       type: object
       required:
+        - mode
         - itemsUsed
       properties:
         autoVoice:
           type: boolean
+        mode:
+          $ref: "#/components/schemas/SessionMode"
         itemsUsed:
           type: array
           items:
@@ -211,6 +223,7 @@ components:
         - scrambledWord
         - scrambledWordDefinition
         - token
+        - mode
         - remainingSeconds
         - autoVoice
       properties:
@@ -218,6 +231,8 @@ components:
           type: string
           format: uuid
           x-go-type: string
+        mode:
+          $ref: "#/components/schemas/SessionMode"
         scrambledWord:
           type: string
           example: 'lpeap'
@@ -348,3 +363,8 @@ components:
           type: integer
           format: int64
           example: 1627847284
+    SessionMode:
+      type: string
+      enum:
+        - vanilla
+        - blind
