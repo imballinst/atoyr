@@ -2,7 +2,7 @@
 
 ## Week 4
 
-- New feature: Added Blind mode — a harder game mode that hides the word definition. A banner showing (Vanilla/Blind) below the navbar will show to indicate the game mode easily.
+- New feature: Added Blind mode; a harder game mode that hides the word definition. A banner showing (Vanilla/Blind) below the navbar will show to indicate the game mode easily.
 
 ## Week 3
 
