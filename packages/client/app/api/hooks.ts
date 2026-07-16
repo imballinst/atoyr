@@ -144,7 +144,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
 
         const { scrambledWord: nextScrambledWord, scrambledWordDefinition: nextDefinition, token: nextToken } = response;
 
-        if (response.correct && nextScrambledWord && nextDefinition && nextToken) {
+        if (response.correct && nextScrambledWord && nextToken) {
           setState((prev) => ({
             ...prev,
             currentWord: {
