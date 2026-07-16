@@ -10,11 +10,11 @@
   --color-dark-text-tertiary: #94a3b8;
   --color-dark-text-muted: #64748b;
   --color-dark-interactive-primary: #4b82f6;
-  --color-dark-interactive-hover: #3b82f6;
-  --color-dark-interactive-success: #34d399;
-  --color-dark-interactive-warning: #fbbf24;
-  --color-dark-interactive-error: #f87171;
-  --color-dark-interactive-disabled: #9ca3af;
+  --color-dark-interactive-hover: #2563eb;
+  --color-dark-interactive-success: #10b981;
+  --color-dark-interactive-warning: #f59e0b;
+  --color-dark-interactive-error: #ef4444;
+  --color-dark-interactive-disabled: #6b7280;
   --color-dark-border-primary: #475569;
   --color-dark-border-secondary: #334155;
   --color-dark-border-light: #64748b;
