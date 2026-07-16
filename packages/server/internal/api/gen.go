@@ -12,6 +12,24 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for SessionMode.
+const (
+	Blind   SessionMode = "blind"
+	Vanilla SessionMode = "vanilla"
+)
+
+// Valid indicates whether the value is a known member of the SessionMode enum.
+func (e SessionMode) Valid() bool {
+	switch e {
+	case Blind:
+		return true
+	case Vanilla:
+		return true
+	default:
+		return false
+	}
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error map[string]interface{} `json:"error"`
@@ -39,20 +57,25 @@ type LeaderboardEntry struct {
 	TotalAttempts              int32   `json:"totalAttempts"`
 }
 
+// SessionMode defines model for SessionMode.
+type SessionMode string
+
 // StartGameRequest defines model for StartGameRequest.
 type StartGameRequest struct {
-	AutoVoice *bool    `json:"autoVoice,omitempty"`
-	ItemsUsed []string `json:"itemsUsed"`
+	AutoVoice *bool       `json:"autoVoice,omitempty"`
+	ItemsUsed []string    `json:"itemsUsed"`
+	Mode      SessionMode `json:"mode"`
 }
 
 // StartGameResponse defines model for StartGameResponse.
 type StartGameResponse struct {
-	AutoVoice               bool   `json:"autoVoice"`
-	RemainingSeconds        int32  `json:"remainingSeconds"`
-	ScrambledWord           string `json:"scrambledWord"`
-	ScrambledWordDefinition string `json:"scrambledWordDefinition"`
-	SessionId               string `json:"sessionId"`
-	Token                   string `json:"token"`
+	AutoVoice               bool        `json:"autoVoice"`
+	Mode                    SessionMode `json:"mode"`
+	RemainingSeconds        int32       `json:"remainingSeconds"`
+	ScrambledWord           string      `json:"scrambledWord"`
+	ScrambledWordDefinition string      `json:"scrambledWordDefinition"`
+	SessionId               string      `json:"sessionId"`
+	Token                   string      `json:"token"`
 }
 
 // SubmitAnswerRequest defines model for SubmitAnswerRequest.
@@ -75,8 +98,14 @@ type SubmitAnswerResponse struct {
 
 // GetApiV1LeaderboardParams defines parameters for GetApiV1Leaderboard.
 type GetApiV1LeaderboardParams struct {
-	Page  *int `form:"page,omitempty" json:"page,omitempty"`
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Page  *int         `form:"page,omitempty" json:"page,omitempty"`
+	Limit *int         `form:"limit,omitempty" json:"limit,omitempty"`
+	Mode  *SessionMode `form:"mode,omitempty" json:"mode,omitempty"`
+}
+
+// GetApiV1LeaderboardPercentileParams defines parameters for GetApiV1LeaderboardPercentile.
+type GetApiV1LeaderboardPercentileParams struct {
+	Mode *SessionMode `form:"mode,omitempty" json:"mode,omitempty"`
 }
 
 // PostApiV1GameStartJSONRequestBody defines body for PostApiV1GameStart for application/json ContentType.
@@ -104,7 +133,7 @@ type ServerInterface interface {
 	GetApiV1Leaderboard(c *gin.Context, params GetApiV1LeaderboardParams)
 
 	// (GET /api/v1/leaderboard/percentile)
-	GetApiV1LeaderboardPercentile(c *gin.Context)
+	GetApiV1LeaderboardPercentile(c *gin.Context, params GetApiV1LeaderboardPercentileParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -193,6 +222,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1Leaderboard(c *gin.Context) {
 		return
 	}
 
+	// ------------- Optional query parameter "mode" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "mode", c.Request.URL.Query(), &params.Mode, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter mode: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -206,6 +243,20 @@ func (siw *ServerInterfaceWrapper) GetApiV1Leaderboard(c *gin.Context) {
 // GetApiV1LeaderboardPercentile operation middleware
 func (siw *ServerInterfaceWrapper) GetApiV1LeaderboardPercentile(c *gin.Context) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetApiV1LeaderboardPercentileParams
+
+	// ------------- Optional query parameter "mode" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "mode", c.Request.URL.Query(), &params.Mode, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter mode: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -213,7 +264,7 @@ func (siw *ServerInterfaceWrapper) GetApiV1LeaderboardPercentile(c *gin.Context)
 		}
 	}
 
-	siw.Handler.GetApiV1LeaderboardPercentile(c)
+	siw.Handler.GetApiV1LeaderboardPercentile(c, params)
 }
 
 // GinServerOptions provides options for the Gin server.

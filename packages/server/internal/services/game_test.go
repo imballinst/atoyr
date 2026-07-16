@@ -11,7 +11,7 @@ import (
 func TestGameService_StartGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	started, err := testServices.Game.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -24,7 +24,7 @@ func TestGameService_StartGame(t *testing.T) {
 func TestGameService_ContinueGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	started, err := testServices.Game.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -44,7 +44,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -63,7 +63,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -79,7 +79,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -111,7 +111,7 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -143,7 +143,7 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_FinishGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	_, err := testServices.Game.StartGame(session.ID)
 	assert.NoError(t, err)
 
@@ -186,7 +186,7 @@ func TestGameService_TokenGeneration(t *testing.T) {
 func TestGameService_AttemptCounting(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)

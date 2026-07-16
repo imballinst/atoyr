@@ -134,6 +134,10 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		ScrambledWordDefinition:  session.CurrentWordDefinition,
 	}
 
+	if session.Mode == "vanilla" {
+		result.ScrambledWordDefinition = ""
+	}
+
 	if !isTokenCorrect {
 		log.Printf("invalid token, submitted answer token: %s, expected %s\n", token, session.CurrentWordToken)
 	} else if !isAnswerCorrect {

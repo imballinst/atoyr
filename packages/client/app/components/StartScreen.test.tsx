@@ -1,11 +1,27 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useGame } from '~/api/hooks';
+import { readStoredSettings, writeStoredSettings } from '~/lib/settings';
+
 import { StartScreen } from './StartScreen';
 
 function renderScreen(overrides: { onStart?: () => void } = {}) {
-  return render(<StartScreen onStart={overrides.onStart ?? vi.fn()} />);
+  const client = new QueryClient();
+
+  function Wrapper() {
+    const { state, updateSettings } = useGame(false, readStoredSettings());
+
+    return <StartScreen onStart={overrides.onStart ?? vi.fn()} settings={state.settings} updateSettings={updateSettings} />;
+  }
+
+  return render(
+    <QueryClientProvider client={client}>
+      <Wrapper />
+    </QueryClientProvider>,
+  );
 }
 
 async function openHowToPlay(user: ReturnType<typeof userEvent.setup>) {
@@ -60,7 +76,7 @@ describe('StartScreen', () => {
   });
 
   it('uses the persisted auto-voice value in the settings modal', async () => {
-    localStorage.setItem('atoyr_auto_voice:v1', JSON.stringify(true));
+    writeStoredSettings({ autoVoice: true, mode: 'vanilla' });
     const user = userEvent.setup();
     renderScreen();
 

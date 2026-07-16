@@ -1,10 +1,15 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useGame } from '~/api/hooks';
+import { readStoredSettings } from '~/lib/settings';
+
 import { ResultsScreen } from './ResultsScreen';
 
-vi.mock('~/api/hooks', () => ({
+vi.mock('~/api/hooks', async (importOriginal) => ({
+  ...((await importOriginal()) as any),
   useLeaderboardPercentile: () => ({ data: undefined }),
   useLeaderboard: () => ({ data: undefined, isFetching: false, error: null }),
 }));
@@ -20,16 +25,30 @@ interface RenderOverrides {
 }
 
 function renderScreen(overrides: RenderOverrides = {}) {
+  const client = new QueryClient();
+
+  function Wrapper() {
+    const { state, updateSettings } = useGame(false, readStoredSettings());
+
+    return (
+      <ResultsScreen
+        score={overrides.score ?? 3}
+        totalAttempts={overrides.totalAttempts ?? 5}
+        currentWord={overrides.currentWord ?? { scrambled: 'plepa', definition: 'A thin, flat cake.' }}
+        lastWordAnswer={overrides.lastWordAnswer ?? 'apple'}
+        correctAttemptTimestamps={overrides.correctAttemptTimestamps ?? []}
+        onPlayAgain={overrides.onPlayAgain ?? vi.fn()}
+        onBackToHome={overrides.onBackToHome ?? vi.fn()}
+        settings={state.settings}
+        onUpdateSettings={updateSettings}
+      />
+    );
+  }
+
   return render(
-    <ResultsScreen
-      score={overrides.score ?? 3}
-      totalAttempts={overrides.totalAttempts ?? 5}
-      currentWord={overrides.currentWord ?? { scrambled: 'plepa', definition: 'A thin, flat cake.' }}
-      lastWordAnswer={overrides.lastWordAnswer ?? 'apple'}
-      correctAttemptTimestamps={overrides.correctAttemptTimestamps ?? []}
-      onPlayAgain={overrides.onPlayAgain ?? vi.fn()}
-      onBackToHome={overrides.onBackToHome ?? vi.fn()}
-    />,
+    <QueryClientProvider client={client}>
+      <Wrapper />
+    </QueryClientProvider>,
   );
 }
 

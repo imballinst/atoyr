@@ -2,6 +2,8 @@ import * as Sentry from '@sentry/browser';
 import createFetchClient, { type Middleware } from 'openapi-fetch';
 import createClient from 'openapi-react-query';
 
+import type { LatestSchema } from '~/lib/settings';
+
 import type { paths } from './gen';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
@@ -50,10 +52,10 @@ export async function apiResumeGame() {
   return response.data!;
 }
 
-export async function apiStartGame(autoVoice: boolean, itemsUsed: string[]) {
+export async function apiStartGame(settings: LatestSchema, itemsUsed: string[]) {
   const response = await apiClient.POST('/api/v1/game/start', {
     body: {
-      autoVoice,
+      ...settings,
       itemsUsed,
     },
   });

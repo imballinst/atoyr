@@ -109,7 +109,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := false
-	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -148,7 +148,7 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -183,11 +183,30 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Code)
 }
 
+func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
+	router, _ := setupTestRouter(t)
+
+	autoVoice := true
+	payload := StartGameRequest{Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	cookie, err := http.ParseSetCookie(recorder.Header().Get("set-cookie"))
+	assert.Error(t, err)
+	assert.Empty(t, cookie)
+}
+
 func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -230,7 +249,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	})
 
 	autoVoice := true
-	payload := StartGameRequest{AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -285,7 +304,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 
 	// Start a game first
 	autoVoice := false
-	startPayload := StartGameRequest{AutoVoice: &autoVoice}
+	startPayload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(startBody))
@@ -328,7 +347,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	sessionIDs := []string{}
 	for range 5 {
-		session, _ := sessionService.Create(false, []string{}, testutils.TestSessionOptions.Duration)
+		session, _ := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
 		sessionIDs = append(sessionIDs, session.ID)
 	}
 
@@ -385,6 +404,71 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 	}
 }
 
+func TestLeaderboardRoutes_GetLeaderboard_DifferentModes(t *testing.T) {
+	router, sessionService := setupTestRouter(t)
+
+	for _, mode := range []string{string(Vanilla), string(Blind)} {
+		sessionIDs := []string{}
+		for range 5 {
+			session, _ := sessionService.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration)
+			sessionIDs = append(sessionIDs, session.ID)
+		}
+
+		getSessionDomainPatchInfo := func(sessionID string, score, totalAttempts int32) domainmodels.SessionDomain {
+			return domainmodels.SessionDomain{
+				ID:            sessionID,
+				Score:         score,
+				TotalAttempts: totalAttempts,
+				Accuracy:      utils.CalculateAccuracy(score, totalAttempts),
+			}
+		}
+
+		patchedSessionsInfo := []domainmodels.SessionDomain{
+			getSessionDomainPatchInfo(sessionIDs[0], 10, 15),
+			getSessionDomainPatchInfo(sessionIDs[1], 10, 12),
+			getSessionDomainPatchInfo(sessionIDs[2], 10, 10),
+			getSessionDomainPatchInfo(sessionIDs[3], 10, 20),
+			getSessionDomainPatchInfo(sessionIDs[4], 10, 30),
+		}
+
+		for _, sessionInfo := range patchedSessionsInfo {
+			session, err := sessionService.FindByID(sessionInfo.ID)
+			assert.NoError(t, err)
+
+			session.Score = sessionInfo.Score
+			session.TotalAttempts = sessionInfo.TotalAttempts
+			session.Accuracy = sessionInfo.Accuracy
+			session.Phase = core.SessionPhaseFinished
+
+			err = sessionService.Update(session)
+			assert.NoError(t, err)
+		}
+
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/leaderboard?mode=%s", mode), nil)
+
+		recorder := testutils.CreateTestResponseRecorder()
+		router.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		var response GetLeaderboardResponse
+		json.Unmarshal(recorder.Body.Bytes(), &response)
+
+		assert.Equal(t, int64(5), response.Total)
+		assert.Len(t, response.Entries, 5)
+
+		expectedLeaderboardOrder := []domainmodels.SessionDomain{patchedSessionsInfo[2], patchedSessionsInfo[1], patchedSessionsInfo[0], patchedSessionsInfo[3], patchedSessionsInfo[4]}
+		for i, session := range response.Entries {
+			assert.Equal(t, expectedLeaderboardOrder[i].Score, session.Score)
+			assert.Equal(t, expectedLeaderboardOrder[i].TotalAttempts, session.TotalAttempts)
+			assert.Equal(t, utils.ToPercentage(expectedLeaderboardOrder[i].Accuracy), session.Accuracy)
+
+			// Ensure the IDs are all masked.
+			assert.Equal(t, utils.MaskSessionID(expectedLeaderboardOrder[i].ID), session.Id)
+		}
+	}
+}
+
 func TestLeaderboardRoutes_Pagination(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
@@ -399,14 +483,14 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 	router, _, sessionService, _ := setupAdminTestRouter(t)
 
 	// Create sessions
-	session, err := sessionService.Create(false, []string{}, testutils.TestSessionOptions.Duration)
+	session, err := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen for some times this month.
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.Now().Location())
 	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 30, 0, time.Now().Location())
 	sessionService.Update(session)
 
-	session, err = sessionService.Create(true, []string{}, testutils.TestSessionOptions.Duration)
+	session, err = sessionService.Create(true, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen for some times this week (but not today).
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 2, 0, 0, 0, 0, time.Now().Location())

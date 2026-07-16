@@ -22,6 +22,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	results := []models.SessionEntity{
 		{
 			ID:                       "session1",
+			Mode:                     "vanilla",
 			Score:                    100,
 			TotalAttempts:            10,
 			Accuracy:                 90,
@@ -33,6 +34,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 		},
 		{
 			ID:                       "session2",
+			Mode:                     "vanilla",
 			Score:                    150,
 			TotalAttempts:            15,
 			Accuracy:                 95,
@@ -44,6 +46,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 		},
 		{
 			ID:                       "session3",
+			Mode:                     "vanilla",
 			Score:                    80,
 			TotalAttempts:            8,
 			Accuracy:                 85.12345,
@@ -55,6 +58,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 		},
 		{
 			ID:                       "session4",
+			Mode:                     "vanilla",
 			Score:                    0,
 			TotalAttempts:            8,
 			Accuracy:                 0,
@@ -71,7 +75,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard(10, 0)
+	entries, err := service.GetLeaderboard("vanilla", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 3)
 
@@ -92,6 +96,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	results := []models.SessionEntity{
 		{
 			ID:                       "s01",
+			Mode:                     "vanilla",
 			Score:                    100,
 			TotalAttempts:            10,
 			Accuracy:                 90,
@@ -103,6 +108,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 		},
 		{
 			ID:                       "s02",
+			Mode:                     "vanilla",
 			Score:                    100,
 			TotalAttempts:            9,
 			Accuracy:                 95,
@@ -119,7 +125,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard(10, 0)
+	entries, err := service.GetLeaderboard("vanilla", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 2)
 
@@ -131,6 +137,59 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	assert.Equal(t, float32(90), entries[1].Accuracy)
 }
 
+func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	// Add some test results
+	results := []models.SessionEntity{
+		{
+			ID:                       "s01",
+			Mode:                     "vanilla",
+			Score:                    100,
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    core.SessionPhaseFinished,
+		},
+		{
+			ID:                       "s02",
+			Mode:                     "blind",
+			Score:                    100,
+			TotalAttempts:            9,
+			Accuracy:                 95,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			WordDefinitions:          pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    core.SessionPhaseFinished,
+		},
+	}
+
+	for _, result := range results {
+		db.Create(&result)
+	}
+
+	// Get leaderboard
+	entries, err := service.GetLeaderboard("vanilla", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 1)
+
+	assert.Equal(t, "s01", entries[0].ID)
+	assert.Equal(t, float32(90), entries[0].Accuracy)
+
+	// Get leaderboard, blind mode
+	entries, err = service.GetLeaderboard("blind", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 1)
+
+	assert.Equal(t, "s02", entries[0].ID)
+	assert.Equal(t, float32(95), entries[0].Accuracy)
+}
+
 func TestLeaderboardService_Pagination(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
@@ -139,6 +198,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 	for i := range 25 {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
+			Mode:                     "vanilla",
 			Score:                    int32(100 + i),
 			TotalAttempts:            int32(10),
 			Accuracy:                 90,
@@ -152,15 +212,15 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 	}
 
 	// Get first page (limit 10)
-	entries, _ := service.GetLeaderboard(10, 0)
+	entries, _ := service.GetLeaderboard("vanilla", 10, 0)
 	assert.Len(t, entries, 10)
 
 	// Get second page
-	entries, _ = service.GetLeaderboard(10, 10)
+	entries, _ = service.GetLeaderboard("vanilla", 10, 10)
 	assert.Len(t, entries, 10)
 
 	// Get third page (should have 5)
-	entries, _ = service.GetLeaderboard(10, 20)
+	entries, _ = service.GetLeaderboard("vanilla", 10, 20)
 	assert.Len(t, entries, 5)
 }
 
@@ -168,13 +228,14 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
-	total, _ := service.GetTotalEntries()
+	total, _ := service.GetTotalEntries("vanilla")
 	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
 	for i := range 5 {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
+			Mode:                     "vanilla",
 			Score:                    int32(100 + i),
 			TotalAttempts:            10,
 			Accuracy:                 90,
@@ -187,7 +248,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 		db.Create(&result)
 	}
 
-	total, _ = service.GetTotalEntries()
+	total, _ = service.GetTotalEntries("vanilla")
 	assert.Equal(t, int64(5), total)
 }
 
@@ -200,6 +261,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 	for i := range 10 {
 		result := models.SessionEntity{
 			ID:                       utils.GenerateUUID(),
+			Mode:                     "vanilla",
 			Score:                    int32(i * 10),
 			TotalAttempts:            int32(10),
 			Accuracy:                 float32(100 - (i * 10)),
@@ -221,7 +283,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-		percentile, err := service.GetPercentile(id, score)
+		percentile, err := service.GetPercentile(id, "vanilla", score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
@@ -256,7 +318,7 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	for b.Loop() {
 		start := time.Now()
 
-		_, err := service.GetPercentile(firstID, firstScore)
+		_, err := service.GetPercentile(firstID, "vanilla", firstScore)
 		if err != nil {
 			b.Fatal(err)
 		}

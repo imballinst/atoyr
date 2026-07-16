@@ -7,16 +7,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import { readStoredAutoVoice } from '../lib/auto-voice';
+import { readStoredSettings, writeStoredSettings, type LatestSchema } from '~/lib/settings';
+
 import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
+import type { SessionMode } from './gen';
 
 interface ServerGameSession {
   sessionId: string;
-  autoVoice: boolean;
+  settings: LatestSchema;
 }
 
-const INITIAL_STATE: GameState = {
+const INITIAL_STATE: Omit<GameState, 'settings'> = {
   phase: 'idle',
   currentWord: null,
   currentWordToken: null,
@@ -26,7 +28,6 @@ const INITIAL_STATE: GameState = {
   correctAttemptTimestamps: [],
   remainingSeconds: GAME_DURATION_SECONDS,
   usedWords: [],
-  autoVoice: false,
 };
 const QUERY_OPTS = { retry: import.meta.env.DEV ? 0 : 3 };
 
@@ -34,10 +35,11 @@ const TickEventSchema = z.object({ type: z.literal('tick'), remainingSeconds: z.
 const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string() });
 const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
-export function useGame(shouldContinueGame: boolean) {
+export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSchema) {
   const [shouldContinue, setShouldContinue] = useState(shouldContinueGame);
   const [state, setState] = useState<GameState>({
     ...INITIAL_STATE,
+    settings: defaultSettings,
     phase: shouldContinueGame ? 'resuming' : 'idle',
   });
   const sessionRef = useRef<ServerGameSession | null>(null);
@@ -45,9 +47,9 @@ export function useGame(shouldContinueGame: boolean) {
   const isBeforeUnloadFnRef = useRef<(() => void) | null>(null);
   const isBeforeUnloadRef = useRef(false);
 
-  const startGame = useCallback(async (autoVoice: boolean, action: 'start' | 'resume' = 'start') => {
+  const startGame = useCallback(async (settings: LatestSchema, action: 'start' | 'resume' = 'start') => {
     try {
-      const response = action === 'start' ? await apiStartGame(autoVoice, []) : await apiResumeGame();
+      const response = action === 'start' ? await apiStartGame(settings, []) : await apiResumeGame();
       setGameEndsAt(response.remainingSeconds);
 
       if (isBeforeUnloadFnRef.current) {
@@ -61,7 +63,7 @@ export function useGame(shouldContinueGame: boolean) {
 
       sessionRef.current = {
         sessionId: response.sessionId,
-        autoVoice,
+        settings,
       };
       setState((prev) => ({
         ...prev,
@@ -71,7 +73,6 @@ export function useGame(shouldContinueGame: boolean) {
         correctAttemptTimestamps: [],
         remainingSeconds: response.remainingSeconds,
         usedWords: [],
-        autoVoice,
         lastWordAnswer: null,
         currentWord: {
           scrambled: response.scrambledWord,
@@ -166,9 +167,8 @@ export function useGame(shouldContinueGame: boolean) {
   );
 
   const playAgain = useCallback(() => {
-    const autoVoice = readStoredAutoVoice();
-    void startGame(autoVoice, 'start');
-  }, [startGame]);
+    void startGame(state.settings, 'start');
+  }, [state.settings, startGame]);
 
   const resetGame = useCallback(() => {
     if (sseUnsubscribeRef.current) {
@@ -178,7 +178,14 @@ export function useGame(shouldContinueGame: boolean) {
     sessionRef.current = null;
     isBeforeUnloadFnRef.current = null;
 
-    setState(INITIAL_STATE);
+    setState((prev) => ({ ...prev, ...INITIAL_STATE }));
+  }, []);
+
+  const updateSettings = useCallback((config: Partial<LatestSchema>) => {
+    setState((prev) => ({ ...prev, settings: { ...prev.settings, ...config } }));
+
+    const currentConfig = readStoredSettings();
+    writeStoredSettings({ ...currentConfig, ...config });
   }, []);
 
   useQuery({
@@ -186,7 +193,7 @@ export function useGame(shouldContinueGame: boolean) {
     queryFn: async () => {
       try {
         const response = await apiResumeGame();
-        await startGame(response.autoVoice, 'resume');
+        await startGame({ autoVoice: response.autoVoice, mode: response.mode }, 'resume');
         return response;
       } catch (err) {
         console.warn('No active session to resume');
@@ -210,17 +217,19 @@ export function useGame(shouldContinueGame: boolean) {
     startGame,
     submitAnswer,
     playAgain,
+    updateSettings,
     resetGame,
   };
 }
 
-export function useLeaderboard(page = 1, limit = 10) {
+export function useLeaderboard(mode?: SessionMode, page = 1, limit = 10) {
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard',
     {
       params: {
         query: {
+          mode,
           page,
           limit,
         },

@@ -123,6 +123,14 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
 
+### Route-Level Tests: Assert Transitions, Not Rendering
+
+Route-level tests (e.g., `home.test.tsx`) orchestrate screen transitions. They should assert on **which screen is visible**, not on rendering details of the child component. Component-level tests (`StartScreen.test.tsx`, `GameScreen.test.tsx`) own the rendering assertions.
+
+- **Do**: assert on transition evidence — a heading or button unique to the target screen (e.g., `Remaining seconds` heading proves the playing screen rendered).
+- **Don't**: assert on specific values rendered by the child component (e.g., timer `"30s"`, score `"0/0 correct"`, definition text, or scrambled word). Those belong in the component's own tests.
+- **Why**: route test failures should indicate orchestration bugs (wrong screen shown, state not reset), not rendering bugs in a child component. This keeps test failures scoped and reduces brittle assertions.
+
 ### Changelog Page & Version Indicator
 
 The navbar shows a combined version chip (client + server semver added component-wise) instead of the `?` icon:

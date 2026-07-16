@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { useLeaderboardPercentile } from '~/api/hooks';
+import type { LatestSchema } from '~/lib/settings';
 
 import { type GameState } from '../lib/game';
 import { Leaderboard } from './Leaderboard';
@@ -8,10 +9,11 @@ import { SettingsModal } from './SettingsModal';
 
 interface ResultsScreenProps extends Pick<
   GameState,
-  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer'
+  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer' | 'settings'
 > {
   onPlayAgain: () => void;
   onBackToHome: () => void;
+  onUpdateSettings: (config: Partial<LatestSchema>) => void;
 }
 
 export function ResultsScreen({
@@ -22,6 +24,8 @@ export function ResultsScreen({
   onBackToHome,
   currentWord,
   lastWordAnswer,
+  settings,
+  onUpdateSettings,
 }: ResultsScreenProps) {
   const { data } = useLeaderboardPercentile();
 
@@ -65,7 +69,12 @@ export function ResultsScreen({
           Back to home
         </button>
         <div className="col-span-4 flex">
-          <SettingsModal triggerText={'⚙️'} triggerClassnames="border-r-0 rounded-r-none" />
+          <SettingsModal
+            triggerText={'⚙️'}
+            triggerClassnames="border-r-0 rounded-r-none"
+            settings={settings}
+            updateSettings={onUpdateSettings}
+          />
 
           <button
             type="button"
@@ -79,7 +88,7 @@ export function ResultsScreen({
       </div>
 
       <div className="pt-6 w-full min-h-[270px]">
-        <Leaderboard limit={5} HeadingComponent="h2" />
+        <Leaderboard mode={settings.mode} limit={5} HeadingComponent="h2" />
       </div>
     </>
   );
