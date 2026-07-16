@@ -3,6 +3,7 @@
 ## Week 4
 
 - New feature: Added Blind mode; a harder game mode that hides the word definition. A banner showing (Vanilla/Blind) below the navbar will show to indicate the game mode easily.
+- Fixed a timer race condition where a wrong answer at exactly 1 second remaining could cause the game session to never be marked as finished, excluding your score from the leaderboard.
 
 ## Week 3
 

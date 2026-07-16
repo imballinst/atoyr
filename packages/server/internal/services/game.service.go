@@ -210,6 +210,9 @@ func (g *GameService) runTimer(sessionID string, initial int32) {
 	for range ticker.C {
 		remainingSeconds := core.SessionDurationManager.Get(sessionID)
 		if remainingSeconds <= 0 {
+			if err := g.FinishGame(sessionID); err != nil {
+				log.Println("error when finishing game due to time is 0, ", err.Error())
+			}
 			return
 		}
 

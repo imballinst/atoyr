@@ -309,6 +309,103 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 	assert.Equal(t, float32(0), percentile)
 }
 
+// TestLeaderboardService_ExcludesSessionWithUnfinishedPhase reproduces the bug where a
+// session that was not properly finished (phase remains "playing" instead of "finished")
+// is excluded from the leaderboard, resulting in fewer entries than expected.
+//
+// Root cause: runTimer() in game.service.go exits without calling FinishGame() when
+// SessionDurationManager already reads 0 at the start of a loop iteration. This happens
+// when the last Decrement() comes from a wrong answer (updateSessionBasedOnAnswerResult)
+// rather than from the timer's own Decrement call. The session stays in "playing" phase
+// in the DB and the leaderboard query WHERE phase = "finished" excludes it.
+func TestLeaderboardService_ExcludesSessionWithUnfinishedPhase(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	leaderboardService := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+
+	// Create 3 finished sessions with scores
+	for i := range 3 {
+		session, err := sessionService.Create(false, []string{}, "vanilla", 30)
+		assert.NoError(t, err)
+
+		session.Score = int32(30 - i*10)
+		session.TotalAttempts = 10
+		session.Accuracy = utils.CalculateAccuracy(session.Score, session.TotalAttempts)
+		session.Phase = core.SessionPhaseFinished
+		assert.NoError(t, sessionService.Update(session))
+	}
+
+	// Player's session — finished in terms of score, but phase was never set to "finished".
+	// This simulates the runTimer race condition where FinishGame() is not called.
+	playerSession, err := sessionService.Create(false, []string{}, "vanilla", 30)
+	assert.NoError(t, err)
+
+	playerSession.Score = 5
+	playerSession.TotalAttempts = 10
+	playerSession.Accuracy = utils.CalculateAccuracy(5, 10)
+	playerSession.Phase = core.SessionPhasePlaying // NOT set to "finished" — the bug
+	assert.NoError(t, sessionService.Update(playerSession))
+
+	// Fetch leaderboard
+	entries, err := leaderboardService.GetLeaderboard("vanilla", 10, 0)
+	assert.NoError(t, err)
+
+	total, err := leaderboardService.GetTotalEntries("vanilla")
+	assert.NoError(t, err)
+
+	t.Logf("Leaderboard returned %d entries (total=%d), expected 4", len(entries), total)
+	for i, e := range entries {
+		t.Logf("  [%d] id=%s score=%d", i+1, e.ID, e.Score)
+	}
+
+	// BUG: only 3 entries are returned because the player's session is excluded
+	assert.Len(t, entries, 3, "BUG: expected 4 entries but got 3 — the player's session was excluded because FinishGame() was never called")
+	assert.Equal(t, int64(3), total, "BUG: expected total 4 but got 3")
+}
+
+// TestLeaderboardService_IncludesFinishedSession verifies that when FinishGame IS called
+// (phase = "finished"), the player's session is included in the leaderboard.
+func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	leaderboardService := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+
+	// Create 3 finished sessions with scores
+	for i := range 3 {
+		session, err := sessionService.Create(false, []string{}, "vanilla", 30)
+		assert.NoError(t, err)
+
+		session.Score = int32(30 - i*10)
+		session.TotalAttempts = 10
+		session.Accuracy = utils.CalculateAccuracy(session.Score, session.TotalAttempts)
+		session.Phase = core.SessionPhaseFinished
+		assert.NoError(t, sessionService.Update(session))
+	}
+
+	// Player's session — properly finished
+	playerSession, err := sessionService.Create(false, []string{}, "vanilla", 30)
+	assert.NoError(t, err)
+
+	playerSession.Score = 5
+	playerSession.TotalAttempts = 10
+	playerSession.Accuracy = utils.CalculateAccuracy(5, 10)
+	playerSession.Phase = core.SessionPhaseFinished // properly finished
+	assert.NoError(t, sessionService.Update(playerSession))
+
+	// Fetch leaderboard
+	entries, err := leaderboardService.GetLeaderboard("vanilla", 10, 0)
+	assert.NoError(t, err)
+
+	total, err := leaderboardService.GetTotalEntries("vanilla")
+	assert.NoError(t, err)
+
+	// Correct: 4 entries
+	assert.Len(t, entries, 4)
+	assert.Equal(t, int64(4), total)
+	// Player's entry should be last (worst score)
+	assert.Equal(t, int32(5), entries[3].Score)
+}
+
 func BenchmarkLeaderboardService(b *testing.B) {
 	db := testutils.SetupTestDB(b)
 	service := NewLeaderboardService(db)
