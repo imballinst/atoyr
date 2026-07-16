@@ -2,12 +2,7 @@
 
 ## Week 4
 
-- New feature: Added Blind mode — a harder game mode that hides the word definition.
-- Added mode banner (Vanilla/Blind) below the navbar on the home page and game screen.
-- Leaderboard percentile comparisons now respect the game mode.
-- Fix: Definition is now omitted from all server responses in Blind mode (not just the client-side render).
-- Fix: "Speak letters" no longer reads the definition in Blind mode.
-- Fix: Settings auto-voice toggle now uses a proper accessible label.
+- New feature: Added Blind mode — a harder game mode that hides the word definition. A banner showing (Vanilla/Blind) below the navbar will show to indicate the game mode easily.
 
 ## Week 3
 

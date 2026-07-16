@@ -13,6 +13,7 @@ A Test of Your Reflexes, or Atoyr, is a game where the users will see 5 characte
 - DO NOT PUT UNNECESSARY COMMENTS between lines unless absolutely necessary. Also don't put unnecessary JSDoc as well for the emitted functions unless the intentions are not clear.
 - DO NOT SPLIT INTO MULTIPLE COMPONENTS unless absolutely necessary. If it's possible to colocate the components, co-locate.
 - Colocate module-level helper functions at the bottom of the file when they do not close over component state (function declarations are hoisted). Prefer this over nesting them inside the component.
+- Bug fixes for features still under active development (same branch/feature) should not be included in the changelog — they are part of the implementation process, not a user-facing change.
 - Don't introduce intermediary variables for values used only once or that need no transformation. Read from the source directly.
 - When writing specs, put AS LITTLE DETAIL AS POSSIBLE to the implementation details. Just have the higher level; only show code snippets when necessary.
 - DO NOT put overly-detailed file structure (apart from top-level ones) because it has potential to change over time.
