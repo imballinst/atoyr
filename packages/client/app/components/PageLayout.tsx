@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
-import { VersionHoverCard } from '~/components/VersionHoverCard';
+import { VersionPopover } from '~/components/VersionPopover';
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
@@ -20,7 +20,7 @@ export function PageLayout({ children }: { children: ReactNode }) {
             </li>
           </ul>
 
-          <VersionHoverCard />
+          <VersionPopover />
         </nav>
       </div>
 

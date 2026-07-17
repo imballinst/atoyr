@@ -1,4 +1,4 @@
-import { HoverCard } from 'radix-ui';
+import { Popover } from 'radix-ui';
 import { useState } from 'react';
 import { Link, useRouteLoaderData } from 'react-router';
 
@@ -7,7 +7,7 @@ import { computeCombinedVersion, getClientVersion, getServerVersion, writeStored
 const VERSION = import.meta.env.VERSION;
 const COMBINED_VERSION = computeCombinedVersion(VERSION);
 
-export function VersionHoverCard() {
+export function VersionPopover() {
   const rootData = useRouteLoaderData('root') as { showBadge: boolean } | undefined;
   const [badgeVisible, setBadgeVisible] = useState(rootData?.showBadge ?? false);
 
@@ -19,8 +19,8 @@ export function VersionHoverCard() {
   }
 
   return (
-    <HoverCard.Root onOpenChange={handleOpenChange} openDelay={0} closeDelay={150}>
-      <HoverCard.Trigger asChild>
+    <Popover.Root onOpenChange={handleOpenChange}>
+      <Popover.Trigger asChild>
         <button
           type="button"
           className="relative text-xs font-mono px-1.5 py-0.5 border border-dark-border-light rounded text-dark-text-secondary hover:text-dark-interactive-primary hover:border-dark-interactive-primary transition duration-200"
@@ -29,9 +29,9 @@ export function VersionHoverCard() {
           {COMBINED_VERSION}
           {badgeVisible && <NewBadge />}
         </button>
-      </HoverCard.Trigger>
-      <HoverCard.Portal>
-        <HoverCard.Content
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
           className="bg-dark-bg-primary border border-dark-border-light px-3 py-2 rounded text-sm text-dark-text-primary outline-0 shadow flex flex-col gap-1"
           sideOffset={5}
           side="bottom"
@@ -39,15 +39,17 @@ export function VersionHoverCard() {
         >
           <span className="text-xs text-dark-text-secondary">Client version: {getClientVersion(VERSION)}</span>
           <span className="text-xs text-dark-text-secondary">Server version: {getServerVersion(VERSION)}</span>
-          <Link
-            to="/changelog"
-            className="text-xs text-dark-interactive-primary underline decoration-dotted hover:text-dark-interactive-primary/80 mt-0.5"
-          >
-            See what changed
-          </Link>
-        </HoverCard.Content>
-      </HoverCard.Portal>
-    </HoverCard.Root>
+          <Popover.Close asChild>
+            <Link
+              to="/changelog"
+              className="text-xs text-dark-interactive-primary underline decoration-dotted hover:text-dark-interactive-primary/80 mt-0.5"
+            >
+              See what changed
+            </Link>
+          </Popover.Close>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
