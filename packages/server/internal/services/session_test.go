@@ -4,6 +4,7 @@ import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/testutils"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -48,4 +49,27 @@ func TestSessionService_EndSession(t *testing.T) {
 	assert.Equal(t, core.SessionPhaseFinished, found.Phase)
 	// Duration should be kept as-is.
 	assert.Equal(t, int32(1), found.DurationSeconds)
+}
+
+func TestSessionService_EndSession_DoubleEnd(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewSessionService(db)
+
+	session, _ := service.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration)
+
+	// First call should succeed.
+	err := service.EndSession(session.ID)
+	assert.NoError(t, err)
+	found1, _ := service.FindByID(session.ID)
+	assert.Equal(t, core.SessionPhaseFinished, found1.Phase)
+
+	// Wait a bit so updated_at would differ if a second write happened.
+	time.Sleep(2 * time.Millisecond)
+
+	// Second call should be a no-op (no error, phase stays finished, updated_at unchanged).
+	err = service.EndSession(session.ID)
+	assert.NoError(t, err)
+	found2, _ := service.FindByID(session.ID)
+	assert.Equal(t, core.SessionPhaseFinished, found2.Phase)
+	assert.Equal(t, found1.UpdatedAt.UnixNano(), found2.UpdatedAt.UnixNano())
 }

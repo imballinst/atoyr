@@ -81,7 +81,7 @@ func (s *SessionService) Update(session *domainmodels.SessionDomain) error {
 
 func (s *SessionService) EndSession(sessionID string) error {
 	if err := s.db.Model(&models.SessionEntity{}).
-		Where("id = ?", sessionID).
+		Where("id = ? AND phase != ?", sessionID, core.SessionPhaseFinished).
 		Updates(map[string]any{
 			"phase":      core.SessionPhaseFinished,
 			"ends_at":    time.Now(),
