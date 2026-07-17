@@ -485,16 +485,16 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 	// Create sessions
 	session, err := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
-	// Update the session to happen for some times this month.
-	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.Now().Location())
-	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 30, 0, time.Now().Location())
+	// Update the session to happen today.
+	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 1, 0, time.UTC)
+	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 31, 0, time.UTC)
 	sessionService.Update(session)
 
 	session, err = sessionService.Create(true, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
-	// Update the session to happen for some times this week (but not today).
-	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 2, 0, 0, 0, 0, time.Now().Location())
-	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 2, 0, 0, 30, 0, time.Now().Location())
+	// Update the session to happen for some times this month (but not today and not this week).
+	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.UTC)
+	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 30, 0, time.UTC)
 	sessionService.Update(session)
 
 	req, _ := http.NewRequest("GET", "/api/v1/admin/stats", nil)
