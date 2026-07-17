@@ -1,7 +1,6 @@
 package services
 
 import (
-	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/utils"
 	"fmt"
@@ -17,31 +16,26 @@ const (
 )
 
 type StatsService struct {
-	db        *gorm.DB
-	metrics   *middleware.MetricsCollector
-	startTime time.Time
-	Now       func() time.Time
+	db  *gorm.DB
+	Now func() time.Time
+}
+
+type ModeStats struct {
+	Mode              string `json:"mode"`
+	SessionsToday     int64  `json:"sessionsToday"`
+	SessionsThisWeek  int64  `json:"sessionsThisWeek"`
+	SessionsThisMonth int64  `json:"sessionsThisMonth"`
+	ActiveGames       int64  `json:"activeGames"`
+	TotalSessions     int64  `json:"totalSessions"`
 }
 
 type StatsResponse struct {
-	// From SQLite
-	TotalSessions     int64 `json:"totalSessions"`
-	SessionsToday     int64 `json:"sessionsToday"`
-	SessionsThisWeek  int64 `json:"sessionsThisWeek"`
-	SessionsThisMonth int64 `json:"sessionsThisMonth"`
-	ActiveGames       int64 `json:"activeGames"`
-
-	// From in-memory metrics
-	TotalRequests   int64   `json:"totalRequests"`
-	ErrorRate4xx    float32 `json:"errorRate4xx"`
-	ErrorRate5xx    float32 `json:"errorRate5xx"`
-	ResponseTimeP50 int64   `json:"responseTimeP50"` // milliseconds
-	ResponseTimeP95 int64   `json:"responseTimeP95"` // milliseconds
-	ResponseTimeP99 int64   `json:"responseTimeP99"` // milliseconds
-
-	// Server resources
-	MemoryUsage uint64 `json:"memoryUsageMB"`
-	Uptime      int64  `json:"uptime"` // seconds
+	TotalSessions     int64       `json:"totalSessions"`
+	SessionsToday     int64       `json:"sessionsToday"`
+	SessionsThisWeek  int64       `json:"sessionsThisWeek"`
+	SessionsThisMonth int64       `json:"sessionsThisMonth"`
+	ActiveGames       int64       `json:"activeGames"`
+	ModeBreakdown     []ModeStats `json:"modeBreakdown"`
 }
 
 type TimeSeriesResponse struct {
@@ -60,12 +54,10 @@ type TimeSeriesPoint struct {
 	MemoryUsage     float32   `json:"memoryUsage"`
 }
 
-func NewStatsService(db *gorm.DB, metricsCollector *middleware.MetricsCollector) *StatsService {
+func NewStatsService(db *gorm.DB) *StatsService {
 	return &StatsService{
-		db:        db,
-		metrics:   metricsCollector,
-		startTime: time.Now(),
-		Now:       time.Now,
+		db:  db,
+		Now: time.Now,
 	}
 }
 
@@ -79,56 +71,118 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 
 	var stats StatsResponse
 
-	// Total sessions (all time) -- expensive, only on demand.
+	// 1. Single query: all sessions this month — categorize into today/week/month in Go
+	type monthlyRow struct {
+		Mode      string
+		Phase     string
+		CreatedAt time.Time
+	}
+	var monthly []monthlyRow
+	result := s.db.Model(&models.SessionEntity{}).
+		Select("mode, phase, created_at").
+		Where("created_at >= ? AND created_at < ?", monthStart, nextMonthStart).
+		Find(&monthly)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	type periodCounts struct {
+		today, week, month int64
+	}
+
+	allCounts := periodCounts{}
+	modeCounts := map[string]*periodCounts{
+		"vanilla": {},
+		"blind":   {},
+	}
+
+	for _, row := range monthly {
+		allCounts.month++
+		if !row.CreatedAt.Before(today) && row.CreatedAt.Before(tomorrow) {
+			allCounts.today++
+		}
+		if !row.CreatedAt.Before(weekStart) && row.CreatedAt.Before(weekEnd) {
+			allCounts.week++
+		}
+
+		if mc := modeCounts[row.Mode]; mc != nil {
+			mc.month++
+			if !row.CreatedAt.Before(today) && row.CreatedAt.Before(tomorrow) {
+				mc.today++
+			}
+			if !row.CreatedAt.Before(weekStart) && row.CreatedAt.Before(weekEnd) {
+				mc.week++
+			}
+		}
+	}
+
+	stats.SessionsToday = allCounts.today
+	stats.SessionsThisWeek = allCounts.week
+	stats.SessionsThisMonth = allCounts.month
+
+	// 2. Single query: active games grouped by mode
+	type groupCount struct {
+		Mode  string
+		Count int64
+	}
+	var activeCounts []groupCount
+	result = s.db.Model(&models.SessionEntity{}).
+		Select("mode, COUNT(*) as count").
+		Where("phase != ?", "finished").
+		Group("mode").
+		Find(&activeCounts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	activeByMode := map[string]int64{}
+	totalActive := int64(0)
+	for _, a := range activeCounts {
+		activeByMode[a.Mode] = a.Count
+		totalActive += a.Count
+	}
+	stats.ActiveGames = totalActive
+
+	// 3. Total sessions (on-demand, grouped by mode)
+	var totalByMode map[string]int64
 	if includeTotalSessions {
-		result := s.db.Model(&models.SessionEntity{}).Count(&stats.TotalSessions)
+		var totalCounts []groupCount
+		result = s.db.Model(&models.SessionEntity{}).
+			Select("mode, COUNT(*) as count").
+			Group("mode").
+			Find(&totalCounts)
 		if result.Error != nil {
 			return nil, result.Error
 		}
+
+		totalByMode = map[string]int64{}
+		totalAll := int64(0)
+		for _, t := range totalCounts {
+			totalByMode[t.Mode] = t.Count
+			totalAll += t.Count
+		}
+		stats.TotalSessions = totalAll
 	} else {
 		stats.TotalSessions = -1
 	}
 
-	// Sessions today
-	result := s.db.Model(&models.SessionEntity{}).
-		Where("created_at >= ? AND created_at < ?", today, tomorrow).
-		Count(&stats.SessionsToday)
-	if result.Error != nil {
-		return nil, result.Error
+	// Build mode breakdown
+	for _, mode := range []string{"vanilla", "blind"} {
+		mc := modeCounts[mode]
+		ms := ModeStats{
+			Mode:              mode,
+			SessionsToday:     mc.today,
+			SessionsThisWeek:  mc.week,
+			SessionsThisMonth: mc.month,
+			ActiveGames:       activeByMode[mode],
+		}
+		if includeTotalSessions {
+			ms.TotalSessions = totalByMode[mode]
+		} else {
+			ms.TotalSessions = -1
+		}
+		stats.ModeBreakdown = append(stats.ModeBreakdown, ms)
 	}
-
-	// Sessions this week
-	result = s.db.Model(&models.SessionEntity{}).
-		Where("created_at >= ? AND created_at < ?", weekStart, weekEnd).
-		Count(&stats.SessionsThisWeek)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	// Sessions this month
-	result = s.db.Model(&models.SessionEntity{}).
-		Where("created_at >= ? AND created_at < ?", monthStart, nextMonthStart).
-		Count(&stats.SessionsThisMonth)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	// Active games (not finished)
-	result = s.db.Model(&models.SessionEntity{}).
-		Where("phase != ?", "finished").
-		Count(&stats.ActiveGames)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	stats.TotalRequests = s.metrics.RequestCount.Load()
-	stats.ErrorRate4xx = float32(s.metrics.ErrorCount4xx.Load())
-	stats.ErrorRate5xx = float32(s.metrics.ErrorCount5xx.Load())
-	stats.ResponseTimeP50 = utils.GetTimePercentile(s.metrics.ResponseTimes, 50)
-	stats.ResponseTimeP95 = utils.GetTimePercentile(s.metrics.ResponseTimes, 95)
-	stats.ResponseTimeP99 = utils.GetTimePercentile(s.metrics.ResponseTimes, 99)
-	stats.MemoryUsage = uint64(utils.GetMemoryUsage())
-	stats.Uptime = int64(time.Since(s.startTime).Seconds())
 
 	return &stats, nil
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"atoyr/server/internal/core"
-	"atoyr/server/internal/middleware"
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/testutils"
 
@@ -17,8 +16,7 @@ import (
 
 func TestStatsService_GetStats(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -52,13 +50,6 @@ func TestStatsService_GetStats(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	metricsCollector.RequestCount.Store(42)
-	metricsCollector.ErrorCount4xx.Store(3)
-	metricsCollector.ErrorCount5xx.Store(1)
-	metricsCollector.ResponseTimes = append(metricsCollector.ResponseTimes,
-		100*time.Millisecond, 200*time.Millisecond, 300*time.Millisecond,
-	)
-
 	stats, err := service.GetStats(false)
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
@@ -68,21 +59,14 @@ func TestStatsService_GetStats(t *testing.T) {
 	assert.Equal(t, int64(3), stats.SessionsThisWeek)
 	assert.Equal(t, int64(4), stats.SessionsThisMonth)
 	assert.Equal(t, int64(1), stats.ActiveGames)
-
-	assert.Equal(t, int64(42), stats.TotalRequests)
-	assert.Equal(t, float32(3), stats.ErrorRate4xx)
-	assert.Equal(t, float32(1), stats.ErrorRate5xx)
-	assert.Equal(t, int64(200), stats.ResponseTimeP50)
-	assert.Equal(t, int64(300), stats.ResponseTimeP95)
-	assert.Equal(t, int64(300), stats.ResponseTimeP99)
-	assert.Greater(t, stats.MemoryUsage, uint64(0))
-	assert.GreaterOrEqual(t, stats.Uptime, int64(0))
+	assert.Len(t, stats.ModeBreakdown, 2)
+	assert.Equal(t, int64(0), stats.ModeBreakdown[0].SessionsToday)
+	assert.Equal(t, int64(0), stats.ModeBreakdown[1].SessionsToday)
 }
 
 func TestStatsService_GetStats_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	stats, err := service.GetStats(false)
@@ -94,15 +78,12 @@ func TestStatsService_GetStats_Empty(t *testing.T) {
 	assert.Equal(t, int64(0), stats.SessionsThisWeek)
 	assert.Equal(t, int64(0), stats.SessionsThisMonth)
 	assert.Equal(t, int64(0), stats.ActiveGames)
-	assert.Equal(t, int64(0), stats.TotalRequests)
-	assert.Equal(t, float32(0), stats.ErrorRate4xx)
-	assert.Equal(t, float32(0), stats.ErrorRate5xx)
+	assert.Len(t, stats.ModeBreakdown, 2)
 }
 
 func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -130,12 +111,84 @@ func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, stats)
 	assert.Equal(t, int64(2), stats.TotalSessions)
+	assert.Len(t, stats.ModeBreakdown, 2)
+}
+
+func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewStatsService(db)
+	service.Now = testutils.NowMockFn
+
+	now := service.Now()
+	today := now.Truncate(24 * time.Hour)
+
+	sessions := []models.SessionEntity{
+		{
+			ID: "vanilla-today", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
+			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
+			Mode: "vanilla",
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+		{
+			ID: "vanilla-playing", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
+			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
+			Mode: "vanilla",
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+		{
+			ID: "blind-today", CreatedAt: today.Add(3 * time.Hour), UpdatedAt: today.Add(3 * time.Hour), EndsAt: today.Add(4 * time.Hour),
+			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
+			Mode: "blind",
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+	}
+
+	for _, s := range sessions {
+		err := db.Create(&s).Error
+		assert.NoError(t, err)
+	}
+
+	t.Run("without total", func(t *testing.T) {
+		stats, err := service.GetStats(false)
+		assert.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Len(t, stats.ModeBreakdown, 2)
+
+		vanilla := stats.ModeBreakdown[0]
+		assert.Equal(t, "vanilla", vanilla.Mode)
+		assert.Equal(t, int64(2), vanilla.SessionsToday)
+		assert.Equal(t, int64(2), vanilla.SessionsThisWeek)
+		assert.Equal(t, int64(2), vanilla.SessionsThisMonth)
+		assert.Equal(t, int64(1), vanilla.ActiveGames)
+		assert.Equal(t, int64(-1), vanilla.TotalSessions)
+
+		blind := stats.ModeBreakdown[1]
+		assert.Equal(t, "blind", blind.Mode)
+		assert.Equal(t, int64(1), blind.SessionsToday)
+		assert.Equal(t, int64(1), blind.SessionsThisWeek)
+		assert.Equal(t, int64(1), blind.SessionsThisMonth)
+		assert.Equal(t, int64(0), blind.ActiveGames)
+		assert.Equal(t, int64(-1), blind.TotalSessions)
+	})
+
+	t.Run("with total", func(t *testing.T) {
+		stats, err := service.GetStats(true)
+		assert.NoError(t, err)
+		assert.NotNil(t, stats)
+		assert.Equal(t, int64(3), stats.TotalSessions)
+		assert.Len(t, stats.ModeBreakdown, 2)
+
+		vanilla := stats.ModeBreakdown[0]
+		assert.Equal(t, int64(2), vanilla.TotalSessions)
+
+		blind := stats.ModeBreakdown[1]
+		assert.Equal(t, int64(1), blind.TotalSessions)
+	})
 }
 
 func TestStatsService_GetTimeSeries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -190,8 +243,7 @@ func TestStatsService_GetTimeSeries(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	result, err := service.GetTimeSeries("1h", "5m")
@@ -225,8 +277,7 @@ func TestStatsService_GetTimeSeries_Empty(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	_, err := service.GetTimeSeries("invalid", "5m")
@@ -236,8 +287,7 @@ func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_AutoGranularity(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	metricsCollector := middleware.NewMetricsCollector()
-	service := NewStatsService(db, metricsCollector)
+	service := NewStatsService(db)
 	service.Now = testutils.NowMockFn
 
 	cases := []struct {
@@ -276,7 +326,6 @@ func TestAggregateSnapshots(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 12)
 
-	// Every point should be before the next one.
 	for i, p := range result {
 		if i+1 == len(result) {
 			break

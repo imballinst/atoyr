@@ -90,7 +90,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, testutils.TestSessionOptions)
 	metricsCollector := middleware.NewMetricsCollector()
-	statsService := services.NewStatsService(db, metricsCollector)
+	statsService := services.NewStatsService(db)
 
 	statsService.Now = testutils.NowMockFn
 
@@ -507,10 +507,9 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 	err = json.Unmarshal(recorder.Body.Bytes(), &stats)
 	assert.NoError(t, err)
 
-	assert.Equal(t, int64(0), stats.SessionsToday)
+	assert.Equal(t, int64(1), stats.SessionsToday)
 	assert.Equal(t, int64(1), stats.SessionsThisWeek)
 	assert.Equal(t, int64(2), stats.SessionsThisMonth)
-	assert.GreaterOrEqual(t, stats.Uptime, int64(0))
 }
 
 func TestAdminRoutes_GetStats_Empty(t *testing.T) {

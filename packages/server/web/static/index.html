@@ -18,54 +18,59 @@
         </div>
       </div>
 
-      <!-- Scalar Stats Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Sessions Today</div>
-          <div id="sessionsToday" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Sessions This Week</div>
-          <div id="sessionsThisWeek" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Sessions This Month</div>
-          <div id="sessionsThisMonth" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="text-gray-400 text-sm">Active Games</div>
-          <div id="activeGames" class="text-2xl font-bold">-</div>
-        </div>
-        <div class="bg-gray-800 rounded-lg p-4">
-          <div class="flex items-center justify-between">
-            <div class="text-gray-400 text-sm">Total Sessions</div>
-            <button
-              id="syncTotalSessionsBtn"
-              onclick="fetchTotalSessions()"
-              title="Compute total session count"
-              class="text-gray-400 hover:text-white disabled:opacity-50"
-            >
-              <svg
-                id="syncTotalSessionsIcon"
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 16h5v5" />
-              </svg>
-            </button>
-          </div>
-          <div id="totalSessions" class="text-2xl font-bold">-</div>
-        </div>
+      <!-- Session Stats Table -->
+      <div class="overflow-x-auto mb-8">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="text-gray-400 text-sm border-b border-gray-700">
+              <th class="pb-3 px-6 font-medium">Mode</th>
+              <th class="pb-3 px-6 font-medium text-right tabular-nums">
+                Sessions Today
+              </th>
+              <th class="pb-3 px-6 font-medium text-right tabular-nums">
+                Sessions This Week
+              </th>
+              <th class="pb-3 px-6 font-medium text-right tabular-nums">
+                Sessions This Month
+              </th>
+              <th class="pb-3 px-6 font-medium text-right tabular-nums">
+                Active Games
+              </th>
+              <th class="pb-3 font-medium text-right tabular-nums">
+                Total Sessions
+                <button
+                  id="syncTotalSessionsBtn"
+                  onclick="fetchTotalSessions()"
+                  title="Compute total session count"
+                  class="text-gray-400 hover:text-white disabled:opacity-50 align-middle ml-1"
+                >
+                  <svg
+                    id="syncTotalSessionsIcon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+                    />
+                    <path d="M3 3v5h5" />
+                    <path
+                      d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"
+                    />
+                    <path d="M16 16h5v5" />
+                  </svg>
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="statsTableBody"></tbody>
+        </table>
       </div>
 
       <!-- Time Series Section -->
@@ -134,25 +139,46 @@
       let accessToken = null;
       let currentTimePeriod = "24h";
 
-      // Chart instances
       let throughputChart, responseTimeChart, errorRateChart, resourcesChart;
 
-      // Initialize Google Sign-In
+      // Column keys in display order
+      const STAT_COLUMNS = [
+        { key: "sessionsToday", label: "Sessions Today" },
+        { key: "sessionsThisWeek", label: "Sessions This Week" },
+        { key: "sessionsThisMonth", label: "Sessions This Month" },
+        { key: "activeGames", label: "Active Games" },
+        { key: "totalSessions", label: "Total Sessions" },
+      ];
+
+      function formatValue(v) {
+        return v == null || v < 0 ? "-" : v;
+      }
+
+      function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
       });
-      google.accounts.id.renderButton(
-        document.getElementById("gSignIn"),
-        { theme: "filled_black", size: "medium", text: "signin" },
-      );
+      google.accounts.id.renderButton(document.getElementById("gSignIn"), {
+        theme: "filled_black",
+        size: "medium",
+        text: "signin",
+      });
       google.accounts.id.prompt();
 
       function handleCredentialResponse(response) {
         accessToken = response.credential;
         try {
           const payload = JSON.parse(
-            atob(response.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
+            atob(
+              response.credential
+                .split(".")[1]
+                .replace(/-/g, "+")
+                .replace(/_/g, "/"),
+            ),
           );
           const emailEl = document.getElementById("signedInAs");
           emailEl.textContent = "Signed in as " + payload.email;
@@ -165,11 +191,9 @@
         fetchTimeSeries();
       }
 
-      // Set time period (only affects time series charts)
       function setTimePeriod(period) {
         currentTimePeriod = period;
 
-        // Update button styles
         document.querySelectorAll(".period-btn").forEach((btn) => {
           if (btn.dataset.period === period) {
             btn.classList.remove("bg-gray-700");
@@ -183,32 +207,26 @@
         fetchTimeSeries();
       }
 
-      // Fetch current stats
       async function fetchStats() {
         if (!accessToken) return;
 
         const response = await fetch("/api/v1/admin/stats", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         if (response.ok) {
           const stats = await response.json();
-          updateStatsCards(stats);
+          updateStatsTable(stats);
         }
       }
 
-      // Fetch time series data
       async function fetchTimeSeries() {
         if (!accessToken) return;
 
         const response = await fetch(
           `/api/v1/admin/timeseries?period=${currentTimePeriod}`,
           {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+            headers: { Authorization: `Bearer ${accessToken}` },
           },
         );
 
@@ -218,22 +236,30 @@
         }
       }
 
-      // Update stats cards
-      function updateStatsCards(stats) {
-        document.getElementById("sessionsToday").textContent =
-          stats.sessionsToday;
-        document.getElementById("sessionsThisWeek").textContent =
-          stats.sessionsThisWeek;
-        document.getElementById("sessionsThisMonth").textContent =
-          stats.sessionsThisMonth;
-        document.getElementById("activeGames").textContent = stats.activeGames;
-        if (stats.totalSessions != null && stats.totalSessions >= 0) {
-          document.getElementById("totalSessions").textContent =
-            stats.totalSessions;
+      function rowHtml(label, data, className) {
+        let cells = `<td class="py-3 px-6 font-medium text-gray-300">${label}</td>`;
+        for (const col of STAT_COLUMNS) {
+          cells += `<td class="py-3 px-6 text-right tabular-nums">${formatValue(data[col.key])}</td>`;
         }
+        return `<tr class="border-b border-gray-700 ${className || ""}">${cells}</tr>`;
       }
 
-      // Fetch total session count (expensive, on demand via the sync button)
+      function updateStatsTable(stats) {
+        let html = "";
+
+        // Mode breakdown rows
+        if (stats.modeBreakdown) {
+          for (const ms of stats.modeBreakdown) {
+            html += rowHtml(capitalize(ms.mode), ms);
+          }
+        }
+
+        // Total row (all modes) at the bottom
+        html += rowHtml("Total", stats, "bg-gray-800 font-bold");
+
+        document.getElementById("statsTableBody").innerHTML = html;
+      }
+
       async function fetchTotalSessions() {
         if (!accessToken) return;
 
@@ -246,15 +272,13 @@
           const response = await fetch(
             "/api/v1/admin/stats?includeStat=alltimecountsessions",
             {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
+              headers: { Authorization: `Bearer ${accessToken}` },
             },
           );
 
           if (response.ok) {
             const stats = await response.json();
-            updateStatsCards(stats);
+            updateStatsTable(stats);
           }
         } finally {
           btn.disabled = false;
@@ -262,7 +286,6 @@
         }
       }
 
-      // Initialize charts
       function initCharts() {
         const chartOptions = {
           responsive: true,
@@ -322,6 +345,12 @@
                   borderColor: "#F59E0B",
                   tension: 0.4,
                 },
+                {
+                  label: "P99",
+                  data: [],
+                  borderColor: "#8B5CF6",
+                  tension: 0.4,
+                },
               ],
             },
             options: chartOptions,
@@ -361,8 +390,6 @@
         });
       }
 
-      // Format a point's timestamp according to the granularity returned by the API.
-      // For 7d / 30d (granularity "1d"), show the date, otherwise the time of day.
       function formatLabel(timestamp, granularity) {
         const date = new Date(timestamp);
         if (granularity === "1d") {
@@ -377,7 +404,6 @@
         });
       }
 
-      // Update charts with time series data
       function updateCharts(timeseries) {
         const granularity = timeseries.granularity || "";
         const labels = timeseries.data.map((d) =>
@@ -397,6 +423,9 @@
         responseTimeChart.data.datasets[1].data = timeseries.data.map(
           (d) => d.responseTimeP95,
         );
+        responseTimeChart.data.datasets[2].data = timeseries.data.map(
+          (d) => d.responseTimeP99,
+        );
         responseTimeChart.update();
 
         errorRateChart.data.labels = labels;
@@ -412,10 +441,11 @@
         resourcesChart.update();
       }
 
-      // Initialize on load
-      document.addEventListener("DOMContentLoaded", initCharts);
+      document.addEventListener("DOMContentLoaded", function () {
+        initCharts();
+        fetchStats();
+      });
 
-      // Poll for updates every 5 seconds
       setInterval(() => {
         fetchStats();
         fetchTimeSeries();
