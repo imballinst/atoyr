@@ -189,6 +189,122 @@ On startup, the server queries the registry for `phase = 'playing'` rounds, load
 
 If the admin dashboard and deploy recovery are redesigned to not need a local queryable registry, the SQLite table can be dropped completely. In practice, Cloud Save does not support efficient cross-user queries, so a minimal local registry is recommended.
 
+## AGS SDK configuration and backend data structures
+
+This migration uses the server-side AccelByte Go SDK (`accelbyte-go-sdk`) for IAM, Cloud Save, Statistics, Leaderboards, and Analytics calls from the custom Go server. AGS Extend is only needed if we later introduce custom backend logic that AGS native services cannot support, such as the current multi-field tie-breaker.
+
+### SDK configuration
+
+The server initializes one `accelbyte-go-sdk` `Config` from environment variables:
+
+- `AGS_BASE_URL` — Shared Cloud or Private Cloud endpoint.
+- `AGS_NAMESPACE` — the game namespace.
+- `AGS_CLIENT_ID` / `AGS_CLIENT_SECRET` — server-to-server OAuth client credentials.
+- `AGS_ADMIN_REDIRECT_URI` — callback URI for admin dashboard OAuth flows.
+
+The SDK handles access-token caching and refresh; the server stores only configuration on disk.
+
+### Identity tokens
+
+Three token paths are needed:
+
+1. **Player token** — issued via IAM headless account or platform OAuth, sent by the client in the `Authorization` header or a secure cookie.
+2. **Admin token** — issued via IAM OAuth for an admin client, gated by AGS roles/permissions.
+3. **Server token** — client-credentials token used by `accelbyte-go-sdk` for service-to-service calls.
+
+The custom server validates player and admin tokens by calling AGS IAM introspection or by using SDK helpers.
+
+### Backend config struct
+
+```go
+type AGSConfig struct {
+    BaseURL      string
+    Namespace    string
+    ClientID     string
+    ClientSecret string
+    RedirectURI  string
+}
+```
+
+### Cloud Save round state
+
+Each active round is stored as a Cloud Save record owned by the player. The record key is deterministic, e.g. `atoyr:round:{roundID}`. Tags can include `mode:{vanilla|blind}` and `phase:{idle|playing|finished}`.
+
+Record payload:
+
+```go
+type CloudSaveRoundState struct {
+    Mode                     string   `json:"mode"`
+    Phase                    string   `json:"phase"`
+    AutoVoice                bool     `json:"autoVoice"`
+    ItemsUsed                []string `json:"itemsUsed"`
+    UsedWords                []string `json:"usedWords"`
+    CurrentWord              string   `json:"currentWord"`
+    CurrentScrambledWord     string   `json:"currentScrambledWord"`
+    CurrentWordDefinition    string   `json:"currentWordDefinition"`
+    CurrentWordToken         string   `json:"currentWordToken"`
+    Score                    int32    `json:"score"`
+    TotalAttempts            int32    `json:"totalAttempts"`
+    Accuracy                 float32  `json:"accuracy"`
+    CorrectAttemptTimestamps []int64  `json:"correctAttemptTimestamps"` // Unix ms
+    EndsAt                   int64    `json:"endsAt"`                   // Unix ms
+    CreatedAt                int64    `json:"createdAt"`                // Unix ms
+    UpdatedAt                int64    `json:"updatedAt"`                // Unix ms
+}
+```
+
+Cloud Save is the source of truth for round state across deploys; the in-memory cache is the source of truth during a single process lifetime.
+
+### Statistics configuration
+
+Create one server-authoritative stat per metric per mode:
+
+| Stat code | Type | Description |
+|---|---|---|
+| `atoyr_score_vanilla` | integer | Final round score in vanilla mode. |
+| `atoyr_score_blind` | integer | Final round score in blind mode. |
+| `atoyr_accuracy_vanilla` | float | Final accuracy in vanilla mode. |
+| `atoyr_accuracy_blind` | float | Final accuracy in blind mode. |
+| `atoyr_attempts_vanilla` | integer | Final attempt count in vanilla mode. |
+| `atoyr_attempts_blind` | integer | Final attempt count in blind mode. |
+
+All stats are server-authoritative; the client never writes them. Tags can include `mode` and `season`.
+
+### Leaderboard configuration
+
+Create one leaderboard per mode, backed by the primary score stat:
+
+| Leaderboard ID | Backing stat | Description |
+|---|---|---|
+| `atoyr_leaderboard_vanilla` | `atoyr_score_vanilla` | Global vanilla leaderboard. |
+| `atoyr_leaderboard_blind` | `atoyr_score_blind` | Global blind leaderboard. |
+
+Tie-breaking must be decided before implementation:
+
+- **Option A**: use a composite score formula (e.g. `score * 1_000_000 + accuracy_pct * 10_000 - end_time_offset`) as the single backing stat and drop the multi-field tie-breaker.
+- **Option B**: keep the custom tie-breaker by implementing an AGS Extend Override or by post-processing AGS top-N results in the custom server.
+
+### Analytics events
+
+Fire custom AGS analytics events from the server:
+
+| Event name | When | Payload |
+|---|---|---|
+| `atoyr.round.started` | `POST /api/v1/game/start` succeeds | `mode`, `itemsUsed`, `roundID`. |
+| `atoyr.round.continued` | `POST /api/v1/game/continue` succeeds | `mode`, `roundID`. |
+| `atoyr.answer.submitted` | `POST /api/v1/game/submit` returns | `mode`, `roundID`, `correct`, `score`, `attempts`, `remainingSeconds`. |
+| `atoyr.round.finished` | timer expires or round ends | `mode`, `roundID`, `score`, `attempts`, `accuracy`, `durationSeconds`. |
+
+Event payloads should be flat JSON key/value pairs.
+
+### IAM roles and permissions
+
+- The server-to-server client needs permissions to write Cloud Save, Statistics, Leaderboards, and Analytics on behalf of players.
+- The admin dashboard client needs permissions to read Statistics and Leaderboards for operational dashboards.
+- Player IAM clients need permissions to read/write their own Cloud Save records.
+
+On Shared Cloud, permissions follow the `<module>:<group>:<groupId>:<action>` shape. On Private Cloud / BYOC, discover the resource/action strings from the deployed permission catalog instead of assuming Shared Cloud groups.
+
 ## Migration shape
 
 ### Phase 1: Identity and stats
