@@ -27,7 +27,7 @@ Covers `packages/server` only: game session lifecycle, scoring, leaderboard, adm
 | Anonymous player identity | IAM headless account / OAuth | Yes | Replace the cookie-only `session_id` with an AGS IAM token so sessions belong to a real player identity. A short-lived round cookie can still identify the active round. |
 | Admin dashboard authentication | IAM OAuth + roles/permissions | Yes | Replace Google OAuth with an AGS IAM admin client and gate `/admin/*` through AGS roles/permissions. |
 | Final score, attempts, and accuracy per player | Statistics module | Yes | Post round results as server-authoritative statistics, per mode. Use stat codes such as `atoyr-score-vanilla` and `atoyr-score-blind`. Accuracy can be stored as additional data or a separate stat. |
-| Global leaderboard and percentile | Leaderboards module | Yes* | Create mode-specific leaderboards backed by the mode statistics. Native AGS ranking is by a single stat; tie-breaking on accuracy/end time requires an Extend override or a composite scoring formula. Percentile can be derived from AGS ranked lookup and total entries. |
+| Global leaderboard and percentile | Leaderboards module | Yes* | Create mode-specific leaderboards backed by the mode statistics. AGS Leaderboards ranks players, not individual sessions, so the product shifts from one entry per round to one entry per player. Native ranking is by a single stat; tie-breaking on accuracy/end time requires an Extend override or a composite scoring formula. Percentile can be derived from AGS ranked lookup and total entries. |
 | Gameplay events (round start, answer submit, round finish) | Analytics module | Yes | Fire custom AGS analytics events for funnel, retention, and engagement reporting. Operational HTTP metrics stay outside AGS Analytics. |
 | Round items / power-ups (`itemsUsed`) | Store/Entitlements + Achievements | Optional future | If `itemsUsed` becomes real consumables or unlockables, model them in AGS Store/Entitlements and gate usage through Achievements or entitlements. |
 | Round-specific game state (used words, current token, timer) | Cloud Save, or keep custom | Partially | This state is short-lived and gameplay-specific. If resume-across-sessions is needed, store an opaque save slot in Cloud Save. Otherwise keep it in the custom server. |
@@ -78,9 +78,10 @@ Before:
 
 After:
 - Identifies the player via IAM token and the round via the round cookie.
-- Fetches the round state from Cloud Save.
+- Fetches the round state from the in-memory cache.
 - Runs the same custom validation, scoring, and word-selection logic.
-- Writes the updated state back to Cloud Save.
+- Updates the in-memory state.
+- Writes the updated state to Cloud Save asynchronously (fire-and-forget) so a restart can recover the round; the response does not wait on this write.
 - Updates the in-memory countdown.
 - Returns the same response shape as today.
 
@@ -101,7 +102,7 @@ Before:
 - Validates the `session_id` cookie, reads the SQLite row, and streams tick events from the in-memory timer until the round finishes.
 
 After:
-- Validates the round cookie and IAM token, reads the round state from Cloud Save when needed, and streams tick events from the same in-memory timer.
+- Validates the round cookie and IAM token and streams tick events from the in-memory timer. Cloud Save is not consulted during the stream; recovery happens when the client reconnects and calls ContinueGame.
 
 ### `GET /api/v1/leaderboard`
 
@@ -133,9 +134,8 @@ Before:
 - Queries SQLite `session_entities` and `metrics_snapshots` for session counts, active games, and mode breakdown.
 
 After:
-- Session and engagement counts come from AGS Analytics.
-- Active games may still be counted from the custom server's in-memory timer registry.
-- Operational request/error counts remain custom.
+- Operational counts (sessions today, active games, mode breakdown) are counted from the custom server's minimal round registry or in-memory timer state.
+- AGS Analytics provides out-of-box dashboards (DAU, MAU, PCCU) and CSV export for engagement metrics; it does not provide a real-time queryable API that can replace these endpoints.
 
 ### `GET /api/v1/admin/timeseries`
 
@@ -143,8 +143,51 @@ Before:
 - Reads `metrics_snapshots` from SQLite.
 
 After:
-- Gameplay event time series come from AGS Analytics.
-- Operational request-latency, error-rate, and memory-usage time series remain custom.
+- Operational time series (request count, error rate, latency percentiles, memory usage) remain custom.
+- Gameplay event time series are available through AGS Analytics dashboards or warehouse export, not through a real-time query API on this endpoint.
+
+## Schema migration
+
+After the migration, the SQLite `session_entities` table is replaced by two concerns:
+
+1. A **round registry** in SQLite for deploy recovery and admin counting.
+2. **Round state** in AGS Cloud Save.
+
+### Fields to remove from `session_entities`
+
+These move to AGS Cloud Save and/or AGS Statistics:
+
+- `Score` → AGS Statistics (mode-specific stat code).
+- `TotalAttempts` → AGS Statistics.
+- `Accuracy` → AGS Statistics or computed from Statistics on read.
+- `DurationSeconds` → derived from `EndsAt` during recovery.
+- `CorrectAttemptTimestamps` → Cloud Save round state.
+- `AutoVoice` → Cloud Save round state.
+- `UsedWords` → Cloud Save round state.
+- `WordDefinitions` → unused; drop.
+- `CurrentWord` → Cloud Save round state.
+- `CurrentScrambledWord` → Cloud Save round state.
+- `CurrentWordDefinition` → Cloud Save round state.
+- `CurrentWordToken` → Cloud Save round state.
+- `UsedItemIDs` → Cloud Save round state.
+
+### Fields to keep in the minimal round registry
+
+- `ID` — round identifier; also the Cloud Save record key.
+- `UserId` (new) — the AGS player ID tied to the round.
+- `Mode` — needed for admin breakdown and recovery.
+- `Phase` — needed for startup recovery queries.
+- `CreatedAt` — needed for sessions today/week/month counts.
+- `EndsAt` — needed for timer recovery.
+- `UpdatedAt` — optional DB metadata.
+
+### Recovery flow
+
+On startup, the server queries the registry for `phase = 'playing'` rounds, loads each round's full state from Cloud Save, and restores the in-memory timer. This replaces the current `restoreActiveSessions` scan of the full SQLite table.
+
+### Optional: remove the table entirely
+
+If the admin dashboard and deploy recovery are redesigned to not need a local queryable registry, the SQLite table can be dropped completely. In practice, Cloud Save does not support efficient cross-user queries, so a minimal local registry is recommended.
 
 ## Migration shape
 
@@ -174,12 +217,14 @@ After:
 
 - The word bank, scrambling, and answer validation logic.
 - The in-memory countdown timer and SSE tick stream.
-- Round-state persistence (unless Cloud Save is adopted for cross-session resume).
+- A minimal round registry in SQLite for deploy recovery and admin counting.
 - Request-level metrics, health endpoint, CORS, Sentry, and graceful shutdown.
 
 ## Risks and open questions
 
 - **Anonymous vs. authenticated**: moving from a fully anonymous cookie to AGS IAM changes the landing-screen UX and may require a login or silent headless flow.
+- **Leaderboard ranking model**: AGS Leaderboards ranks players by statistic value, not individual game sessions. The product must accept one entry per player per mode, or keep a custom session-based leaderboard instead.
 - **Leaderboard tie-breaking**: AGS native leaderboards rank by a single statistic. Preserving the current multi-field tie-breaker is the biggest functional gap and likely requires Extend or a composite score.
 - **Per-round state**: AGS Session Management is designed for multiplayer match wrappers, not single-player puzzle rounds. Storing round state in Cloud Save is possible but adds latency; keeping it in the custom server is simpler.
 - **Operational dashboard**: AGS does not replace the existing request-latency and error-rate dashboard. Decide whether to keep that dashboard or migrate it to a separate observability stack.
+- **Cloud Save write failures**: async Cloud Save writes need a retry or dead-letter path so a deploy does not lose the last answer before recovery.
