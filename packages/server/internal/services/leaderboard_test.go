@@ -16,10 +16,11 @@ import (
 
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	// Add some test results
-	results := []models.SessionEntity{
+	results := []models.LeaderboardSessionEntity{
 		{
 			ID:                       "session1",
 			Mode:                     "vanilla",
@@ -90,10 +91,11 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 
 func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	// Add some test results
-	results := []models.SessionEntity{
+	results := []models.LeaderboardSessionEntity{
 		{
 			ID:                       "s01",
 			Mode:                     "vanilla",
@@ -139,10 +141,11 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 
 func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	// Add some test results
-	results := []models.SessionEntity{
+	results := []models.LeaderboardSessionEntity{
 		{
 			ID:                       "s01",
 			Mode:                     "vanilla",
@@ -192,11 +195,12 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 
 func TestLeaderboardService_Pagination(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	// Add 25 results
 	for i := range 25 {
-		result := models.SessionEntity{
+		result := models.LeaderboardSessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Mode:                     "vanilla",
 			Score:                    int32(100 + i),
@@ -226,14 +230,15 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 
 func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	total, _ := service.GetTotalEntries("vanilla")
 	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
 	for i := range 5 {
-		result := models.SessionEntity{
+		result := models.LeaderboardSessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Mode:                     "vanilla",
 			Score:                    int32(100 + i),
@@ -254,12 +259,13 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 
 func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
-	results := []models.SessionEntity{}
+	results := []models.LeaderboardSessionEntity{}
 
 	for i := range 10 {
-		result := models.SessionEntity{
+		result := models.LeaderboardSessionEntity{
 			ID:                       utils.GenerateUUID(),
 			Mode:                     "vanilla",
 			Score:                    int32(i * 10),
@@ -276,7 +282,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 	}
 
 	// Create a single blind session with a high score.
-	blindSession := models.SessionEntity{
+	blindSession := models.LeaderboardSessionEntity{
 		ID:                       utils.GenerateUUID(),
 		Mode:                     "blind",
 		Score:                    100,
@@ -293,18 +299,17 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		// 0 is not eligible in the code, so we start from 1 to 10.
 		id := results[i].ID
-		score := results[i].Score
 		totalEligible := float32(8)
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-		percentile, err := service.GetPercentile(id, "vanilla", score)
+		percentile, err := service.GetPercentile(id, "vanilla")
 		assert.NoError(t, err)
-		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
+		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": results[i].Score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
 
 	// A blind session should only be compared against other blind sessions.
-	percentile, err := service.GetPercentile(blindSession.ID, "blind", blindSession.Score)
+	percentile, err := service.GetPercentile(blindSession.ID, "blind")
 	assert.NoError(t, err)
 	assert.Equal(t, float32(0), percentile)
 }
@@ -313,30 +318,38 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 // (phase = "finished"), the player's session is included in the leaderboard.
 func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	leaderboardService := NewLeaderboardService(db)
 	sessionService := NewSessionService(db)
+	leaderboardService := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	// Create 3 finished sessions with scores
 	for i := range 3 {
 		session, err := sessionService.Create(false, []string{}, "vanilla", 30)
 		assert.NoError(t, err)
 
-		session.Score = int32(30 - i*10)
-		session.TotalAttempts = 10
-		session.Accuracy = utils.CalculateAccuracy(session.Score, session.TotalAttempts)
-		session.Phase = core.SessionPhaseFinished
-		assert.NoError(t, sessionService.Update(session))
+		entity := &models.LeaderboardSessionEntity{
+			ID:            session.ID,
+			Mode:          "vanilla",
+			Score:         int32(30 - i*10),
+			TotalAttempts: 10,
+			Accuracy:      utils.CalculateAccuracy(int32(30-i*10), 10),
+			Phase:         core.SessionPhaseFinished,
+		}
+		assert.NoError(t, db.Save(entity).Error)
 	}
 
 	// Player's session — properly finished
 	playerSession, err := sessionService.Create(false, []string{}, "vanilla", 30)
 	assert.NoError(t, err)
 
-	playerSession.Score = 5
-	playerSession.TotalAttempts = 10
-	playerSession.Accuracy = utils.CalculateAccuracy(5, 10)
-	playerSession.Phase = core.SessionPhaseFinished // properly finished
-	assert.NoError(t, sessionService.Update(playerSession))
+	entity := &models.LeaderboardSessionEntity{
+		ID:            playerSession.ID,
+		Mode:          "vanilla",
+		Score:         5,
+		TotalAttempts: 10,
+		Accuracy:      utils.CalculateAccuracy(5, 10),
+		Phase:         core.SessionPhaseFinished,
+	}
+	assert.NoError(t, db.Save(entity).Error)
 
 	// Fetch leaderboard
 	entries, err := leaderboardService.GetLeaderboard("vanilla", 10, 0)
@@ -354,7 +367,8 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 
 func BenchmarkLeaderboardService(b *testing.B) {
 	db := testutils.SetupTestDB(b)
-	service := NewLeaderboardService(db)
+	sessionService := NewSessionService(db)
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
 
 	sqlDB, _ := db.DB()
 	txn, _ := sqlDB.Begin()
@@ -363,14 +377,12 @@ func BenchmarkLeaderboardService(b *testing.B) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 
 	var firstID string
-	var firstScore int32
 	for i := range 50_000 {
 		id := utils.GenerateUUID()
 		score := int32(rand.Intn(100))
 		stmt.Exec(id, score, rand.Intn(100), rand.Float32()*100, "[]", "{}", "{}", "{}", core.SessionPhaseFinished)
 		if i == 0 {
 			firstID = id
-			firstScore = score
 		}
 	}
 	stmt.Close()
@@ -381,7 +393,7 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	for b.Loop() {
 		start := time.Now()
 
-		_, err := service.GetPercentile(firstID, "vanilla", firstScore)
+		_, err := service.GetPercentile(firstID, "vanilla")
 		if err != nil {
 			b.Fatal(err)
 		}

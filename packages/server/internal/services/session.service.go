@@ -9,7 +9,6 @@ import (
 	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/utils"
 
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -21,39 +20,37 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
+// Create inserts a minimal registry row. The autoVoice and itemsUsed parameters
+// are accepted for API compatibility but are not persisted in the registry;
+// gameplay state lives in the in-memory SessionStore.
 func (s *SessionService) Create(autoVoice bool, itemsUsed []string, mode string, durationSeconds int32) (*domainmodels.SessionDomain, error) {
 	initialRemainingSeconds := durationSeconds
 	if autoVoice {
 		initialRemainingSeconds += 5
 	}
 
+	now := time.Now()
 	session := &models.SessionEntity{
-		ID:                       utils.GenerateUUID(),
-		Phase:                    "idle",
-		Score:                    0,
-		TotalAttempts:            0,
-		Mode:                     mode,
-		Accuracy:                 0,
-		DurationSeconds:          initialRemainingSeconds,
-		AutoVoice:                autoVoice,
-		UsedWords:                pq.StringArray{},
-		WordDefinitions:          pq.StringArray{},
-		CorrectAttemptTimestamps: models.JSON([]byte("[]")),
-		CurrentScrambledWord:     "",
-		CurrentWordDefinition:    "",
-		CurrentWord:              "",
-		CurrentWordToken:         "",
-		UsedItemIDs:              itemsUsed,
-		CreatedAt:                time.Now(),
-		EndsAt:                   time.Now().Add(time.Duration(initialRemainingSeconds) * time.Second),
-		UpdatedAt:                time.Now().Add(5 * time.Minute),
+		ID:        utils.GenerateUUID(),
+		UserID:    "",
+		Phase:     "idle",
+		Mode:      mode,
+		CreatedAt: now,
+		UpdatedAt: now.Add(5 * time.Minute),
+		EndsAt:    now.Add(time.Duration(initialRemainingSeconds) * time.Second),
 	}
 
 	if err := s.db.Create(session).Error; err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	return domainmodels.ConvertSessionDBToDomain(session)
+	domain := domainmodels.ConvertSessionRegistryToDomain(session)
+	// Preserve the values expected by callers for the returned domain, even
+	// though they are not stored in the minimal registry.
+	domain.AutoVoice = autoVoice
+	domain.DurationSeconds = initialRemainingSeconds
+	domain.UsedItemIDs = itemsUsed
+	return domain, nil
 }
 
 func (s *SessionService) FindByID(id string) (*domainmodels.SessionDomain, error) {
@@ -62,13 +59,13 @@ func (s *SessionService) FindByID(id string) (*domainmodels.SessionDomain, error
 		return nil, err
 	}
 
-	return domainmodels.ConvertSessionDBToDomain(&session)
+	return domainmodels.ConvertSessionRegistryToDomain(&session), nil
 }
 
 func (s *SessionService) Update(session *domainmodels.SessionDomain) error {
-	dbModel, err := domainmodels.ConvertSessionDomainToDB(session)
-	if err != nil {
-		return fmt.Errorf("failed to convert session to db model: %w", err)
+	dbModel := domainmodels.ConvertSessionDomainToRegistry(session)
+	if dbModel == nil {
+		return fmt.Errorf("failed to convert session to db model")
 	}
 
 	dbModel.UpdatedAt = time.Now()
@@ -100,11 +97,7 @@ func (s *SessionService) FindPlaying() ([]*domainmodels.SessionDomain, error) {
 
 	domains := make([]*domainmodels.SessionDomain, len(entities))
 	for i, e := range entities {
-		d, err := domainmodels.ConvertSessionDBToDomain(&e)
-		if err != nil {
-			return nil, err
-		}
-		domains[i] = d
+		domains[i] = domainmodels.ConvertSessionRegistryToDomain(&e)
 	}
 	return domains, nil
 }

@@ -12,7 +12,7 @@ func TestGameService_StartGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id", false)
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -27,7 +27,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id", false)
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -49,12 +49,12 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 			testServices := initTestServices(t)
 
 			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
-			testServices.Game.StartGame(session.ID, "test-device-id")
+			testServices.Game.StartGame(session.ID, "test-device-id", false)
 
-			session, _ = testServices.Session.FindByID(session.ID)
-			word := session.CurrentWord
+			state := testServices.Store.Get(session.ID)
+			word := state.CurrentWord
 
-			result, err := testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+			result, err := testServices.Game.SubmitAnswer(session.ID, word, state.CurrentWordToken)
 
 			assert.NoError(t, err)
 			assert.Equal(t, true, result.Correct)
@@ -77,11 +77,11 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 			testServices := initTestServices(t)
 
 			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
-			testServices.Game.StartGame(session.ID, "test-device-id")
+			testServices.Game.StartGame(session.ID, "test-device-id", false)
 
-			session, _ = testServices.Session.FindByID(session.ID)
-			originalEndsAt := session.EndsAt
-			result, err := testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
+			state := testServices.Store.Get(session.ID)
+			originalEndsAt := state.EndsAt
+			result, err := testServices.Game.SubmitAnswer(session.ID, "wronganswer", state.CurrentWordToken)
 
 			assert.NoError(t, err)
 			assert.Equal(t, false, result.Correct)
@@ -89,8 +89,8 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 			assert.Len(t, result.CorrectAttemptTimestamps, 0)
 			assert.Equal(t, int32(1), result.Attempts)
 
-			session, _ = testServices.Session.FindByID(session.ID)
-			assert.True(t, session.EndsAt.Before(originalEndsAt))
+			state = testServices.Store.Get(session.ID)
+			assert.True(t, state.EndsAt.Before(originalEndsAt))
 		})
 	}
 }
@@ -99,12 +99,12 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID, "test-device-id")
+	testServices.Game.StartGame(session.ID, "test-device-id", false)
 
-	session, _ = testServices.Session.FindByID(session.ID)
-	word := session.CurrentWord
+	state := testServices.Store.Get(session.ID)
+	word := state.CurrentWord
 
-	result, err := testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+	result, err := testServices.Game.SubmitAnswer(session.ID, word, state.CurrentWordToken)
 
 	assert.NoError(t, err)
 	assert.Equal(t, true, result.Correct)
@@ -114,10 +114,10 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	assert.Equal(t, int32(1), result.Attempts)
 
 	// Check session again to get the latest word.
-	session, _ = testServices.Session.FindByID(session.ID)
-	word = session.CurrentWord
+	state = testServices.Store.Get(session.ID)
+	word = state.CurrentWord
 
-	result, err = testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+	result, err = testServices.Game.SubmitAnswer(session.ID, word, state.CurrentWordToken)
 
 	assert.NoError(t, err)
 	assert.Equal(t, true, result.Correct)
@@ -131,12 +131,12 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID, "test-device-id")
+	testServices.Game.StartGame(session.ID, "test-device-id", false)
 
-	session, _ = testServices.Session.FindByID(session.ID)
-	word := session.CurrentWord
+	state := testServices.Store.Get(session.ID)
+	word := state.CurrentWord
 
-	result, err := testServices.Game.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+	result, err := testServices.Game.SubmitAnswer(session.ID, word, state.CurrentWordToken)
 
 	assert.NoError(t, err)
 	assert.Equal(t, true, result.Correct)
@@ -146,9 +146,9 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	assert.Equal(t, int32(1), result.Attempts)
 
 	// Check session again to get the latest word.
-	session, _ = testServices.Session.FindByID(session.ID)
+	state = testServices.Store.Get(session.ID)
 
-	result, err = testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
+	result, err = testServices.Game.SubmitAnswer(session.ID, "wronganswer", state.CurrentWordToken)
 
 	assert.NoError(t, err)
 	assert.Equal(t, false, result.Correct)
@@ -163,35 +163,34 @@ func TestGameService_FinishGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	_, err := testServices.Game.StartGame(session.ID, "test-device-id")
+	_, err := testServices.Game.StartGame(session.ID, "test-device-id", false)
 	assert.NoError(t, err)
 
-	session.Score = 7
-	session.TotalAttempts = 8
-	session.CorrectAttemptTimestamps = [][]string{{"ts1"}, {"ts2", "ts3"}}
-
-	err = testServices.Session.Update(session)
-	assert.NoError(t, err)
+	state := testServices.Store.Get(session.ID)
+	state.Score = 7
+	state.TotalAttempts = 8
+	state.CorrectAttemptTimestamps = [][]string{{"ts1"}, {"ts2", "ts3"}}
+	testServices.Store.Set(state)
 
 	err = testServices.Game.FinishGame(session.ID)
 
-	// Check session again to get the latest word.
-	session, err = testServices.Session.FindByID(session.ID)
-
 	assert.NoError(t, err)
-	assert.Len(t, session.CorrectAttemptTimestamps, 2)
-	assert.Len(t, session.CorrectAttemptTimestamps[0], 1)
-	assert.Len(t, session.CorrectAttemptTimestamps[1], 2)
-	assert.Equal(t, int32(7), session.Score)
-	assert.Equal(t, int32(8), session.TotalAttempts)
-	assert.Equal(t, float32(87.5), session.Accuracy)
+	assert.Nil(t, testServices.Store.Get(session.ID))
+
+	// Verify the SQLite leaderboard fallback has the finished summary.
+	finished, err := testServices.Leaderboard.GetLeaderboard("vanilla", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, finished, 1)
+	assert.Equal(t, int32(7), finished[0].Score)
+	assert.Equal(t, int32(8), finished[0].TotalAttempts)
+	assert.Equal(t, float32(87.5), finished[0].Accuracy)
 }
 
 func TestGameService_StartGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id", false)
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -204,7 +203,7 @@ func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
-	_, err := testServices.Game.StartGame(session.ID, "test-device-id")
+	_, err := testServices.Game.StartGame(session.ID, "test-device-id", false)
 	assert.NoError(t, err)
 
 	continued, err := testServices.Game.ContinueGame(session.ID)
@@ -233,15 +232,13 @@ func TestGameService_AttemptCounting(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID, "test-device-id")
+	testServices.Game.StartGame(session.ID, "test-device-id", false)
 
-	testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
-	session, _ = testServices.Session.FindByID(session.ID)
+	testServices.Game.SubmitAnswer(session.ID, "wronganswer", testServices.Store.Get(session.ID).CurrentWordToken)
+	state := testServices.Store.Get(session.ID)
+	assert.Equal(t, int32(1), state.TotalAttempts)
 
-	assert.Equal(t, int32(1), session.TotalAttempts)
-
-	testServices.Game.SubmitAnswer(session.ID, "wronganswer2", session.CurrentWordToken)
-	session, _ = testServices.Session.FindByID(session.ID)
-
-	assert.Equal(t, int32(2), session.TotalAttempts)
+	testServices.Game.SubmitAnswer(session.ID, "wronganswer2", testServices.Store.Get(session.ID).CurrentWordToken)
+	state = testServices.Store.Get(session.ID)
+	assert.Equal(t, int32(2), state.TotalAttempts)
 }

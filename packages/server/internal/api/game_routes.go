@@ -51,7 +51,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 	}
 
 	// Start game
-	session, err = gr.gameService.StartGame(session.ID, deviceID)
+	session, err = gr.gameService.StartGame(session.ID, deviceID, *req.AutoVoice)
 	if err != nil {
 		log.Println("Failed to start game:", err)
 

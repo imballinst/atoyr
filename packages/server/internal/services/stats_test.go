@@ -10,7 +10,6 @@ import (
 	"atoyr/server/internal/models"
 	"atoyr/server/internal/testutils"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,23 +24,19 @@ func TestStatsService_GetStats(t *testing.T) {
 	sessions := []models.SessionEntity{
 		{
 			ID: "session-today-1", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
 		},
 		{
 			ID: "session-today-2", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
-			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhasePlaying,
 		},
 		{
 			ID: "session-tomorrow", CreatedAt: today.AddDate(0, 0, 1).Add(12 * time.Hour), UpdatedAt: today.AddDate(0, 0, 1).Add(12 * time.Hour), EndsAt: today.AddDate(0, 0, 1).Add(13 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
 		},
 		{
 			ID: "session-next-week", CreatedAt: today.AddDate(0, 0, 8), UpdatedAt: today.AddDate(0, 0, 8), EndsAt: today.AddDate(0, 0, 8).Add(1 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 25, TotalAttempts: 3, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
 		},
 	}
 
@@ -92,13 +87,11 @@ func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
 	sessions := []models.SessionEntity{
 		{
 			ID: "session-1", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
 		},
 		{
 			ID: "session-2", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
-			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhasePlaying,
 		},
 	}
 
@@ -125,21 +118,18 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 	sessions := []models.SessionEntity{
 		{
 			ID: "vanilla-today", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
-			Mode:                     "vanilla",
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
+			Mode:  "vanilla",
 		},
 		{
 			ID: "vanilla-playing", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
-			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
-			Mode:                     "vanilla",
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhasePlaying,
+			Mode:  "vanilla",
 		},
 		{
 			ID: "blind-today", CreatedAt: today.Add(3 * time.Hour), UpdatedAt: today.Add(3 * time.Hour), EndsAt: today.Add(4 * time.Hour),
-			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
-			Mode:                     "blind",
-			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+			Phase: core.SessionPhaseFinished,
+			Mode:  "blind",
 		},
 	}
 

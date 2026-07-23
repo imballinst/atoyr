@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AccelByte/accelbyte-go-sdk/gametelemetry-sdk/pkg/gametelemetryclient"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/repository"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/cloudsave"
@@ -70,6 +71,7 @@ type Client struct {
 	UserStatisticService    *social.UserStatisticService
 	LeaderboardService      *leaderboard.UserDataV3Service
 	LeaderboardDataService  *leaderboard.LeaderboardDataV3Service
+	GameTelemetryService    *gametelemetryclient.JusticeGametelemetryService
 }
 
 func NewClient(cfg *Config) (*Client, error) {
@@ -112,6 +114,8 @@ func NewClient(cfg *Config) (*Client, error) {
 		TokenRepository:  tokenRepo,
 	}
 
+	gameTelemetrySvc := factory.NewGametelemetryClient(configRepo)
+
 	return &Client{
 		Config:                  cfg,
 		ConfigRepository:        configRepo,
@@ -122,6 +126,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		UserStatisticService:    userStatSvc,
 		LeaderboardService:      leaderboardSvc,
 		LeaderboardDataService:  leaderboardDataSvc,
+		GameTelemetryService:    gameTelemetrySvc,
 	}, nil
 }
 

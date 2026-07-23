@@ -12,11 +12,16 @@ import (
 
 	"github.com/AccelByte/accelbyte-go-sdk/cloudsave-sdk/pkg/cloudsaveclient/admin_player_record"
 	"github.com/AccelByte/accelbyte-go-sdk/cloudsave-sdk/pkg/cloudsaveclientmodels"
+	"github.com/AccelByte/accelbyte-go-sdk/gametelemetry-sdk/pkg/gametelemetryclient/gametelemetry_operations"
+	"github.com/AccelByte/accelbyte-go-sdk/gametelemetry-sdk/pkg/gametelemetryclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclient/o_auth2_0"
 	"github.com/AccelByte/accelbyte-go-sdk/leaderboard-sdk/pkg/leaderboardclient/leaderboard_data_v3"
 	"github.com/AccelByte/accelbyte-go-sdk/leaderboard-sdk/pkg/leaderboardclientmodels"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils"
 	"github.com/AccelByte/accelbyte-go-sdk/social-sdk/pkg/socialclient/user_statistic"
 	"github.com/AccelByte/accelbyte-go-sdk/social-sdk/pkg/socialclientmodels"
+	"github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 )
 
 const (
@@ -179,6 +184,63 @@ func (a *AGSSyncService) GetUserRank(userID, mode string) (int64, int64, error) 
 	return *resp.AllTime.Rank, total, nil
 }
 
+func (a *AGSSyncService) CountLeaderboardEntries(mode string) (int64, error) {
+	leaderboardCode := fmt.Sprintf("atoyr-leaderboard-%s", mode)
+	return a.countLeaderboardEntries(leaderboardCode)
+}
+
+func (a *AGSSyncService) SendSessionStarted(userID, mode, roundID string) error {
+	return a.sendTelemetryEvent("atoyr_session_started", map[string]any{
+		"userId":  userID,
+		"mode":    mode,
+		"roundId": roundID,
+	})
+}
+
+func (a *AGSSyncService) SendSessionFinished(userID, mode, roundID string, score, attempts int32, accuracy float32, durationSeconds int32) error {
+	return a.sendTelemetryEvent("atoyr_session_finished", map[string]any{
+		"userId":          userID,
+		"mode":            mode,
+		"roundId":         roundID,
+		"score":           score,
+		"attempts":        attempts,
+		"accuracy":        accuracy,
+		"durationSeconds": durationSeconds,
+	})
+}
+
+func (a *AGSSyncService) sendTelemetryEvent(eventName string, payload map[string]any) error {
+	namespace := a.client.Config.Namespace
+	now := strfmt.DateTime(time.Now().UTC())
+	body := []*gametelemetryclientmodels.TelemetryBody{{
+		EventName:       &eventName,
+		EventNamespace:  &namespace,
+		Payload:         payload,
+		ClientTimestamp: &now,
+	}}
+
+	input := &gametelemetry_operations.ProtectedSaveEventsGameTelemetryV1ProtectedEventsPostParams{
+		Body: body,
+	}
+	input.RetryPolicy = &utils.Retry{
+		MaxTries:   utils.MaxTries,
+		Backoff:    utils.NewConstantBackoff(0),
+		Transport:  a.client.GameTelemetryService.Runtime.Transport,
+		RetryCodes: utils.RetryCodes,
+	}
+
+	token, err := a.client.TokenRepository.GetToken()
+	if err != nil {
+		return fmt.Errorf("failed to get token for telemetry: %w", err)
+	}
+
+	_, err = a.client.GameTelemetryService.GametelemetryOperations.ProtectedSaveEventsGameTelemetryV1ProtectedEventsPostShort(input, client.BearerToken(*token.AccessToken))
+	if err != nil {
+		return fmt.Errorf("failed to send telemetry event: %w", err)
+	}
+	return nil
+}
+
 func (a *AGSSyncService) transformLeaderboardResponse(resp *leaderboardclientmodels.ModelsGetLeaderboardRankingResp, offset int) ([]LeaderboardEntry, int64, error) {
 	if resp == nil {
 		return nil, 0, nil
@@ -275,6 +337,22 @@ func (a *AGSSyncService) PostRoundStatsAsync(userID, mode string, score, attempt
 	go func() {
 		if err := a.PostRoundStats(userID, mode, score, attempts, accuracy, durationSeconds); err != nil {
 			log.Printf("async AGS stats post failed for user %s: %v", userID, err)
+		}
+	}()
+}
+
+func (a *AGSSyncService) SendSessionStartedAsync(userID, mode, roundID string) {
+	go func() {
+		if err := a.SendSessionStarted(userID, mode, roundID); err != nil {
+			log.Printf("async AGS telemetry failed for session started: %v", err)
+		}
+	}()
+}
+
+func (a *AGSSyncService) SendSessionFinishedAsync(userID, mode, roundID string, score, attempts int32, accuracy float32, durationSeconds int32) {
+	go func() {
+		if err := a.SendSessionFinished(userID, mode, roundID, score, attempts, accuracy, durationSeconds); err != nil {
+			log.Printf("async AGS telemetry failed for session finished: %v", err)
 		}
 	}()
 }

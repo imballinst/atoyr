@@ -6,17 +6,24 @@ import (
 
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/models"
+	"atoyr/server/internal/services/domainmodels"
 	"atoyr/server/internal/utils"
 
 	"gorm.io/gorm"
 )
 
 type LeaderboardService struct {
-	db *gorm.DB
+	db             *gorm.DB
+	sessionService *SessionService
+	agsSyncService *AGSSyncService
 }
 
-func NewLeaderboardService(db *gorm.DB) *LeaderboardService {
-	return &LeaderboardService{db: db}
+func NewLeaderboardService(db *gorm.DB, sessionService *SessionService, agsSyncService *AGSSyncService) *LeaderboardService {
+	return &LeaderboardService{
+		db:             db,
+		sessionService: sessionService,
+		agsSyncService: agsSyncService,
+	}
 }
 
 type LeaderboardEntry struct {
@@ -29,7 +36,12 @@ type LeaderboardEntry struct {
 }
 
 func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, error) {
-	var results []models.SessionEntity
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		entries, _, err := l.agsSyncService.GetLeaderboard(mode, limit, offset)
+		return entries, err
+	}
+
+	var results []models.LeaderboardSessionEntity
 
 	if err := l.db.
 		Where("mode = ? AND phase = ? AND score > 0", mode, core.SessionPhaseFinished).
@@ -56,6 +68,10 @@ func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]L
 }
 
 func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		return l.agsSyncService.CountLeaderboardEntries(mode)
+	}
+
 	var totalEntries int64
 
 	if err := l.db.
@@ -66,20 +82,39 @@ func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
 	return totalEntries, nil
 }
 
-func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) (float32, error) {
-	// 1. Fetch the current session's tiebreaker fields
+func (l *LeaderboardService) GetPercentile(sessionId, mode string) (float32, error) {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		session, err := l.sessionService.FindByID(sessionId)
+		if err != nil {
+			return 0, fmt.Errorf("failed to fetch session: %w", err)
+		}
+		if session.UserID == "" {
+			return 0, fmt.Errorf("session has no user id")
+		}
+		rank, total, err := l.agsSyncService.GetUserRank(session.UserID, mode)
+		if err != nil {
+			return 0, err
+		}
+		if total <= 1 {
+			return 0, nil
+		}
+		return (float32(total-rank) / float32(total-1)) * 100, nil
+	}
+
+	// SQLite fallback: read the finished session summary from the leaderboard
+	// entity, which shares the session_entities table with the minimal registry.
 	type sessionMeta struct {
+		Score    int32
 		Accuracy float32
 		EndsAt   time.Time
 	}
 	var meta sessionMeta
 	if err := l.db.
-		Raw("SELECT accuracy, ends_at FROM session_entities WHERE id = ?", sessionId).
+		Raw("SELECT score, accuracy, ends_at FROM session_entities WHERE id = ?", sessionId).
 		Scan(&meta).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch session meta: %w", err)
 	}
 
-	// 2. Total eligible
 	var totalEligible int32
 	if err := l.db.
 		Raw(`SELECT COUNT(*) FROM session_entities
@@ -89,7 +124,6 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 
-	// 3. Count sessions that rank WORSE than the current one
 	var totalBelowCurrentScore int32
 	if err := l.db.
 		Raw(`SELECT COUNT(*) FROM session_entities
@@ -100,9 +134,9 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
                      OR (score = ? AND accuracy = ? AND ends_at > ?)
                )`,
 			core.SessionPhaseFinished, mode, sessionId,
-			score,
-			score, meta.Accuracy,
-			score, meta.Accuracy, meta.EndsAt).
+			meta.Score,
+			meta.Score, meta.Accuracy,
+			meta.Score, meta.Accuracy, meta.EndsAt).
 		Scan(&totalBelowCurrentScore).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
@@ -115,4 +149,22 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
 	return percentile, nil
 }
 
+// SaveFallback persists a finished session's gameplay summary to SQLite for the
+// leaderboard fallback. It is a no-op when AGS is enabled because AGS is the
+// source of truth for leaderboard data in that configuration.
+func (l *LeaderboardService) SaveFallback(session *domainmodels.SessionDomain) error {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		return nil
+	}
 
+	entity, err := domainmodels.ConvertSessionDomainToLeaderboardSession(session)
+	if err != nil {
+		return fmt.Errorf("failed to convert session to leaderboard entity: %w", err)
+	}
+	entity.UpdatedAt = time.Now()
+
+	if err := l.db.Save(entity).Error; err != nil {
+		return fmt.Errorf("failed to save leaderboard fallback: %w", err)
+	}
+	return nil
+}

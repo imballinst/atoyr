@@ -47,8 +47,6 @@ func TestSessionService_EndSession(t *testing.T) {
 	found, _ := service.FindByID(session.ID)
 
 	assert.Equal(t, core.SessionPhaseFinished, found.Phase)
-	// Duration should be kept as-is.
-	assert.Equal(t, int32(1), found.DurationSeconds)
 }
 
 func TestSessionService_EndSession_DoubleEnd(t *testing.T) {

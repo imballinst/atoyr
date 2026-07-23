@@ -121,6 +121,20 @@ The landing and results screens use a shared `radix-ui` Dialog wrapper for "How 
 
 Key files: `packages/client/app/components/Dialog.tsx`, `packages/client/app/components/HowToPlayModal.tsx`, `packages/client/app/components/SettingsModal.tsx`, `packages/client/app/components/StartScreen.tsx`, `packages/client/app/components/ResultsScreen.tsx`.
 
+### AGS Migration
+
+Gameplay state and leaderboard reads are moving from SQLite to AGS-native services where possible. SQLite is retained only for operational concerns AGS cannot cover.
+
+- **In-memory gameplay store**: `internal/core/session_store.go` holds rich round state in a `sync.Map` keyed by session ID. `GameService.StartGame`, `SubmitAnswer`, and `FinishGame` read/write this store instead of SQLite.
+- **Minimal SQLite registry**: `models.SessionEntity` keeps only `ID`, `UserID`, `Mode`, `Phase`, `CreatedAt`, `UpdatedAt`, `EndsAt`, and `CurrentWord` (for the SSE finish event). Full gameplay fields live in memory and are flushed to AGS Cloud Save asynchronously.
+- **AGS Cloud Save**: `AGSSyncService.SaveRoundStateAsync` persists round state under `{userID, roundID}` after start and submit. `LoadRoundState` exists for recovery but is not yet wired into startup or continue paths.
+- **AGS Leaderboard**: `LeaderboardService` delegates to `AGSSyncService.GetLeaderboard`, `GetUserRank`, and `CountLeaderboardEntries` when AGS is enabled. A composite score (`score * 1_000_000 + round(accuracy * 10_000) - durationSeconds`) is the leaderboard point. When AGS is disabled, the service falls back to a SQLite `LeaderboardSessionEntity` view of the same table.
+- **AGS Analytics**: `AGSSyncService.SendSessionStarted` and `SendSessionFinished` fire `atoyr_session_started` / `atoyr_session_finished` telemetry events via the AGS Game Telemetry SDK.
+- **Crash recovery**: `cmd/service/main.go` still scans the registry for `phase = "playing"` and restores timers. Rebuilding the rich in-memory state from Cloud Save on startup is a known follow-up.
+- **Extend package**: `packages/extend` contains skeleton Service Extension and Event Handler apps for the gaps described in `tmp/gaps.md`: leaderboard metadata enrichment, exact total counts/percentile, and an active-session registry.
+
+Key files: `packages/server/cmd/service/main.go`, `packages/server/internal/core/session_store.go`, `packages/server/internal/services/game.service.go`, `packages/server/internal/services/session.service.go`, `packages/server/internal/services/leaderboard.service.go`, `packages/server/internal/services/agssync.service.go`, `packages/server/internal/models/models.go`, `packages/server/internal/platform/accelbyte/accelbyte.go`, `packages/extend/README.md`, `packages/extend/design.md`.
+
 ## Tests
 
 Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.

@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+// SessionDomain is the rich gameplay representation used by the game service.
+// It is intentionally decoupled from the minimal SQLite registry model so that
+// gameplay fields can be kept in memory while the registry only stores the
+// columns needed for crash recovery and admin counting.
 type SessionDomain struct {
 	ID                       string
 	UserID                   string
@@ -29,7 +33,49 @@ type SessionDomain struct {
 	UsedItemIDs              []string
 }
 
-func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, error) {
+// ConvertSessionRegistryToDomain builds a SessionDomain from the minimal SQLite
+// registry row. Gameplay fields are left at their zero values.
+func ConvertSessionRegistryToDomain(session *models.SessionEntity) *SessionDomain {
+	if session == nil {
+		return nil
+	}
+
+	return &SessionDomain{
+		ID:          session.ID,
+		UserID:      session.UserID,
+		CreatedAt:   session.CreatedAt,
+		UpdatedAt:   session.UpdatedAt,
+		EndsAt:      session.EndsAt,
+		Phase:       session.Phase,
+		Mode:        session.Mode,
+		CurrentWord: session.CurrentWord,
+	}
+}
+
+// ConvertSessionDomainToRegistry extracts only the registry fields from a rich
+// SessionDomain. This is the only conversion used when writing to SQLite during
+// gameplay.
+func ConvertSessionDomainToRegistry(session *SessionDomain) *models.SessionEntity {
+	if session == nil {
+		return nil
+	}
+
+	return &models.SessionEntity{
+		ID:          session.ID,
+		UserID:      session.UserID,
+		CreatedAt:   session.CreatedAt,
+		UpdatedAt:   session.UpdatedAt,
+		EndsAt:      session.EndsAt,
+		Phase:       session.Phase,
+		Mode:        session.Mode,
+		CurrentWord: session.CurrentWord,
+	}
+}
+
+// ConvertLeaderboardSessionToDomain builds a full SessionDomain from a
+// LeaderboardSessionEntity. It is used when restoring or inspecting finished
+// sessions from the SQLite leaderboard fallback.
+func ConvertLeaderboardSessionToDomain(session *models.LeaderboardSessionEntity) (*SessionDomain, error) {
 	if session == nil {
 		return nil, nil
 	}
@@ -63,7 +109,10 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 	}, nil
 }
 
-func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, error) {
+// ConvertSessionDomainToLeaderboardSession builds a LeaderboardSessionEntity
+// from a rich SessionDomain. It is used to write finished session data to the
+// SQLite leaderboard fallback.
+func ConvertSessionDomainToLeaderboardSession(session *SessionDomain) (*models.LeaderboardSessionEntity, error) {
 	if session == nil {
 		return nil, nil
 	}
@@ -73,15 +122,15 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		return nil, err
 	}
 
-	return &models.SessionEntity{
+	return &models.LeaderboardSessionEntity{
 		ID:                       session.ID,
 		UserID:                   session.UserID,
 		CreatedAt:                session.CreatedAt,
 		UpdatedAt:                session.UpdatedAt,
 		EndsAt:                   session.EndsAt,
 		Phase:                    session.Phase,
-		Score:                    session.Score,
 		Mode:                     session.Mode,
+		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
 		DurationSeconds:          session.DurationSeconds,

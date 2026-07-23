@@ -32,8 +32,16 @@ type JSON json.RawMessage
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
 func (j *JSON) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	case nil:
+		*j = JSON(nil)
+		return nil
+	default:
 		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
 	}
 
@@ -51,7 +59,9 @@ func (j JSON) Value() (driver.Value, error) {
 	return json.RawMessage(j).MarshalJSON()
 }
 
-// SessionEntity represents an active game session
+// SessionEntity is the minimal SQLite registry used for crash recovery and
+// admin counting. Gameplay state lives in the in-memory SessionStore and is
+// flushed to AGS Cloud Save asynchronously.
 type SessionEntity struct {
 	ID        string `gorm:"primaryKey"`
 	UserID    string
@@ -60,6 +70,23 @@ type SessionEntity struct {
 	EndsAt    time.Time
 	Mode      string
 	// Available phases: idle, playing, finished.
+	Phase string
+	// CurrentWord is kept in the registry so the SSE finish event can report
+	// the last word without requiring the rich in-memory state to survive.
+	CurrentWord string
+}
+
+// LeaderboardSessionEntity maps to the same session_entities table but includes
+// the gameplay fields required by the SQLite leaderboard fallback. This model is
+// intentionally separate from the minimal registry so that the game service
+// cannot accidentally read or write gameplay fields during normal gameplay.
+type LeaderboardSessionEntity struct {
+	ID                       string `gorm:"primaryKey"`
+	UserID                   string
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
+	EndsAt                   time.Time
+	Mode                     string
 	Phase                    string
 	Score                    int32
 	TotalAttempts            int32
@@ -74,4 +101,8 @@ type SessionEntity struct {
 	CurrentWordDefinition    string
 	CurrentWordToken         string
 	UsedItemIDs              pq.StringArray `gorm:"type:text"`
+}
+
+func (LeaderboardSessionEntity) TableName() string {
+	return "session_entities"
 }
