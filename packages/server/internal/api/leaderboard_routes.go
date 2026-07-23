@@ -57,10 +57,17 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 		return
 	}
 
+	sessionUserID := ""
 	sessionId, err := c.Cookie(sessionIdCookie)
+	if err == nil {
+		session, err := gr.sessionService.FindByID(sessionId)
+		if err == nil {
+			sessionUserID = session.UserID
+		}
+	}
 	apiEntries := make([]LeaderboardEntry, len(entries))
 	for i, entry := range entries {
-		apiEntries[i] = ToApiLeaderboardEntry(entry, sessionId)
+		apiEntries[i] = ToApiLeaderboardEntry(entry, sessionUserID)
 	}
 
 	c.JSON(http.StatusOK, GetLeaderboardResponse{

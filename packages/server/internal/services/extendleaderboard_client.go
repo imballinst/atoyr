@@ -42,13 +42,39 @@ type extendLeaderboardResponse struct {
 	Total   int                      `json:"total"`
 }
 
+type int64Str int64
+
+func (i *int64Str) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 {
+		return nil
+	}
+	if b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		n, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return err
+		}
+		*i = int64Str(n)
+		return nil
+	}
+	var n int64
+	if err := json.Unmarshal(b, &n); err != nil {
+		return err
+	}
+	*i = int64Str(n)
+	return nil
+}
+
 type extendLeaderboardEntry struct {
 	Rank          int32   `json:"rank"`
 	UserID        string  `json:"userId"`
 	Score         int32   `json:"score"`
 	TotalAttempts int32   `json:"totalAttempts"`
 	Accuracy      float64 `json:"accuracy"`
-	Timestamp     int64   `json:"timestamp"`
+	Timestamp     int64Str `json:"timestamp"`
 }
 
 type extendPercentileResponse struct {
@@ -57,11 +83,11 @@ type extendPercentileResponse struct {
 
 type upsertEntryBody struct {
 	Mode          string  `json:"mode"`
-	UserID        string  `json:"userId"`
+	UserID        string  `json:"user_id"`
 	Score         int32   `json:"score"`
-	TotalAttempts int32   `json:"totalAttempts"`
+	TotalAttempts int32   `json:"total_attempts"`
 	Accuracy      float64 `json:"accuracy"`
-	FinishedAt    int64   `json:"finishedAt"`
+	FinishedAt    int64   `json:"finished_at"`
 }
 
 func (c *ExtendLeaderboardClient) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, int64, error) {
@@ -102,7 +128,7 @@ func (c *ExtendLeaderboardClient) GetLeaderboard(mode string, limit, offset int)
 			Score:         e.Score,
 			TotalAttempts: e.TotalAttempts,
 			Accuracy:      float32(e.Accuracy),
-			Timestamp:     e.Timestamp,
+			Timestamp:     int64(e.Timestamp),
 		}
 	}
 

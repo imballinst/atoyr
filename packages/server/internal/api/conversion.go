@@ -5,8 +5,8 @@ import (
 	"atoyr/server/internal/utils"
 )
 
-func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, sessionId string) LeaderboardEntry {
-	isSessionSameAsCurrentUser := domainEntry.ID == sessionId
+func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, userID string) LeaderboardEntry {
+	isSessionSameAsCurrentUser := domainEntry.ID == userID
 
 	return LeaderboardEntry{
 		Id:                         utils.MaskSessionID(domainEntry.ID),
