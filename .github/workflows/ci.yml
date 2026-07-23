@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, ags-integration]
     tags: ['*.*.*']
   pull_request:
     branches: [main]
@@ -68,6 +68,7 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
             type=raw,value=staging,enable=${{ github.ref_type == 'branch' }}
+            type=raw,value=ags,enable=${{ github.ref_name == 'ags-integration' }}
             type=raw,value=${{ github.sha }}
 
       - name: Build and push
