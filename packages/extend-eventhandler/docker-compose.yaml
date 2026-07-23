@@ -2,9 +2,11 @@ services:
   app:
     build: .
     ports:
-      - "6565:6565"
-      - "8080:8080"
+      - "6566:6566"
+      - "8081:8081"
     environment:
+      - GRPC_SERVER_PORT=6566
+      - METRICS_PORT=8081
       - AB_CLIENT_ID=${AB_CLIENT_ID}
       - AB_CLIENT_SECRET=${AB_CLIENT_SECRET}
       - AB_BASE_URL=${AB_BASE_URL}

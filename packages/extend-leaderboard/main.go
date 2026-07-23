@@ -52,10 +52,13 @@ import (
 )
 
 const (
-	metricsEndpoint     = "/metrics"
-	metricsPort         = 8080
-	grpcServerPort      = 6565
-	grpcGatewayHTTPPort = 8000
+	metricsEndpoint = "/metrics"
+)
+
+var (
+	metricsPort         = common.GetEnvInt("METRICS_PORT", 8080)
+	grpcServerPort      = common.GetEnvInt("GRPC_SERVER_PORT", 6565)
+	grpcGatewayHTTPPort = common.GetEnvInt("GRPC_GATEWAY_HTTP_PORT", 8000)
 )
 
 var (

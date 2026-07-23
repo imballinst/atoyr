@@ -39,8 +39,11 @@ const (
 	environment     = "production"
 	id              = int64(1)
 	metricsEndpoint = "/metrics"
-	metricsPort     = 8080
-	grpcServerPort  = 6565
+)
+
+var (
+	metricsPort    = common.GetEnvInt("METRICS_PORT", 8081)
+	grpcServerPort = common.GetEnvInt("GRPC_SERVER_PORT", 6566)
 )
 
 var (
