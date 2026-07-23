@@ -84,7 +84,7 @@ jobs:
 
   deploy-staging:
     needs: build
-    if: github.event_name == 'push' && github.ref_type == 'branch'
+    if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Staging to Coolify
