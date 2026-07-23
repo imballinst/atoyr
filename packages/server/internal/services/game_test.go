@@ -176,9 +176,6 @@ func TestGameService_FinishGame(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Nil(t, testServices.Store.Get(session.ID))
-
-	// SaveFallback is a no-op; leaderboard data flows through extend-leaderboard.
-	assert.NoError(t, testServices.Leaderboard.SaveFallback(nil))
 }
 
 func TestGameService_StartGame_BlindMode(t *testing.T) {

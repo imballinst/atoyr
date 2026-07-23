@@ -60,6 +60,38 @@
         ]
       }
     },
+    "/v1/leaderboard/entry": {
+      "post": {
+        "operationId": "LeaderboardService_UpsertEntry",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpsertEntryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpsertEntryRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LeaderboardService"
+        ]
+      }
+    },
     "/v1/leaderboard/percentile": {
       "get": {
         "operationId": "LeaderboardService_GetPercentile",
@@ -178,6 +210,36 @@
           "format": "int64"
         }
       }
+    },
+    "v1UpsertEntryRequest": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "score": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalAttempts": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accuracy": {
+          "type": "number",
+          "format": "double"
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1UpsertEntryResponse": {
+      "type": "object"
     }
   }
 }

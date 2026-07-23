@@ -668,14 +668,14 @@ const file_leaderboard_v1_leaderboard_proto_rawDesc = "" +
 	"\baccuracy\x18\x05 \x01(\x01R\baccuracy\x12\x1f\n" +
 	"\vfinished_at\x18\x06 \x01(\x03R\n" +
 	"finishedAt\"\x15\n" +
-	"\x13UpsertEntryResponse2\xd9\x04\n" +
+	"\x13UpsertEntryResponse2\xfc\x04\n" +
 	"\x12LeaderboardService\x12\x84\x01\n" +
 	"\x0eGetLeaderboard\x12+.atoyr.leaderboard.v1.GetLeaderboardRequest\x1a,.atoyr.leaderboard.v1.GetLeaderboardResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/leaderboard\x12\x8c\x01\n" +
 	"\rGetPercentile\x12*.atoyr.leaderboard.v1.GetPercentileRequest\x1a+.atoyr.leaderboard.v1.GetPercentileResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/leaderboard/percentile\x12_\n" +
 	"\n" +
 	"AddSession\x12'.atoyr.leaderboard.v1.AddSessionRequest\x1a(.atoyr.leaderboard.v1.AddSessionResponse\x12h\n" +
-	"\rRemoveSession\x12*.atoyr.leaderboard.v1.RemoveSessionRequest\x1a+.atoyr.leaderboard.v1.RemoveSessionResponse\x12b\n" +
-	"\vUpsertEntry\x12(.atoyr.leaderboard.v1.UpsertEntryRequest\x1a).atoyr.leaderboard.v1.UpsertEntryResponseB8Z6extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1b\x06proto3"
+	"\rRemoveSession\x12*.atoyr.leaderboard.v1.RemoveSessionRequest\x1a+.atoyr.leaderboard.v1.RemoveSessionResponse\x12\x84\x01\n" +
+	"\vUpsertEntry\x12(.atoyr.leaderboard.v1.UpsertEntryRequest\x1a).atoyr.leaderboard.v1.UpsertEntryResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/leaderboard/entryB8Z6extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1b\x06proto3"
 
 var (
 	file_leaderboard_v1_leaderboard_proto_rawDescOnce sync.Once

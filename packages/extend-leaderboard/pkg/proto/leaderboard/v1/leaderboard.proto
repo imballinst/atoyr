@@ -27,7 +27,12 @@ service LeaderboardService {
 
   rpc RemoveSession(RemoveSessionRequest) returns (RemoveSessionResponse);
 
-  rpc UpsertEntry(UpsertEntryRequest) returns (UpsertEntryResponse);
+  rpc UpsertEntry(UpsertEntryRequest) returns (UpsertEntryResponse) {
+    option (google.api.http) = {
+      post: "/v1/leaderboard/entry"
+      body: "*"
+    };
+  }
 }
 
 message GetLeaderboardRequest {

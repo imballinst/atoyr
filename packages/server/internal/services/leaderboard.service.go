@@ -61,6 +61,12 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string) (float32, err
 	return float32(percentile), nil
 }
 
-func (l *LeaderboardService) SaveFallback(_ *domainmodels.SessionDomain) error {
-	return nil
+func (l *LeaderboardService) UpsertEntry(session *domainmodels.SessionDomain) error {
+	if l.leaderboard == nil {
+		return fmt.Errorf("leaderboard backend not configured")
+	}
+	if session.UserID == "" {
+		return nil
+	}
+	return l.leaderboard.UpsertEntry(session.Mode, session.UserID, session.Score, session.TotalAttempts, session.Accuracy, session.EndsAt.UnixMilli())
 }

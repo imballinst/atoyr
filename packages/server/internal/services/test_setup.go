@@ -38,6 +38,10 @@ func (f *FakeLeaderboardClient) GetTotalEntries(_ string) (int64, error) {
 	return f.Total, nil
 }
 
+func (f *FakeLeaderboardClient) UpsertEntry(_, _ string, score, attempts int32, accuracy float32, finishedAt int64) error {
+	return nil
+}
+
 func initTestWordService() *WordService {
 	return &WordService{
 		Words: []WordDefinition{

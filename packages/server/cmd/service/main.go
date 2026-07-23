@@ -102,6 +102,8 @@ func main() {
 	if addr := os.Getenv("EXTEND_LEADERBOARD_ADDR"); addr != "" {
 		extendLeaderboardClient = services.NewExtendLeaderboardClient(addr)
 		log.Printf("Using extend-leaderboard at %s", addr)
+	} else {
+		log.Println("EXTEND_LEADERBOARD_ADDR not set; leaderboard endpoints will return 500")
 	}
 
 	leaderboardService := services.NewLeaderboardService(sessionService, extendLeaderboardClient)

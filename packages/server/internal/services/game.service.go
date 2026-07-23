@@ -242,9 +242,9 @@ func (g *GameService) FinishGame(sessionID string) error {
 		return err
 	}
 
-	if g.leaderboardService != nil && (g.agsSyncService == nil || !g.agsSyncService.Enabled()) {
-		if err := g.leaderboardService.SaveFallback(session); err != nil {
-			log.Printf("failed to save leaderboard fallback: %v", err)
+	if g.leaderboardService != nil {
+		if err := g.leaderboardService.UpsertEntry(session); err != nil {
+			log.Printf("failed to upsert leaderboard entry: %v", err)
 		}
 	}
 

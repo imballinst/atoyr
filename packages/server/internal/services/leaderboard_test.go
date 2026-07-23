@@ -94,10 +94,27 @@ func TestLeaderboardService_GetPercentile_NoUserID(t *testing.T) {
 	assert.ErrorContains(t, err, "no user id")
 }
 
-func TestLeaderboardService_SaveFallback(t *testing.T) {
-	sessionService := NewSessionService(testutils.SetupTestDB(t))
+func TestLeaderboardService_UpsertEntry(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	sessionService := NewSessionService(db)
+	session, err := sessionService.Create(false, []string{}, "vanilla", 30)
+	assert.NoError(t, err)
+	db.Exec("UPDATE session_entities SET user_id = ? WHERE id = ?", "user-a", session.ID)
+
 	service := NewLeaderboardService(sessionService, &FakeLeaderboardClient{})
 
-	err := service.SaveFallback(nil)
+	err = service.UpsertEntry(session)
+	assert.NoError(t, err)
+}
+
+func TestLeaderboardService_UpsertEntry_NoUserID(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	sessionService := NewSessionService(db)
+	session, err := sessionService.Create(false, []string{}, "vanilla", 30)
+	assert.NoError(t, err)
+
+	service := NewLeaderboardService(sessionService, &FakeLeaderboardClient{})
+
+	err = service.UpsertEntry(session)
 	assert.NoError(t, err)
 }

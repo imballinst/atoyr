@@ -1,8 +1,11 @@
 package services
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,6 +19,7 @@ type LeaderboardReadClient interface {
 	GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, int64, error)
 	GetPercentile(mode, userID string) (float64, error)
 	GetTotalEntries(mode string) (int64, error)
+	UpsertEntry(mode, userID string, score, attempts int32, accuracy float32, finishedAt int64) error
 }
 
 type ExtendLeaderboardClient struct {
@@ -51,6 +55,15 @@ type extendPercentileResponse struct {
 	Percentile float64 `json:"percentile"`
 }
 
+type upsertEntryBody struct {
+	Mode          string  `json:"mode"`
+	UserID        string  `json:"userId"`
+	Score         int32   `json:"score"`
+	TotalAttempts int32   `json:"totalAttempts"`
+	Accuracy      float64 `json:"accuracy"`
+	FinishedAt    int64   `json:"finishedAt"`
+}
+
 func (c *ExtendLeaderboardClient) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, int64, error) {
 	u, err := url.Parse(c.baseURL + "/v1/leaderboard")
 	if err != nil {
@@ -64,16 +77,20 @@ func (c *ExtendLeaderboardClient) GetLeaderboard(mode string, limit, offset int)
 
 	resp, err := c.client.Get(u.String())
 	if err != nil {
+		log.Printf("extend-leaderboard request failed: %s: %v", u.String(), err)
 		return nil, 0, fmt.Errorf("failed to call extend-leaderboard: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("extend-leaderboard returned status %d for %s: %s", resp.StatusCode, u.String(), string(bodyBytes))
 		return nil, 0, fmt.Errorf("extend-leaderboard returned status %d", resp.StatusCode)
 	}
 
 	var body extendLeaderboardResponse
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		log.Printf("extend-leaderboard decode failed for %s: %v", u.String(), err)
 		return nil, 0, fmt.Errorf("failed to decode extend-leaderboard response: %w", err)
 	}
 
@@ -104,20 +121,64 @@ func (c *ExtendLeaderboardClient) GetPercentile(mode, userID string) (float64, e
 
 	resp, err := c.client.Get(u.String())
 	if err != nil {
+		log.Printf("extend-leaderboard request failed: %s: %v", u.String(), err)
 		return 0, fmt.Errorf("failed to call extend-leaderboard: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return 0, nil
+	}
+
 	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("extend-leaderboard returned status %d for %s: %s", resp.StatusCode, u.String(), string(bodyBytes))
 		return 0, fmt.Errorf("extend-leaderboard returned status %d", resp.StatusCode)
 	}
 
 	var body extendPercentileResponse
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		log.Printf("extend-leaderboard decode failed for %s: %v", u.String(), err)
 		return 0, fmt.Errorf("failed to decode extend-leaderboard response: %w", err)
 	}
 
 	return body.Percentile, nil
+}
+
+func (c *ExtendLeaderboardClient) UpsertEntry(mode, userID string, score, attempts int32, accuracy float32, finishedAt int64) error {
+	u, err := url.Parse(c.baseURL + "/v1/leaderboard/entry")
+	if err != nil {
+		return fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	body := upsertEntryBody{
+		Mode:          mode,
+		UserID:        userID,
+		Score:         score,
+		TotalAttempts: attempts,
+		Accuracy:      float64(accuracy),
+		FinishedAt:    finishedAt,
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	resp, err := c.client.Post(u.String(), "application/json", bytes.NewReader(bodyBytes))
+	if err != nil {
+		log.Printf("extend-leaderboard upsert entry request failed: %s: %v", u.String(), err)
+		return fmt.Errorf("failed to call extend-leaderboard: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("extend-leaderboard upsert entry returned status %d for %s: %s", resp.StatusCode, u.String(), string(respBody))
+		return fmt.Errorf("extend-leaderboard returned status %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func (c *ExtendLeaderboardClient) GetTotalEntries(mode string) (int64, error) {
@@ -133,16 +194,20 @@ func (c *ExtendLeaderboardClient) GetTotalEntries(mode string) (int64, error) {
 
 	resp, err := c.client.Get(u.String())
 	if err != nil {
+		log.Printf("extend-leaderboard request failed: %s: %v", u.String(), err)
 		return 0, fmt.Errorf("failed to call extend-leaderboard: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("extend-leaderboard returned status %d for %s: %s", resp.StatusCode, u.String(), string(bodyBytes))
 		return 0, fmt.Errorf("extend-leaderboard returned status %d", resp.StatusCode)
 	}
 
 	var body extendLeaderboardResponse
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		log.Printf("extend-leaderboard decode failed for %s: %v", u.String(), err)
 		return 0, fmt.Errorf("failed to decode extend-leaderboard response: %w", err)
 	}
 

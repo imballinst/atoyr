@@ -42,6 +42,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	// Get total count
 	total, err := gr.leaderboardService.GetTotalEntries(mode)
 	if err != nil {
+		log.Printf("leaderboard total entries failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
 		utils.SendExceptionToSentry(err)
 		return
@@ -50,6 +51,7 @@ func (gr *Server) GetApiV1Leaderboard(c *gin.Context, params GetApiV1Leaderboard
 	// Get entries
 	entries, err := gr.leaderboardService.GetLeaderboard(mode, limit, (page-1)*limit)
 	if err != nil {
+		log.Printf("leaderboard entries failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard"})
 		utils.SendExceptionToSentry(err)
 		return
@@ -105,6 +107,7 @@ func (gr *Server) GetApiV1LeaderboardPercentile(c *gin.Context, params GetApiV1L
 
 	percentile, err := gr.leaderboardService.GetPercentile(sessionId, mode)
 	if err != nil {
+		log.Printf("leaderboard percentile failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch leaderboard percentile"})
 		utils.SendExceptionToSentry(err)
 		return
