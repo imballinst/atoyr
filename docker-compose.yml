@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
+    network_mode: host
     ports:
       - "5432:5432"
     environment:

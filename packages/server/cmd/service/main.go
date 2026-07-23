@@ -98,7 +98,7 @@ func main() {
 	sessionService := services.NewSessionService(db)
 	agsSyncService := services.NewAGSSyncService(agsClient)
 
-	var extendLeaderboardClient *services.ExtendLeaderboardClient
+	var extendLeaderboardClient services.LeaderboardReadClient
 	if addr := os.Getenv("EXTEND_LEADERBOARD_ADDR"); addr != "" {
 		extendLeaderboardClient = services.NewExtendLeaderboardClient(addr)
 		log.Printf("Using extend-leaderboard at %s", addr)

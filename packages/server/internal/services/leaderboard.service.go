@@ -28,15 +28,24 @@ type LeaderboardEntry struct {
 }
 
 func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, error) {
+	if l.leaderboard == nil {
+		return nil, fmt.Errorf("leaderboard backend not configured")
+	}
 	entries, _, err := l.leaderboard.GetLeaderboard(mode, limit, offset)
 	return entries, err
 }
 
 func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
+	if l.leaderboard == nil {
+		return 0, fmt.Errorf("leaderboard backend not configured")
+	}
 	return l.leaderboard.GetTotalEntries(mode)
 }
 
 func (l *LeaderboardService) GetPercentile(sessionId, mode string) (float32, error) {
+	if l.leaderboard == nil {
+		return 0, fmt.Errorf("leaderboard backend not configured")
+	}
 	session, err := l.sessionService.FindByID(sessionId)
 	if err != nil {
 		return 0, fmt.Errorf("failed to fetch session: %w", err)
