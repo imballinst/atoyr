@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "setup": "yarn install && go install github.com/air-verse/air@latest",
-    "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
+    "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\" \"yarn --cwd packages/extend-leaderboard dev\" \"yarn --cwd packages/extend-eventhandler dev\"",
     "build": "yarn workspace client build && yarn workspace server build",
     "test": "yarn workspace client test && yarn workspace server test",
     "bench": "yarn workspace server bench",

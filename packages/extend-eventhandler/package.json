@@ -1,0 +1,10 @@
+{
+  "name": "extend-eventhandler",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "air -c .air.toml",
+    "build": "go build -o bin/extend-event-handler .",
+    "test": "gotestsum -- -count=1 ./..."
+  }
+}

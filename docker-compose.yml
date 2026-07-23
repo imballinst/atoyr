@@ -1,24 +1,4 @@
 services:
-  atoyr:
-    build:
-      context: .
-    image: atoyr:latest
-    container_name: atoyr
-    ports:
-      - "80:80"
-    env_file:
-      - packages/server/.env.production
-    environment:
-      PORT: 3000
-      WORDS_PATH: /app/server/data/words.json
-      DATABASE_PATH: /app/server/db/db.sqlite3
-      MIGRATIONS_PATH: /app/server/migrations
-      STATIC_FILES_PATH: /app/server/web/static
-      ENV: production
-    volumes:
-      - ./packages/server/db:/app/server/db
-      - ./packages/server/data:/app/server/data
-
   postgres:
     image: postgres:17-alpine
     ports:

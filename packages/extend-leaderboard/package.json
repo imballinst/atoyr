@@ -1,0 +1,10 @@
+{
+  "name": "extend-leaderboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "air -c .air.toml",
+    "build": "go build -o bin/extend-leaderboard .",
+    "test": "gotestsum -- -count=1 ./..."
+  }
+}

@@ -4511,6 +4511,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"extend-eventhandler@workspace:packages/extend-eventhandler":
+  version: 0.0.0-use.local
+  resolution: "extend-eventhandler@workspace:packages/extend-eventhandler"
+  languageName: unknown
+  linkType: soft
+
+"extend-leaderboard@workspace:packages/extend-leaderboard":
+  version: 0.0.0-use.local
+  resolution: "extend-leaderboard@workspace:packages/extend-leaderboard"
+  languageName: unknown
+  linkType: soft
+
 "fast-deep-equal@npm:^3.1.1":
   version: 3.1.3
   resolution: "fast-deep-equal@npm:3.1.3"
