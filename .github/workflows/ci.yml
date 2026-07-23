@@ -92,6 +92,16 @@ jobs:
           curl --request GET '${{ secrets.COOLIFY_STAGING_DEPLOY_WEBHOOK }}' \
                --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
 
+  deploy-ags:
+    needs: build
+    if: github.event_name == 'push' && github.ref_name == 'ags-integration'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy AGS to Coolify
+        run: |
+          curl --request GET '${{ secrets.COOLIFY_AGS_DEPLOY_WEBHOOK }}' \
+               --header 'Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}'
+
   deploy-prod:
     needs: build
     if: github.event_name == 'push' && github.ref_type == 'tag' && !contains(github.ref_name, '-')
