@@ -9,17 +9,34 @@ package atoyr.leaderboard.v1;
 option go_package = "extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1";
 
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Atoyr Extend Leaderboard";
+    version: "1.0";
+    description: "Leaderboard service for A Test of Your Reflexes (Atoyr). Stores and retrieves player scores, calculates percentiles, and ranks entries per game mode.";
+  };
+};
 
 service LeaderboardService {
   rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse) {
     option (google.api.http) = {
       get: "/v1/leaderboard"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List leaderboard entries";
+      description: "Returns a paginated list of ranked leaderboard entries for a given game mode, ordered by score descending.";
+    };
   }
 
   rpc GetPercentile(GetPercentileRequest) returns (GetPercentileResponse) {
     option (google.api.http) = {
       get: "/v1/leaderboard/percentile"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get player percentile";
+      description: "Returns the percentile rank of a player within a given game mode, based on score and accuracy.";
     };
   }
 
@@ -31,6 +48,10 @@ service LeaderboardService {
     option (google.api.http) = {
       post: "/v1/leaderboard/entry"
       body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Upsert a leaderboard entry";
+      description: "Creates or updates a player's score entry for a given game mode. If the player already has an entry for that mode, it is overwritten.";
     };
   }
 }

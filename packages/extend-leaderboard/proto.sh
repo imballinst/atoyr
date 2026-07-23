@@ -35,7 +35,6 @@ protoc \
 protoc \
   -I "${PROTO_DIR}" \
   --openapiv2_out "${APIDOCS_DIR}" \
-  --openapiv2_opt=logtostderr=true \
-  "${PROTO_DIR}"/service.proto \
+  --openapiv2_opt=logtostderr=true,allow_merge=true,merge_file_name=leaderboard \
   "${PROTO_DIR}"/leaderboard/v1/leaderboard.proto
 

@@ -1,8 +1,9 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "leaderboard/v1/leaderboard.proto",
-    "version": "version not set"
+    "title": "Atoyr Extend Leaderboard",
+    "description": "Leaderboard service for A Test of Your Reflexes (Atoyr). Stores and retrieves player scores, calculates percentiles, and ranks entries per game mode.",
+    "version": "1.0"
   },
   "tags": [
     {
@@ -18,6 +19,8 @@
   "paths": {
     "/v1/leaderboard": {
       "get": {
+        "summary": "List leaderboard entries",
+        "description": "Returns a paginated list of ranked leaderboard entries for a given game mode, ordered by score descending.",
         "operationId": "LeaderboardService_GetLeaderboard",
         "responses": {
           "200": {
@@ -62,6 +65,8 @@
     },
     "/v1/leaderboard/entry": {
       "post": {
+        "summary": "Upsert a leaderboard entry",
+        "description": "Creates or updates a player's score entry for a given game mode. If the player already has an entry for that mode, it is overwritten.",
         "operationId": "LeaderboardService_UpsertEntry",
         "responses": {
           "200": {
@@ -94,6 +99,8 @@
     },
     "/v1/leaderboard/percentile": {
       "get": {
+        "summary": "Get player percentile",
+        "description": "Returns the percentile rank of a player within a given game mode, based on score and accuracy.",
         "operationId": "LeaderboardService_GetPercentile",
         "responses": {
           "200": {

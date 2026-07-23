@@ -77,11 +77,13 @@ type Client struct {
 func NewClient(cfg *Config) (*Client, error) {
 	configRepo := &configRepository{cfg: cfg}
 	tokenRepo := auth.DefaultTokenRepositoryImpl()
+	refreshRepo := &auth.RefreshTokenImpl{RefreshRate: 0.8, AutoRefresh: true}
 
 	oauth := &iam.OAuth20Service{
-		Client:           factory.NewIamClient(configRepo),
-		ConfigRepository: configRepo,
-		TokenRepository:  tokenRepo,
+		Client:                 factory.NewIamClient(configRepo),
+		ConfigRepository:       configRepo,
+		TokenRepository:        tokenRepo,
+		RefreshTokenRepository: refreshRepo,
 	}
 
 	oauthExt := &iam.OAuth20ExtensionService{

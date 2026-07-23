@@ -11,6 +11,7 @@
 package leaderboardv1
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -626,7 +627,7 @@ var File_leaderboard_v1_leaderboard_proto protoreflect.FileDescriptor
 
 const file_leaderboard_v1_leaderboard_proto_rawDesc = "" +
 	"\n" +
-	" leaderboard/v1/leaderboard.proto\x12\x14atoyr.leaderboard.v1\x1a\x1cgoogle/api/annotations.proto\"Y\n" +
+	" leaderboard/v1/leaderboard.proto\x12\x14atoyr.leaderboard.v1\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"Y\n" +
 	"\x15GetLeaderboardRequest\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
@@ -668,14 +669,15 @@ const file_leaderboard_v1_leaderboard_proto_rawDesc = "" +
 	"\baccuracy\x18\x05 \x01(\x01R\baccuracy\x12\x1f\n" +
 	"\vfinished_at\x18\x06 \x01(\x03R\n" +
 	"finishedAt\"\x15\n" +
-	"\x13UpsertEntryResponse2\xfc\x04\n" +
-	"\x12LeaderboardService\x12\x84\x01\n" +
-	"\x0eGetLeaderboard\x12+.atoyr.leaderboard.v1.GetLeaderboardRequest\x1a,.atoyr.leaderboard.v1.GetLeaderboardResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/leaderboard\x12\x8c\x01\n" +
-	"\rGetPercentile\x12*.atoyr.leaderboard.v1.GetPercentileRequest\x1a+.atoyr.leaderboard.v1.GetPercentileResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/leaderboard/percentile\x12_\n" +
+	"\x13UpsertEntryResponse2\xab\b\n" +
+	"\x12LeaderboardService\x12\x8f\x02\n" +
+	"\x0eGetLeaderboard\x12+.atoyr.leaderboard.v1.GetLeaderboardRequest\x1a,.atoyr.leaderboard.v1.GetLeaderboardResponse\"\xa1\x01\x92A\x86\x01\x12\x18List leaderboard entries\x1ajReturns a paginated list of ranked leaderboard entries for a given game mode, ordered by score descending.\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/leaderboard\x12\x87\x02\n" +
+	"\rGetPercentile\x12*.atoyr.leaderboard.v1.GetPercentileRequest\x1a+.atoyr.leaderboard.v1.GetPercentileResponse\"\x9c\x01\x92Aw\x12\x15Get player percentile\x1a^Returns the percentile rank of a player within a given game mode, based on score and accuracy.\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/leaderboard/percentile\x12_\n" +
 	"\n" +
 	"AddSession\x12'.atoyr.leaderboard.v1.AddSessionRequest\x1a(.atoyr.leaderboard.v1.AddSessionResponse\x12h\n" +
-	"\rRemoveSession\x12*.atoyr.leaderboard.v1.RemoveSessionRequest\x1a+.atoyr.leaderboard.v1.RemoveSessionResponse\x12\x84\x01\n" +
-	"\vUpsertEntry\x12(.atoyr.leaderboard.v1.UpsertEntryRequest\x1a).atoyr.leaderboard.v1.UpsertEntryResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/leaderboard/entryB8Z6extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1b\x06proto3"
+	"\rRemoveSession\x12*.atoyr.leaderboard.v1.RemoveSessionRequest\x1a+.atoyr.leaderboard.v1.RemoveSessionResponse\x12\xad\x02\n" +
+	"\vUpsertEntry\x12(.atoyr.leaderboard.v1.UpsertEntryRequest\x1a).atoyr.leaderboard.v1.UpsertEntryResponse\"\xc8\x01\x92A\xa4\x01\x12\x1aUpsert a leaderboard entry\x1a\x85\x01Creates or updates a player's score entry for a given game mode. If the player already has an entry for that mode, it is overwritten.\x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/leaderboard/entryB\xf6\x01\x92A\xba\x01\x12\xb7\x01\n" +
+	"\x18Atoyr Extend Leaderboard\x12\x95\x01Leaderboard service for A Test of Your Reflexes (Atoyr). Stores and retrieves player scores, calculates percentiles, and ranks entries per game mode.2\x031.0Z6extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1b\x06proto3"
 
 var (
 	file_leaderboard_v1_leaderboard_proto_rawDescOnce sync.Once

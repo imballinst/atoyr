@@ -335,8 +335,14 @@ func serveSwaggerUI(mux *http.ServeMux) {
 
 func serveSwaggerJSON(mux *http.ServeMux, swaggerDir string) {
 	fileHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		matchingFiles, err := filepath.Glob(filepath.Join(swaggerDir, "*.swagger.json"))
-		if err != nil || len(matchingFiles) == 0 {
+		var matchingFiles []string
+		filepath.Walk(swaggerDir, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.HasSuffix(path, ".swagger.json") {
+				matchingFiles = append(matchingFiles, path)
+			}
+			return nil
+		})
+		if len(matchingFiles) == 0 {
 			http.Error(w, "Error finding Swagger JSON file", http.StatusInternalServerError)
 
 			return
