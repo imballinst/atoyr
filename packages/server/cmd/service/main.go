@@ -15,6 +15,7 @@ import (
 	"atoyr/server/internal/core"
 	"atoyr/server/internal/database"
 	"atoyr/server/internal/middleware"
+	"atoyr/server/internal/platform/accelbyte"
 	"atoyr/server/internal/services"
 
 	"github.com/getsentry/sentry-go"
@@ -44,6 +45,24 @@ func main() {
 		if err != nil {
 			log.Println("Error loading .env.local file")
 		}
+	}
+
+	var agsClient *accelbyte.Client
+	if os.Getenv("AGS_BASE_URL") != "" {
+		agsConfig, err := accelbyte.NewConfigFromEnv()
+		if err != nil {
+			log.Fatalf("Failed to load AGS config: %v", err)
+		}
+		agsClient, err = accelbyte.NewClient(agsConfig)
+		if err != nil {
+			log.Fatalf("Failed to initialize AGS client: %v", err)
+		}
+		if err := agsClient.LoginClientCredentials(); err != nil {
+			log.Fatalf("Failed to authenticate AGS client: %v", err)
+		}
+		log.Println("AGS client authenticated")
+	} else {
+		log.Println("AGS_BASE_URL not set; skipping AGS integration")
 	}
 
 	log.Println("Initializing database...")
