@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package atoyr.leaderboard.v1;
+
+option go_package = "extend-event-handler/pkg/pb/leaderboard/v1;leaderboardv1";
+
+service LeaderboardService {
+  rpc AddSession(AddSessionRequest) returns (AddSessionResponse);
+  rpc RemoveSession(RemoveSessionRequest) returns (RemoveSessionResponse);
+  rpc UpsertEntry(UpsertEntryRequest) returns (UpsertEntryResponse);
+}
+
+message AddSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string mode = 3;
+  int64 started_at = 4;
+}
+
+message AddSessionResponse {}
+
+message RemoveSessionRequest {
+  string session_id = 1;
+}
+
+message RemoveSessionResponse {}
+
+message UpsertEntryRequest {
+  string mode = 1;
+  string user_id = 2;
+  int32 score = 3;
+  int32 total_attempts = 4;
+  double accuracy = 5;
+  int64 finished_at = 6;
+}
+
+message UpsertEntryResponse {}

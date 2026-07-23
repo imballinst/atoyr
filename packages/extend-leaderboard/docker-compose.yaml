@@ -1,0 +1,46 @@
+services:
+  app:
+    build: .
+    ports:
+      - "6565:6565"
+      - "8080:8080"
+      - "8000:8000"
+    environment:
+      - AB_CLIENT_ID=${AB_CLIENT_ID}
+      - AB_CLIENT_SECRET=${AB_CLIENT_SECRET}
+      - AB_BASE_URL=${AB_BASE_URL}
+      - AB_NAMESPACE=${AB_NAMESPACE}
+      - PLUGIN_GRPC_SERVER_AUTH_ENABLED
+      - OTEL_EXPORTER_ZIPKIN_ENDPOINT=http://host.docker.internal:9411/api/v2/spans
+      - BASE_PATH
+      - SQLDB_HOST=postgres:5432
+      - SQLDB_USERNAME=${SQLDB_USERNAME}
+      - SQLDB_PASSWORD=${SQLDB_PASSWORD}
+      - SQLDB_DATABASE_NAME=${SQLDB_DATABASE_NAME}
+      - SQLDB_CA_CERT_FILE_PATH=
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=extend_leaderboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d extend_leaderboard"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+volumes:
+  postgres_data:
+    driver: local

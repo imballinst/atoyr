@@ -1,0 +1,86 @@
+// Copyright (c) 2025 AccelByte Inc. All Rights Reserved.
+// This is licensed software from AccelByte Inc, for limitations
+// and restrictions contact your company contract manager.
+
+syntax = "proto3";
+
+package atoyr.leaderboard.v1;
+
+option go_package = "extend-leaderboard/pkg/pb/leaderboard/v1;leaderboardv1";
+
+import "google/api/annotations.proto";
+
+service LeaderboardService {
+  rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse) {
+    option (google.api.http) = {
+      get: "/v1/leaderboard"
+    };
+  }
+
+  rpc GetPercentile(GetPercentileRequest) returns (GetPercentileResponse) {
+    option (google.api.http) = {
+      get: "/v1/leaderboard/percentile"
+    };
+  }
+
+  rpc AddSession(AddSessionRequest) returns (AddSessionResponse);
+
+  rpc RemoveSession(RemoveSessionRequest) returns (RemoveSessionResponse);
+
+  rpc UpsertEntry(UpsertEntryRequest) returns (UpsertEntryResponse);
+}
+
+message GetLeaderboardRequest {
+  string mode = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message LeaderboardEntry {
+  int32 rank = 1;
+  string user_id = 2;
+  int32 score = 3;
+  int32 total_attempts = 4;
+  double accuracy = 5;
+  int64 timestamp = 6;
+}
+
+message GetLeaderboardResponse {
+  repeated LeaderboardEntry entries = 1;
+  int32 total = 2;
+}
+
+message GetPercentileRequest {
+  string mode = 1;
+  string user_id = 2;
+}
+
+message GetPercentileResponse {
+  double percentile = 1;
+}
+
+message AddSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string mode = 3;
+  int64 started_at = 4;
+}
+
+message AddSessionResponse {}
+
+message RemoveSessionRequest {
+  string session_id = 1;
+}
+
+message RemoveSessionResponse {}
+
+message UpsertEntryRequest {
+  string mode = 1;
+  string user_id = 2;
+  int32 score = 3;
+  int32 total_attempts = 4;
+  double accuracy = 5;
+  int64 finished_at = 6;
+}
+
+message UpsertEntryResponse {}
