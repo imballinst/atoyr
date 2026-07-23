@@ -16,7 +16,7 @@ import (
 
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	// Add some test results
 	results := []models.SessionEntity{
@@ -90,7 +90,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 
 func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	// Add some test results
 	results := []models.SessionEntity{
@@ -139,7 +139,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 
 func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	// Add some test results
 	results := []models.SessionEntity{
@@ -192,7 +192,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 
 func TestLeaderboardService_Pagination(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	// Add 25 results
 	for i := range 25 {
@@ -226,7 +226,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 
 func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	total, _ := service.GetTotalEntries("vanilla")
 	assert.Equal(t, int64(0), total)
@@ -254,7 +254,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 
 func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	results := []models.SessionEntity{}
 
@@ -298,13 +298,13 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-		percentile, err := service.GetPercentile(id, "", "vanilla", score)
+		percentile, err := service.GetPercentile(id, "vanilla", score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
 
 	// A blind session should only be compared against other blind sessions.
-	percentile, err := service.GetPercentile(blindSession.ID, "", "blind", blindSession.Score)
+	percentile, err := service.GetPercentile(blindSession.ID, "blind", blindSession.Score)
 	assert.NoError(t, err)
 	assert.Equal(t, float32(0), percentile)
 }
@@ -313,7 +313,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 // (phase = "finished"), the player's session is included in the leaderboard.
 func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	leaderboardService := NewLeaderboardService(db, nil)
+	leaderboardService := NewLeaderboardService(db)
 	sessionService := NewSessionService(db)
 
 	// Create 3 finished sessions with scores
@@ -354,7 +354,7 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 
 func BenchmarkLeaderboardService(b *testing.B) {
 	db := testutils.SetupTestDB(b)
-	service := NewLeaderboardService(db, nil)
+	service := NewLeaderboardService(db)
 
 	sqlDB, _ := db.DB()
 	txn, _ := sqlDB.Begin()
@@ -381,7 +381,7 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	for b.Loop() {
 		start := time.Now()
 
-		_, err := service.GetPercentile(firstID, "", "vanilla", firstScore)
+		_, err := service.GetPercentile(firstID, "vanilla", firstScore)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -97,7 +97,7 @@ func main() {
 
 	sessionService := services.NewSessionService(db)
 	agsSyncService := services.NewAGSSyncService(agsClient)
-	leaderboardService := services.NewLeaderboardService(db, agsSyncService)
+	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, agsSyncService, sessionOptions)
 	statsService := services.NewStatsService(db)
 	healthService := services.NewHealthService(db, "atoyr", GitHash)

@@ -20,7 +20,7 @@ func initTestServices(t *testing.T) TestValues {
 
 	ws := initTestWordService()
 	ss := NewSessionService(db)
-	ls := NewLeaderboardService(db, nil)
+	ls := NewLeaderboardService(db)
 	gs := NewGameService(ss, ws, ls, nil, testutils.TestSessionOptions)
 
 	return TestValues{db, ws, ss, ls, gs}

@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -12,7 +13,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/cloudsave-sdk/pkg/cloudsaveclient/admin_player_record"
 	"github.com/AccelByte/accelbyte-go-sdk/cloudsave-sdk/pkg/cloudsaveclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclient/o_auth2_0"
-	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclient/o_auth2_0_extension"
 	"github.com/AccelByte/accelbyte-go-sdk/leaderboard-sdk/pkg/leaderboardclient/leaderboard_data_v3"
 	"github.com/AccelByte/accelbyte-go-sdk/leaderboard-sdk/pkg/leaderboardclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/social-sdk/pkg/socialclient/user_statistic"
@@ -55,16 +55,19 @@ func (a *AGSSyncService) Enabled() bool {
 	return a != nil && a.client != nil
 }
 
-func (a *AGSSyncService) CreateHeadlessAccount() (string, string, error) {
-	input := &o_auth2_0_extension.GenerateTokenByNewHeadlessAccountV3Params{}
-	resp, err := a.client.OAuth20ExtensionService.GenerateTokenByNewHeadlessAccountV3Short(input)
+func (a *AGSSyncService) CreateHeadlessAccount(deviceID string) (string, string, error) {
+	input := &o_auth2_0.PlatformTokenGrantV3Params{
+		PlatformID:    "device",
+		PlatformToken: &deviceID,
+	}
+	resp, err := a.client.OAuth20Service.PlatformTokenGrantV3Short(input)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create headless account: %w", err)
 	}
-	if resp == nil || resp.AccessToken == nil || resp.UserID == "" {
+	if resp == nil || resp.AccessToken == nil || resp.UserID == nil || *resp.UserID == "" {
 		return "", "", fmt.Errorf("empty headless account response")
 	}
-	return resp.UserID, *resp.AccessToken, nil
+	return *resp.UserID, *resp.AccessToken, nil
 }
 
 func (a *AGSSyncService) ValidatePlayerToken(token string) (string, error) {
@@ -146,6 +149,10 @@ func (a *AGSSyncService) GetLeaderboard(mode string, limit, offset int) ([]Leade
 	}
 	resp, err := a.client.LeaderboardDataService.GetAllTimeLeaderboardRankingAdminV3Short(input)
 	if err != nil {
+		var notFound *leaderboard_data_v3.GetAllTimeLeaderboardRankingAdminV3NotFound
+		if errors.As(err, &notFound) {
+			return []LeaderboardEntry{}, 0, nil
+		}
 		return nil, 0, fmt.Errorf("failed to fetch AGS leaderboard: %w", err)
 	}
 	return a.transformLeaderboardResponse(resp, offset)
@@ -202,6 +209,10 @@ func (a *AGSSyncService) countLeaderboardEntries(leaderboardCode string) (int64,
 	}
 	resp, err := a.client.LeaderboardDataService.GetAllTimeLeaderboardRankingAdminV3Short(input)
 	if err != nil {
+		var notFound *leaderboard_data_v3.GetAllTimeLeaderboardRankingAdminV3NotFound
+		if errors.As(err, &notFound) {
+			return 0, nil
+		}
 		return 0, fmt.Errorf("failed to count leaderboard entries: %w", err)
 	}
 	if resp == nil {

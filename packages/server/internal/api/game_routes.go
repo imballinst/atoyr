@@ -12,11 +12,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 const (
 	sessionIdCookie = "session_id"
+	deviceIdCookie  = "device_id"
 )
 
 func (gr *Server) PostApiV1GameStart(c *gin.Context) {
@@ -41,8 +43,15 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
+	// Ensure device ID cookie
+	deviceID, err := c.Cookie(deviceIdCookie)
+	if err != nil {
+		deviceID = uuid.New().String()
+		c.SetCookie(deviceIdCookie, deviceID, 31536000, "/", "", false, true)
+	}
+
 	// Start game
-	session, err = gr.gameService.StartGame(session.ID)
+	session, err = gr.gameService.StartGame(session.ID, deviceID)
 	if err != nil {
 		log.Println("Failed to start game:", err)
 

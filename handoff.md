@@ -1,30 +1,60 @@
-# AGS integration — handoff
+# AGS Migration Plan
 
-Completed:
+## Motivation
 
-- IAM clients created: server-to-server (confidential `e50254a28f0740369981d194137abd14`) and web/public (`cecf5228881640ef88fc9a3fbc079cc3`)
-- Server-to-server client permissions added: Cloud Save (Player Records CRU), Statistics (User Values CU), Leaderboard (Config/Data R, User Visibility R)
-- AccelByte Go SDK installed and wired into `packages/server/cmd/service/main.go`
-- `.env.local`/`.env.local.example` updated with AGS config
+Remove the SQLite dependency from the game server entirely. AGS serves as both the operational store (via in-memory state + async AGS persistence) and the analytics/leaderboard backend.
 
-## Next steps
+## Trade-off
 
-- ✅ **Create Cloud Save / Statistics / Leaderboard configurations in AGS** (`/ags manage-resource`) — completed. AGS stat codes and leaderboard codes use hyphens because underscores are rejected by AGS validation:
-  - Stats: `atoyr-score-vanilla`, `atoyr-score-blind`, `atoyr-accuracy-vanilla`, `atoyr-accuracy-blind`, `atoyr-attempts-vanilla`, `atoyr-attempts-blind`, `atoyr-composite-vanilla`, `atoyr-composite-blind` (all `setBy: SERVER`, `visibility: SERVERONLY`).
-  - Leaderboards: `atoyr-leaderboard-vanilla` (backed by `atoyr-composite-vanilla`, `descending: true`, `allTime: true`), `atoyr-leaderboard-blind` (backed by `atoyr-composite-blind`).
-- ✅ **Decide on the leaderboard tie-breaker strategy** — Option A (composite score formula). `atoyr-composite-*` encodes `score * 1_000_000 + accuracy * 10_000 - durationSeconds` so AGS native leaderboards can rank by a single stat. Higher score wins; equal score, higher accuracy wins; equal accuracy, faster finish wins.
-- ✅ **Implement the actual migration of `game.service.go`** endpoints to use AGS Cloud Save (round persistence), Statistics (post-game score/attempts/accuracy/composite), and Leaderboards (top-N/percentile queries):
-  - `internal/platform/accelbyte/accelbyte.go` now exposes Cloud Save, Statistics, Leaderboard, and IAM headless-account service clients.
-  - `internal/services/agssync.service.go` wraps Cloud Save player-record writes/reads, bulk Statistics updates, and Leaderboard top-N/user-rank queries.
-  - `internal/services/game.service.go` creates an AGS headless account on first start, writes round state to Cloud Save, and posts final score/attempts/accuracy/composite stats on finish (async where appropriate).
-  - `internal/services/leaderboard.service.go` falls back to SQLite when AGS is disabled; when enabled it reads top-N and user rank from AGS.
-  - `session_entities` gained a `user_id` column (migration `005_add_user_id`) and `SessionDomain`/`SessionEntity` carry the AGS player ID.
-  - Added `internal/services/agssync_test.go` covering the composite-score calculation and disabled-service behavior.
+In-memory state means in-flight sessions are lost on server crash. Acceptable for this game — timer restoration from SQLite is the only remaining SQLite read after migration.
 
-## Open follow-ups
+## Architecture
 
-- **Client AGS token flow**: the server currently creates headless accounts internally and stores the AGS `user_id` in the SQLite session. To support cross-device resume or explicit login, the client should receive and send the IAM access token (e.g. in an `Authorization` header or cookie) and the server should validate it via IAM introspection.
-- **Admin dashboard AGS auth**: replace Google OAuth with AGS IAM admin roles/permissions for `/admin/*`.
-- **AGS Analytics events**: fire `atoyr.round.started`, `atoyr.answer.submitted`, and `atoyr.round.finished` through `gametelemetry`.
-- **Health check AGS dependency**: optionally include AGS token/Cloud Save reachability in `/api/v1/health`.
-- **Cloud Save write retry**: add a retry/dead-letter path for failed async Cloud Save writes so deploy recovery does not lose the latest answer.
+### 1. Operational State: In-memory + Async AGS Persistence
+
+Replace synchronous SQLite `FindByID`/`Update` calls with an in-memory session store:
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Session store | `sync.Map` keyed by `sessionID` | Sub-millisecond reads/writes during gameplay |
+| Timer store | `SessionDurationManager` (already exists) | In-memory countdown per session |
+| Persistence queue | Goroutine + channel | Flush session state to AGS Cloud Save asynchronously |
+| Crash recovery | SQLite (only remaining use) | `SELECT ... WHERE phase = 'playing'` on startup to rebuild in-memory state + timers |
+
+**Flow per game:**
+1. `StartGame` → insert into `sync.Map`, persist to AGS Cloud Save (async)
+2. `SubmitAnswer` → read/write `sync.Map`, persist to AGS Cloud Save (async)
+3. `FinishGame` → read from `sync.Map`, publish stats to AGS User Stats + Leaderboard (async), delete from `sync.Map`
+
+### 2. Leaderboard & Percentile: Always SQLite (already fixed)
+
+The leaderboard fix from the previous session (removing AGS delegation from `GetLeaderboard`, `GetTotalEntries`, `GetPercentile`) stands. These always read from SQLite, which is written synchronously and has all fields (`totalAttempts`, `accuracy`, `timestamp`, session `ID`).
+
+AGS stat posting (`PostRoundStats`) continues to run asynchronously — it's a side effect, not the source of truth for leaderboard queries.
+
+### 3. Dashboard Stats: SQLite Polling
+
+The stats service (`GET /admin/stats`, `GET /admin/timeseries`) stays on SQLite. AGS Analytics can ingest session-started/finished custom events for export to an external warehouse (S3/Redshift/Snowflake) if needed later, but the real-time dashboard queries the local DB.
+
+### 4. Composite Score (Already Done)
+
+`calculateCompositeScore` (`score * 1,000,000 + round(accuracy * 10,000) - durationSeconds`) encodes all three tiebreak dimensions into a single sortable integer. AGS leaderboard and percentile ranking use this composite.
+
+### 5. Cloud Save: Key-Value Only
+
+AGS Cloud Save is a key-value store per user (`{userID, key}` → value). No field-level querying. The session ID is used as the key; scanning active sessions on startup iterates the known set from SQLite (see Crash Recovery above).
+
+### 6. Analytics: Custom Events + External Export
+
+Session-started/finished events emit via Analytics module custom telemetry. Export pipeline (S3/Redshift/Snowflake) is natively supported; SQLite polling is the simpler path for the current dashboard.
+
+## Remaining SQLite Footprint After Migration
+
+| Query | Replaced by |
+|-------|------------|
+| `FindByID` / `Update` during gameplay | In-memory `sync.Map` + async AGS Cloud Save |
+| `ORDER BY score DESC, accuracy DESC, ends_at ASC` (leaderboard) | Stays on SQLite |
+| `GetPercentile` percentile computation | Stays on SQLite |
+| `SELECT ... WHERE phase = ? AND mode = ? AND score > 0` (total entries) | Stays on SQLite |
+| `COUNT(*) ... WHERE created_at >= ?` (stats) | Stays on SQLite (or Analytics export) |
+| `SELECT ... WHERE phase = 'playing'` (crash recovery) | Stays on SQLite (only write after migration) |

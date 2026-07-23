@@ -53,7 +53,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	wordService.SetWords(wordDefinitions)
 
 	sessionService := services.NewSessionService(db)
-	leaderboardService := services.NewLeaderboardService(db, nil)
+	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, nil, testutils.TestSessionOptions)
 
 	// Create router
@@ -87,7 +87,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	})
 
 	sessionService := services.NewSessionService(db)
-	leaderboardService := services.NewLeaderboardService(db, nil)
+	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, nil, testutils.TestSessionOptions)
 	metricsCollector := middleware.NewMetricsCollector()
 	statsService := services.NewStatsService(db)

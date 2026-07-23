@@ -12,7 +12,7 @@ func TestGameService_StartGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID)
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -27,7 +27,7 @@ func TestGameService_ContinueGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID)
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -49,7 +49,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 			testServices := initTestServices(t)
 
 			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
-			testServices.Game.StartGame(session.ID)
+			testServices.Game.StartGame(session.ID, "test-device-id")
 
 			session, _ = testServices.Session.FindByID(session.ID)
 			word := session.CurrentWord
@@ -77,7 +77,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 			testServices := initTestServices(t)
 
 			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
-			testServices.Game.StartGame(session.ID)
+			testServices.Game.StartGame(session.ID, "test-device-id")
 
 			session, _ = testServices.Session.FindByID(session.ID)
 			originalEndsAt := session.EndsAt
@@ -99,7 +99,7 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID)
+	testServices.Game.StartGame(session.ID, "test-device-id")
 
 	session, _ = testServices.Session.FindByID(session.ID)
 	word := session.CurrentWord
@@ -131,7 +131,7 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID)
+	testServices.Game.StartGame(session.ID, "test-device-id")
 
 	session, _ = testServices.Session.FindByID(session.ID)
 	word := session.CurrentWord
@@ -163,7 +163,7 @@ func TestGameService_FinishGame(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	_, err := testServices.Game.StartGame(session.ID)
+	_, err := testServices.Game.StartGame(session.ID, "test-device-id")
 	assert.NoError(t, err)
 
 	session.Score = 7
@@ -191,7 +191,7 @@ func TestGameService_StartGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
-	started, err := testServices.Game.StartGame(session.ID)
+	started, err := testServices.Game.StartGame(session.ID, "test-device-id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, core.SessionPhasePlaying, started.Phase)
@@ -204,7 +204,7 @@ func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
-	_, err := testServices.Game.StartGame(session.ID)
+	_, err := testServices.Game.StartGame(session.ID, "test-device-id")
 	assert.NoError(t, err)
 
 	continued, err := testServices.Game.ContinueGame(session.ID)
@@ -233,7 +233,7 @@ func TestGameService_AttemptCounting(t *testing.T) {
 	testServices := initTestServices(t)
 
 	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
-	testServices.Game.StartGame(session.ID)
+	testServices.Game.StartGame(session.ID, "test-device-id")
 
 	testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
 	session, _ = testServices.Session.FindByID(session.ID)

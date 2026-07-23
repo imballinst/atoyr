@@ -54,14 +54,14 @@ func NewGameService(
 	}
 }
 
-func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, error) {
+func (g *GameService) StartGame(sessionID, deviceID string) (*domainmodels.SessionDomain, error) {
 	// Start the game by emitting first word
 	session, err := g.getSessionWithNextWord(sessionID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := g.ensureAGSPlayer(session); err != nil {
+	if err := g.ensureAGSPlayer(session, deviceID); err != nil {
 		return nil, err
 	}
 
@@ -339,14 +339,14 @@ func (g *GameService) sessionWithVisibleDefinition(session *domainmodels.Session
 	return session
 }
 
-func (g *GameService) ensureAGSPlayer(session *domainmodels.SessionDomain) error {
+func (g *GameService) ensureAGSPlayer(session *domainmodels.SessionDomain, deviceID string) error {
 	if g.agsSyncService == nil || !g.agsSyncService.Enabled() {
 		return nil
 	}
 	if session.UserID != "" {
 		return nil
 	}
-	userID, _, err := g.agsSyncService.CreateHeadlessAccount()
+	userID, _, err := g.agsSyncService.CreateHeadlessAccount(deviceID)
 	if err != nil {
 		return fmt.Errorf("failed to create AGS headless account: %w", err)
 	}
