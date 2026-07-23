@@ -8,6 +8,7 @@ import (
 
 type SessionDomain struct {
 	ID                       string
+	UserID                   string
 	CreatedAt                time.Time
 	UpdatedAt                time.Time
 	EndsAt                   time.Time
@@ -40,6 +41,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 
 	return &SessionDomain{
 		ID:                       session.ID,
+		UserID:                   session.UserID,
 		CreatedAt:                session.CreatedAt,
 		UpdatedAt:                session.UpdatedAt,
 		EndsAt:                   session.EndsAt,
@@ -73,6 +75,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 
 	return &models.SessionEntity{
 		ID:                       session.ID,
+		UserID:                   session.UserID,
 		CreatedAt:                session.CreatedAt,
 		UpdatedAt:                session.UpdatedAt,
 		EndsAt:                   session.EndsAt,

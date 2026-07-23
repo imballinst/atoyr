@@ -6,7 +6,10 @@ import (
 
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/repository"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/cloudsave"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/leaderboard"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/social"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
 )
 
@@ -58,10 +61,15 @@ func (r *configRepository) GetJusticeBaseUrl() string {
 }
 
 type Client struct {
-	Config           *Config
-	ConfigRepository repository.ConfigRepository
-	TokenRepository  repository.TokenRepository
-	OAuth20Service   *iam.OAuth20Service
+	Config                  *Config
+	ConfigRepository        repository.ConfigRepository
+	TokenRepository         repository.TokenRepository
+	OAuth20Service          *iam.OAuth20Service
+	OAuth20ExtensionService *iam.OAuth20ExtensionService
+	CloudSaveService        *cloudsave.AdminPlayerRecordService
+	UserStatisticService    *social.UserStatisticService
+	LeaderboardService      *leaderboard.UserDataV3Service
+	LeaderboardDataService  *leaderboard.LeaderboardDataV3Service
 }
 
 func NewClient(cfg *Config) (*Client, error) {
@@ -74,11 +82,46 @@ func NewClient(cfg *Config) (*Client, error) {
 		TokenRepository:  tokenRepo,
 	}
 
-	return &Client{
-		Config:           cfg,
+	oauthExt := &iam.OAuth20ExtensionService{
+		Client:           factory.NewIamClient(configRepo),
 		ConfigRepository: configRepo,
 		TokenRepository:  tokenRepo,
-		OAuth20Service:   oauth,
+	}
+
+	cloudSaveSvc := &cloudsave.AdminPlayerRecordService{
+		Client:           factory.NewCloudsaveClient(configRepo),
+		ConfigRepository: configRepo,
+		TokenRepository:  tokenRepo,
+	}
+
+	userStatSvc := &social.UserStatisticService{
+		Client:           factory.NewSocialClient(configRepo),
+		ConfigRepository: configRepo,
+		TokenRepository:  tokenRepo,
+	}
+
+	leaderboardSvc := &leaderboard.UserDataV3Service{
+		Client:           factory.NewLeaderboardClient(configRepo),
+		ConfigRepository: configRepo,
+		TokenRepository:  tokenRepo,
+	}
+
+	leaderboardDataSvc := &leaderboard.LeaderboardDataV3Service{
+		Client:           factory.NewLeaderboardClient(configRepo),
+		ConfigRepository: configRepo,
+		TokenRepository:  tokenRepo,
+	}
+
+	return &Client{
+		Config:                  cfg,
+		ConfigRepository:        configRepo,
+		TokenRepository:         tokenRepo,
+		OAuth20Service:          oauth,
+		OAuth20ExtensionService: oauthExt,
+		CloudSaveService:        cloudSaveSvc,
+		UserStatisticService:    userStatSvc,
+		LeaderboardService:      leaderboardSvc,
+		LeaderboardDataService:  leaderboardDataSvc,
 	}, nil
 }
 

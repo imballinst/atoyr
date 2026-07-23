@@ -54,6 +54,7 @@ func (j JSON) Value() (driver.Value, error) {
 // SessionEntity represents an active game session
 type SessionEntity struct {
 	ID        string `gorm:"primaryKey"`
+	UserID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	EndsAt    time.Time

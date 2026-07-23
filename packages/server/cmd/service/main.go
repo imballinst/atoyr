@@ -58,9 +58,11 @@ func main() {
 			log.Fatalf("Failed to initialize AGS client: %v", err)
 		}
 		if err := agsClient.LoginClientCredentials(); err != nil {
-			log.Fatalf("Failed to authenticate AGS client: %v", err)
+			log.Printf("Failed to authenticate AGS client; continuing without AGS integration: %v", err)
+			agsClient = nil
+		} else {
+			log.Println("AGS client authenticated")
 		}
-		log.Println("AGS client authenticated")
 	} else {
 		log.Println("AGS_BASE_URL not set; skipping AGS integration")
 	}
@@ -94,8 +96,9 @@ func main() {
 	}
 
 	sessionService := services.NewSessionService(db)
-	leaderboardService := services.NewLeaderboardService(db)
-	gameService := services.NewGameService(sessionService, wordService, leaderboardService, sessionOptions)
+	agsSyncService := services.NewAGSSyncService(agsClient)
+	leaderboardService := services.NewLeaderboardService(db, agsSyncService)
+	gameService := services.NewGameService(sessionService, wordService, leaderboardService, agsSyncService, sessionOptions)
 	statsService := services.NewStatsService(db)
 	healthService := services.NewHealthService(db, "atoyr", GitHash)
 

@@ -257,32 +257,31 @@ Cloud Save is the source of truth for round state across deploys; the in-memory 
 
 ### Statistics configuration
 
-Create one server-authoritative stat per metric per mode:
+Create one server-authoritative stat per metric per mode, plus one composite stat per mode for leaderboard ranking:
 
 | Stat code | Type | Description |
 |---|---|---|
-| `atoyr_score_vanilla` | integer | Final round score in vanilla mode. |
-| `atoyr_score_blind` | integer | Final round score in blind mode. |
-| `atoyr_accuracy_vanilla` | float | Final accuracy in vanilla mode. |
-| `atoyr_accuracy_blind` | float | Final accuracy in blind mode. |
-| `atoyr_attempts_vanilla` | integer | Final attempt count in vanilla mode. |
-| `atoyr_attempts_blind` | integer | Final attempt count in blind mode. |
+| `atoyr-score-vanilla` | integer | Final round score in vanilla mode. |
+| `atoyr-score-blind` | integer | Final round score in blind mode. |
+| `atoyr-accuracy-vanilla` | float | Final accuracy in vanilla mode. |
+| `atoyr-accuracy-blind` | float | Final accuracy in blind mode. |
+| `atoyr-attempts-vanilla` | integer | Final attempt count in vanilla mode. |
+| `atoyr-attempts-blind` | integer | Final attempt count in blind mode. |
+| `atoyr-composite-vanilla` | integer | Composite ranking score for vanilla mode. |
+| `atoyr-composite-blind` | integer | Composite ranking score for blind mode. |
 
 All stats are server-authoritative; the client never writes them. Tags can include `mode` and `season`.
 
 ### Leaderboard configuration
 
-Create one leaderboard per mode, backed by the primary score stat:
+Create one leaderboard per mode, backed by the composite stat:
 
 | Leaderboard ID | Backing stat | Description |
 |---|---|---|
-| `atoyr_leaderboard_vanilla` | `atoyr_score_vanilla` | Global vanilla leaderboard. |
-| `atoyr_leaderboard_blind` | `atoyr_score_blind` | Global blind leaderboard. |
+| `atoyr-leaderboard-vanilla` | `atoyr-composite-vanilla` | Global vanilla leaderboard. |
+| `atoyr-leaderboard-blind` | `atoyr-composite-blind` | Global blind leaderboard. |
 
-Tie-breaking must be decided before implementation:
-
-- **Option A**: use a composite score formula (e.g. `score * 1_000_000 + accuracy_pct * 10_000 - end_time_offset`) as the single backing stat and drop the multi-field tie-breaker.
-- **Option B**: keep the custom tie-breaker by implementing an AGS Extend Override or by post-processing AGS top-N results in the custom server.
+**Tie-breaker decision:** Option A is used. The composite score formula is `score * 1_000_000 + accuracy * 10_000 - durationSeconds`, where `durationSeconds` is the time from round start to finish. Higher score wins; on equal scores, higher accuracy wins; on equal accuracy, the faster finish wins. This is encoded into a single integer stat so AGS native leaderboards can rank players without an Extend override.
 
 ### Analytics events
 

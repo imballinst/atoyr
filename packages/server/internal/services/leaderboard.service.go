@@ -12,11 +12,12 @@ import (
 )
 
 type LeaderboardService struct {
-	db *gorm.DB
+	db             *gorm.DB
+	agsSyncService *AGSSyncService
 }
 
-func NewLeaderboardService(db *gorm.DB) *LeaderboardService {
-	return &LeaderboardService{db: db}
+func NewLeaderboardService(db *gorm.DB, agsSyncService *AGSSyncService) *LeaderboardService {
+	return &LeaderboardService{db: db, agsSyncService: agsSyncService}
 }
 
 type LeaderboardEntry struct {
@@ -29,6 +30,11 @@ type LeaderboardEntry struct {
 }
 
 func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, error) {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		entries, _, err := l.agsSyncService.GetLeaderboard(mode, limit, offset)
+		return entries, err
+	}
+
 	var results []models.SessionEntity
 
 	if err := l.db.
@@ -56,6 +62,11 @@ func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]L
 }
 
 func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
+		_, total, err := l.agsSyncService.GetLeaderboard(mode, 1, 0)
+		return total, err
+	}
+
 	var totalEntries int64
 
 	if err := l.db.
@@ -66,7 +77,11 @@ func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
 	return totalEntries, nil
 }
 
-func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) (float32, error) {
+func (l *LeaderboardService) GetPercentile(sessionId, userID, mode string, score int32) (float32, error) {
+	if l.agsSyncService != nil && l.agsSyncService.Enabled() && userID != "" {
+		return l.getPercentileFromAGS(userID, mode)
+	}
+
 	// 1. Fetch the current session's tiebreaker fields
 	type sessionMeta struct {
 		Accuracy float32
@@ -112,5 +127,20 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
 	}
 
 	percentile := (float32(totalBelowCurrentScore) / float32(totalEligible)) * 100
+	return percentile, nil
+}
+
+func (l *LeaderboardService) getPercentileFromAGS(userID, mode string) (float32, error) {
+	rank, total, err := l.agsSyncService.GetUserRank(userID, mode)
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch AGS user rank: %w", err)
+	}
+	if total == 0 {
+		return 0, nil
+	}
+	percentile := (float32(total-rank) / float32(total)) * 100
+	if percentile < 0 {
+		percentile = 0
+	}
 	return percentile, nil
 }

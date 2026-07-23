@@ -126,19 +126,19 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 		{
 			ID: "vanilla-today", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
-			Mode: "vanilla",
+			Mode:                     "vanilla",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
 			ID: "vanilla-playing", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
 			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
-			Mode: "vanilla",
+			Mode:                     "vanilla",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
 			ID: "blind-today", CreatedAt: today.Add(3 * time.Hour), UpdatedAt: today.Add(3 * time.Hour), EndsAt: today.Add(4 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
-			Mode: "blind",
+			Mode:                     "blind",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, WordDefinitions: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 	}
@@ -291,10 +291,10 @@ func TestStatsService_GetTimeSeries_AutoGranularity(t *testing.T) {
 	service.Now = testutils.NowMockFn
 
 	cases := []struct {
-		period        string
-		expected      string
-		dataCountMin  int
-		dataCountMax  int
+		period       string
+		expected     string
+		dataCountMin int
+		dataCountMax int
 	}{
 		{"1h", "1m", 60, 60},
 		{"24h", "1h", 24, 24},

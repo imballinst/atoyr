@@ -23,6 +23,7 @@ type GameService struct {
 	sessionService     *SessionService
 	wordService        *WordService
 	leaderboardService *LeaderboardService
+	agsSyncService     *AGSSyncService
 	sessionOptions     core.SessionOptions
 }
 
@@ -41,12 +42,14 @@ func NewGameService(
 	sessionService *SessionService,
 	wordService *WordService,
 	leaderboardService *LeaderboardService,
+	agsSyncService *AGSSyncService,
 	sessionOptions core.SessionOptions,
 ) *GameService {
 	return &GameService{
 		sessionService:     sessionService,
 		wordService:        wordService,
 		leaderboardService: leaderboardService,
+		agsSyncService:     agsSyncService,
 		sessionOptions:     sessionOptions,
 	}
 }
@@ -58,6 +61,10 @@ func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, 
 		return nil, err
 	}
 
+	if err := g.ensureAGSPlayer(session); err != nil {
+		return nil, err
+	}
+
 	// Update phase to playing
 	session.Phase = core.SessionPhasePlaying
 	session.EndsAt = time.Now().Add(time.Second * time.Duration(session.DurationSeconds))
@@ -65,6 +72,8 @@ func (g *GameService) StartGame(sessionID string) (*domainmodels.SessionDomain, 
 	if err := g.sessionService.Update(session); err != nil {
 		return nil, err
 	}
+
+	g.syncRoundStateToCloudSave(session)
 
 	// Start timer
 	go g.startTimer(session)
@@ -168,6 +177,8 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 	result.Score = session.Score
 	result.DurationSeconds = core.SessionDurationManager.Get(session.ID)
 
+	g.syncRoundStateToCloudSave(session)
+
 	return result, nil
 }
 
@@ -187,6 +198,9 @@ func (g *GameService) FinishGame(sessionID string) error {
 	if err := g.sessionService.Update(session); err != nil {
 		return err
 	}
+
+	g.syncRoundStateToCloudSave(session)
+	g.postRoundStatsToAGS(session)
 
 	core.SessionDurationManager.Clean(session.ID)
 
@@ -323,4 +337,62 @@ func (g *GameService) sessionWithVisibleDefinition(session *domainmodels.Session
 		session.CurrentWordDefinition = ""
 	}
 	return session
+}
+
+func (g *GameService) ensureAGSPlayer(session *domainmodels.SessionDomain) error {
+	if g.agsSyncService == nil || !g.agsSyncService.Enabled() {
+		return nil
+	}
+	if session.UserID != "" {
+		return nil
+	}
+	userID, _, err := g.agsSyncService.CreateHeadlessAccount()
+	if err != nil {
+		return fmt.Errorf("failed to create AGS headless account: %w", err)
+	}
+	session.UserID = userID
+	return g.sessionService.Update(session)
+}
+
+func (g *GameService) syncRoundStateToCloudSave(session *domainmodels.SessionDomain) {
+	if g.agsSyncService == nil || !g.agsSyncService.Enabled() || session.UserID == "" {
+		return
+	}
+	state := domainSessionToCloudSave(session)
+	g.agsSyncService.SaveRoundStateAsync(session.UserID, session.ID, state)
+}
+
+func (g *GameService) postRoundStatsToAGS(session *domainmodels.SessionDomain) {
+	if g.agsSyncService == nil || !g.agsSyncService.Enabled() || session.UserID == "" {
+		return
+	}
+	durationSeconds := int32(time.Since(session.CreatedAt).Seconds())
+	g.agsSyncService.PostRoundStatsAsync(session.UserID, session.Mode, session.Score, session.TotalAttempts, session.Accuracy, durationSeconds)
+}
+
+func domainSessionToCloudSave(session *domainmodels.SessionDomain) CloudSaveRoundState {
+	timestamps := make([]string, 0)
+	for _, streak := range session.CorrectAttemptTimestamps {
+		for _, ts := range streak {
+			timestamps = append(timestamps, ts)
+		}
+	}
+	return CloudSaveRoundState{
+		Mode:                     session.Mode,
+		Phase:                    session.Phase,
+		AutoVoice:                session.AutoVoice,
+		ItemsUsed:                session.UsedItemIDs,
+		UsedWords:                session.UsedWords,
+		CurrentWord:              session.CurrentWord,
+		CurrentScrambledWord:     session.CurrentScrambledWord,
+		CurrentWordDefinition:    session.CurrentWordDefinition,
+		CurrentWordToken:         session.CurrentWordToken,
+		Score:                    session.Score,
+		TotalAttempts:            session.TotalAttempts,
+		Accuracy:                 session.Accuracy,
+		CorrectAttemptTimestamps: timestamps,
+		EndsAt:                   session.EndsAt.UnixMilli(),
+		CreatedAt:                session.CreatedAt.UnixMilli(),
+		UpdatedAt:                time.Now().UnixMilli(),
+	}
 }
