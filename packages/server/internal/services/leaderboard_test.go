@@ -17,7 +17,7 @@ import (
 func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	// Add some test results
 	results := []models.LeaderboardSessionEntity{
@@ -92,7 +92,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	// Add some test results
 	results := []models.LeaderboardSessionEntity{
@@ -142,7 +142,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	// Add some test results
 	results := []models.LeaderboardSessionEntity{
@@ -196,7 +196,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 func TestLeaderboardService_Pagination(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	// Add 25 results
 	for i := range 25 {
@@ -231,7 +231,7 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	total, _ := service.GetTotalEntries("vanilla")
 	assert.Equal(t, int64(0), total)
@@ -260,7 +260,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	results := []models.LeaderboardSessionEntity{}
 
@@ -319,7 +319,7 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	sessionService := NewSessionService(db)
-	leaderboardService := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	leaderboardService := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	// Create 3 finished sessions with scores
 	for i := range 3 {
@@ -368,7 +368,7 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 func BenchmarkLeaderboardService(b *testing.B) {
 	db := testutils.SetupTestDB(b)
 	sessionService := NewSessionService(db)
-	service := NewLeaderboardService(db, sessionService, &AGSSyncService{})
+	service := NewLeaderboardService(db, sessionService, &AGSSyncService{}, nil)
 
 	sqlDB, _ := db.DB()
 	txn, _ := sqlDB.Begin()

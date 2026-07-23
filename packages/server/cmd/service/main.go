@@ -97,7 +97,14 @@ func main() {
 
 	sessionService := services.NewSessionService(db)
 	agsSyncService := services.NewAGSSyncService(agsClient)
-	leaderboardService := services.NewLeaderboardService(db, sessionService, agsSyncService)
+
+	var extendLeaderboardClient *services.ExtendLeaderboardClient
+	if addr := os.Getenv("EXTEND_LEADERBOARD_ADDR"); addr != "" {
+		extendLeaderboardClient = services.NewExtendLeaderboardClient(addr)
+		log.Printf("Using extend-leaderboard at %s", addr)
+	}
+
+	leaderboardService := services.NewLeaderboardService(db, sessionService, agsSyncService, extendLeaderboardClient)
 	gameService := services.NewGameService(sessionService, core.GlobalSessionStore, wordService, leaderboardService, agsSyncService, sessionOptions)
 	statsService := services.NewStatsService(db)
 	healthService := services.NewHealthService(db, "atoyr", GitHash)

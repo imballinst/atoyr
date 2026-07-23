@@ -13,16 +13,18 @@ import (
 )
 
 type LeaderboardService struct {
-	db             *gorm.DB
-	sessionService *SessionService
-	agsSyncService *AGSSyncService
+	db                      *gorm.DB
+	sessionService          *SessionService
+	agsSyncService          *AGSSyncService
+	extendLeaderboardClient *ExtendLeaderboardClient
 }
 
-func NewLeaderboardService(db *gorm.DB, sessionService *SessionService, agsSyncService *AGSSyncService) *LeaderboardService {
+func NewLeaderboardService(db *gorm.DB, sessionService *SessionService, agsSyncService *AGSSyncService, extendClient *ExtendLeaderboardClient) *LeaderboardService {
 	return &LeaderboardService{
-		db:             db,
-		sessionService: sessionService,
-		agsSyncService: agsSyncService,
+		db:                      db,
+		sessionService:          sessionService,
+		agsSyncService:          agsSyncService,
+		extendLeaderboardClient: extendClient,
 	}
 }
 
@@ -36,6 +38,11 @@ type LeaderboardEntry struct {
 }
 
 func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, error) {
+	if l.extendLeaderboardClient != nil {
+		entries, _, err := l.extendLeaderboardClient.GetLeaderboard(mode, limit, offset)
+		return entries, err
+	}
+
 	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
 		entries, _, err := l.agsSyncService.GetLeaderboard(mode, limit, offset)
 		return entries, err
@@ -68,6 +75,10 @@ func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]L
 }
 
 func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
+	if l.extendLeaderboardClient != nil {
+		return l.extendLeaderboardClient.GetTotalEntries(mode)
+	}
+
 	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
 		return l.agsSyncService.CountLeaderboardEntries(mode)
 	}
@@ -83,6 +94,21 @@ func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
 }
 
 func (l *LeaderboardService) GetPercentile(sessionId, mode string) (float32, error) {
+	if l.extendLeaderboardClient != nil {
+		session, err := l.sessionService.FindByID(sessionId)
+		if err != nil {
+			return 0, fmt.Errorf("failed to fetch session: %w", err)
+		}
+		if session.UserID == "" {
+			return 0, fmt.Errorf("session has no user id")
+		}
+		percentile, err := l.extendLeaderboardClient.GetPercentile(mode, session.UserID)
+		if err != nil {
+			return 0, err
+		}
+		return float32(percentile), nil
+	}
+
 	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
 		session, err := l.sessionService.FindByID(sessionId)
 		if err != nil {
@@ -153,6 +179,10 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string) (float32, err
 // leaderboard fallback. It is a no-op when AGS is enabled because AGS is the
 // source of truth for leaderboard data in that configuration.
 func (l *LeaderboardService) SaveFallback(session *domainmodels.SessionDomain) error {
+	if l.extendLeaderboardClient != nil {
+		return nil
+	}
+
 	if l.agsSyncService != nil && l.agsSyncService.Enabled() {
 		return nil
 	}

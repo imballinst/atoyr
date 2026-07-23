@@ -22,7 +22,7 @@ func initTestServices(t *testing.T) TestValues {
 
 	ws := initTestWordService()
 	ss := NewSessionService(db)
-	ls := NewLeaderboardService(db, ss, &AGSSyncService{})
+	ls := NewLeaderboardService(db, ss, &AGSSyncService{}, nil)
 	store := core.NewSessionStore()
 	gs := NewGameService(ss, store, ws, ls, &AGSSyncService{}, testutils.TestSessionOptions)
 
