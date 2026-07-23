@@ -1,3 +1,4 @@
+env_files = [".env.local"]
 root = "."
 tmp_dir = "tmp"
 
