@@ -4511,12 +4511,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"extend-eventhandler@workspace:packages/extend-eventhandler":
-  version: 0.0.0-use.local
-  resolution: "extend-eventhandler@workspace:packages/extend-eventhandler"
-  languageName: unknown
-  linkType: soft
-
 "extend-leaderboard@workspace:packages/extend-leaderboard":
   version: 0.0.0-use.local
   resolution: "extend-leaderboard@workspace:packages/extend-leaderboard"
