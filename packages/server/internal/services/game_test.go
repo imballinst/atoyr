@@ -177,13 +177,8 @@ func TestGameService_FinishGame(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, testServices.Store.Get(session.ID))
 
-	// Verify the SQLite leaderboard fallback has the finished summary.
-	finished, err := testServices.Leaderboard.GetLeaderboard("vanilla", 10, 0)
-	assert.NoError(t, err)
-	assert.Len(t, finished, 1)
-	assert.Equal(t, int32(7), finished[0].Score)
-	assert.Equal(t, int32(8), finished[0].TotalAttempts)
-	assert.Equal(t, float32(87.5), finished[0].Accuracy)
+	// SaveFallback is a no-op; leaderboard data flows through extend-leaderboard.
+	assert.NoError(t, testServices.Leaderboard.SaveFallback(nil))
 }
 
 func TestGameService_StartGame_BlindMode(t *testing.T) {

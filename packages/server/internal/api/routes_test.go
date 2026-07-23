@@ -20,11 +20,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func setupTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService, *core.SessionStore) {
+func setupTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService, *core.SessionStore, *services.FakeLeaderboardClient) {
 	return setupTestRouterWithWordDefinition(t, nil)
 }
 
-func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []services.WordDefinition) (*gin.Engine, *gorm.DB, *services.SessionService, *core.SessionStore) {
+func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []services.WordDefinition) (*gin.Engine, *gorm.DB, *services.SessionService, *core.SessionStore, *services.FakeLeaderboardClient) {
 	// Set Gin to release mode for tests
 	gin.SetMode(gin.TestMode)
 
@@ -52,9 +52,10 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	wordService.SetWords(wordDefinitions)
 
 	sessionService := services.NewSessionService(db)
-	agsSyncService := &services.AGSSyncService{}
-	leaderboardService := services.NewLeaderboardService(db, sessionService, agsSyncService, nil)
+	leaderboardClient := services.NewFakeLeaderboardClient()
+	leaderboardService := services.NewLeaderboardService(sessionService, leaderboardClient)
 	store := core.NewSessionStore()
+	agsSyncService := &services.AGSSyncService{}
 	gameService := services.NewGameService(sessionService, store, wordService, leaderboardService, agsSyncService, testutils.TestSessionOptions)
 
 	// Create router
@@ -65,7 +66,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 
-	return router, db, sessionService, store
+	return router, db, sessionService, store, leaderboardClient
 }
 
 func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.SessionService, *services.StatsService) {
@@ -88,8 +89,9 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	})
 
 	sessionService := services.NewSessionService(db)
+	leaderboardClient := services.NewFakeLeaderboardClient()
+	leaderboardService := services.NewLeaderboardService(sessionService, leaderboardClient)
 	agsSyncService := &services.AGSSyncService{}
-	leaderboardService := services.NewLeaderboardService(db, sessionService, agsSyncService, nil)
 	gameService := services.NewGameService(sessionService, core.NewSessionStore(), wordService, leaderboardService, agsSyncService, testutils.TestSessionOptions)
 	metricsCollector := middleware.NewMetricsCollector()
 	statsService := services.NewStatsService(db)
@@ -107,18 +109,8 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	return router, db, sessionService, statsService
 }
 
-func finishSessionForLeaderboard(db *gorm.DB, sessionID string, score, totalAttempts int32) {
-	db.Model(&models.LeaderboardSessionEntity{ID: sessionID}).Updates(map[string]any{
-		"score":          score,
-		"total_attempts": totalAttempts,
-		"accuracy":       utils.CalculateAccuracy(score, totalAttempts),
-		"phase":          core.SessionPhaseFinished,
-		"ends_at":        time.Now(),
-	})
-}
-
 func TestGameRoutes_StartGame(t *testing.T) {
-	router, _, _, _ := setupTestRouter(t)
+	router, _, _, _, _ := setupTestRouter(t)
 
 	autoVoice := false
 	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
@@ -157,7 +149,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 }
 
 func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
-	router, _, _, _ := setupTestRouter(t)
+	router, _, _, _, _ := setupTestRouter(t)
 
 	autoVoice := true
 	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
@@ -196,7 +188,7 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 }
 
 func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
-	router, _, _, _ := setupTestRouter(t)
+	router, _, _, _, _ := setupTestRouter(t)
 
 	autoVoice := true
 	payload := StartGameRequest{Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
@@ -215,7 +207,7 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 }
 
 func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
-	router, _, _, _ := setupTestRouter(t)
+	router, _, _, _, _ := setupTestRouter(t)
 
 	autoVoice := true
 	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
@@ -253,7 +245,7 @@ func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 }
 
 func TestGameRoutes_FinishGame(t *testing.T) {
-	router, _, sessionService, _ := setupTestRouterWithWordDefinition(t, []services.WordDefinition{
+	router, _, sessionService, _, _ := setupTestRouterWithWordDefinition(t, []services.WordDefinition{
 		{
 			Word:       "apple",
 			Definition: "A fruit with red color",
@@ -312,7 +304,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 }
 
 func TestGameRoutes_SubmitAnswer(t *testing.T) {
-	router, _, _, store := setupTestRouter(t)
+	router, _, _, store, _ := setupTestRouter(t)
 
 	// Start a game first
 	autoVoice := false
@@ -355,35 +347,22 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 }
 
 func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
-	router, db, sessionService, _ := setupTestRouter(t)
+	router, _, sessionService, _, leaderboardClient := setupTestRouter(t)
 
-	sessionIDs := []string{}
-	for range 5 {
+	sessions := make([]struct{ ID string }, 5)
+	for i := range 5 {
 		session, _ := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
-		sessionIDs = append(sessionIDs, session.ID)
+		sessions[i] = struct{ ID string }{ID: session.ID}
 	}
 
-	type patchInfo struct {
-		id            string
-		score         int32
-		totalAttempts int32
+	leaderboardClient.Entries = []services.LeaderboardEntry{
+		{ID: sessions[2].ID, Rank: 1, Score: 10, TotalAttempts: 10, Accuracy: float32(100), Timestamp: time.Now().UnixMilli()},
+		{ID: sessions[1].ID, Rank: 2, Score: 10, TotalAttempts: 12, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 12)), Timestamp: time.Now().UnixMilli()},
+		{ID: sessions[0].ID, Rank: 3, Score: 10, TotalAttempts: 15, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 15)), Timestamp: time.Now().UnixMilli()},
+		{ID: sessions[3].ID, Rank: 4, Score: 10, TotalAttempts: 20, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 20)), Timestamp: time.Now().UnixMilli()},
+		{ID: sessions[4].ID, Rank: 5, Score: 10, TotalAttempts: 30, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 30)), Timestamp: time.Now().UnixMilli()},
 	}
-
-	getPatchInfo := func(sessionID string, score, totalAttempts int32) patchInfo {
-		return patchInfo{sessionID, score, totalAttempts}
-	}
-
-	patchedSessionsInfo := []patchInfo{
-		getPatchInfo(sessionIDs[0], 10, 15),
-		getPatchInfo(sessionIDs[1], 10, 12),
-		getPatchInfo(sessionIDs[2], 10, 10),
-		getPatchInfo(sessionIDs[3], 10, 20),
-		getPatchInfo(sessionIDs[4], 10, 30),
-	}
-
-	for _, sessionInfo := range patchedSessionsInfo {
-		finishSessionForLeaderboard(db, sessionInfo.id, sessionInfo.score, sessionInfo.totalAttempts)
-	}
+	leaderboardClient.Total = 5
 
 	req, _ := http.NewRequest("GET", "/api/v1/leaderboard", nil)
 	recorder := testutils.CreateTestResponseRecorder()
@@ -397,51 +376,32 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 	assert.Equal(t, int64(5), response.Total)
 	assert.Len(t, response.Entries, 5)
 
-	expectedLeaderboardOrder := []patchInfo{patchedSessionsInfo[2], patchedSessionsInfo[1], patchedSessionsInfo[0], patchedSessionsInfo[3], patchedSessionsInfo[4]}
-	for i, session := range response.Entries {
-		assert.Equal(t, expectedLeaderboardOrder[i].score, session.Score)
-		assert.Equal(t, expectedLeaderboardOrder[i].totalAttempts, session.TotalAttempts)
-		assert.Equal(t, utils.ToPercentage(utils.CalculateAccuracy(expectedLeaderboardOrder[i].score, expectedLeaderboardOrder[i].totalAttempts)), session.Accuracy)
-
-		// Ensure the IDs are all masked.
-		assert.Equal(t, utils.MaskSessionID(expectedLeaderboardOrder[i].id), session.Id)
+	expectedOrder := []int{2, 1, 0, 3, 4}
+	for i, idx := range expectedOrder {
+		assert.Equal(t, utils.MaskSessionID(sessions[idx].ID), response.Entries[i].Id)
 	}
 }
 
 func TestLeaderboardRoutes_GetLeaderboard_DifferentModes(t *testing.T) {
-	router, db, sessionService, _ := setupTestRouter(t)
+	router, _, sessionService, _, leaderboardClient := setupTestRouter(t)
 
 	for _, mode := range []string{string(Vanilla), string(Blind)} {
-		sessionIDs := []string{}
-		for range 5 {
+		sessions := make([]struct{ ID string }, 5)
+		for i := range 5 {
 			session, _ := sessionService.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration)
-			sessionIDs = append(sessionIDs, session.ID)
+			sessions[i] = struct{ ID string }{ID: session.ID}
 		}
 
-		type patchInfo struct {
-			id            string
-			score         int32
-			totalAttempts int32
+		leaderboardClient.Entries = []services.LeaderboardEntry{
+			{ID: sessions[2].ID, Rank: 1, Score: 10, TotalAttempts: 10, Accuracy: float32(100), Timestamp: time.Now().UnixMilli()},
+			{ID: sessions[1].ID, Rank: 2, Score: 10, TotalAttempts: 12, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 12)), Timestamp: time.Now().UnixMilli()},
+			{ID: sessions[0].ID, Rank: 3, Score: 10, TotalAttempts: 15, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 15)), Timestamp: time.Now().UnixMilli()},
+			{ID: sessions[3].ID, Rank: 4, Score: 10, TotalAttempts: 20, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 20)), Timestamp: time.Now().UnixMilli()},
+			{ID: sessions[4].ID, Rank: 5, Score: 10, TotalAttempts: 30, Accuracy: utils.ToPercentage(utils.CalculateAccuracy(10, 30)), Timestamp: time.Now().UnixMilli()},
 		}
-
-		getPatchInfo := func(sessionID string, score, totalAttempts int32) patchInfo {
-			return patchInfo{sessionID, score, totalAttempts}
-		}
-
-		patchedSessionsInfo := []patchInfo{
-			getPatchInfo(sessionIDs[0], 10, 15),
-			getPatchInfo(sessionIDs[1], 10, 12),
-			getPatchInfo(sessionIDs[2], 10, 10),
-			getPatchInfo(sessionIDs[3], 10, 20),
-			getPatchInfo(sessionIDs[4], 10, 30),
-		}
-
-		for _, sessionInfo := range patchedSessionsInfo {
-			finishSessionForLeaderboard(db, sessionInfo.id, sessionInfo.score, sessionInfo.totalAttempts)
-		}
+		leaderboardClient.Total = 5
 
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/v1/leaderboard?mode=%s", mode), nil)
-
 		recorder := testutils.CreateTestResponseRecorder()
 		router.ServeHTTP(recorder, req)
 
@@ -453,20 +413,15 @@ func TestLeaderboardRoutes_GetLeaderboard_DifferentModes(t *testing.T) {
 		assert.Equal(t, int64(5), response.Total)
 		assert.Len(t, response.Entries, 5)
 
-		expectedLeaderboardOrder := []patchInfo{patchedSessionsInfo[2], patchedSessionsInfo[1], patchedSessionsInfo[0], patchedSessionsInfo[3], patchedSessionsInfo[4]}
-		for i, session := range response.Entries {
-			assert.Equal(t, expectedLeaderboardOrder[i].score, session.Score)
-			assert.Equal(t, expectedLeaderboardOrder[i].totalAttempts, session.TotalAttempts)
-			assert.Equal(t, utils.ToPercentage(utils.CalculateAccuracy(expectedLeaderboardOrder[i].score, expectedLeaderboardOrder[i].totalAttempts)), session.Accuracy)
-
-			// Ensure the IDs are all masked.
-			assert.Equal(t, utils.MaskSessionID(expectedLeaderboardOrder[i].id), session.Id)
+		expectedOrder := []int{2, 1, 0, 3, 4}
+		for i, idx := range expectedOrder {
+			assert.Equal(t, utils.MaskSessionID(sessions[idx].ID), response.Entries[i].Id)
 		}
 	}
 }
 
 func TestLeaderboardRoutes_Pagination(t *testing.T) {
-	router, _, _, _ := setupTestRouter(t)
+	router, _, _, _, _ := setupTestRouter(t)
 
 	req, _ := http.NewRequest("GET", "/api/v1/leaderboard?page=1&limit=5", nil)
 	recorder := testutils.CreateTestResponseRecorder()

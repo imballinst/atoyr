@@ -12,6 +12,12 @@ const (
 	defaultExtendLeaderboardBase = "http://localhost:8000/leaderboard"
 )
 
+type LeaderboardReadClient interface {
+	GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, int64, error)
+	GetPercentile(mode, userID string) (float64, error)
+	GetTotalEntries(mode string) (int64, error)
+}
+
 type ExtendLeaderboardClient struct {
 	baseURL string
 	client  *http.Client

@@ -8,25 +8,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type TestValues struct {
-	DB          *gorm.DB
-	Word        *WordService
-	Session     *SessionService
-	Leaderboard *LeaderboardService
-	Game        *GameService
-	Store       *core.SessionStore
+type FakeLeaderboardClient struct {
+	Entries       []LeaderboardEntry
+	Total         int64
+	Percentile    float64
+	PercentileErr error
 }
 
-func initTestServices(t *testing.T) TestValues {
-	db := testutils.SetupTestDB(t)
+func NewFakeLeaderboardClient() *FakeLeaderboardClient {
+	return &FakeLeaderboardClient{}
+}
 
-	ws := initTestWordService()
-	ss := NewSessionService(db)
-	ls := NewLeaderboardService(db, ss, &AGSSyncService{}, nil)
-	store := core.NewSessionStore()
-	gs := NewGameService(ss, store, ws, ls, &AGSSyncService{}, testutils.TestSessionOptions)
+func (f *FakeLeaderboardClient) GetLeaderboard(_ string, limit, offset int) ([]LeaderboardEntry, int64, error) {
+	if offset >= len(f.Entries) {
+		return nil, f.Total, nil
+	}
+	end := offset + limit
+	if end > len(f.Entries) {
+		end = len(f.Entries)
+	}
+	return f.Entries[offset:end], f.Total, nil
+}
 
-	return TestValues{db, ws, ss, ls, gs, store}
+func (f *FakeLeaderboardClient) GetPercentile(_, _ string) (float64, error) {
+	return f.Percentile, f.PercentileErr
+}
+
+func (f *FakeLeaderboardClient) GetTotalEntries(_ string) (int64, error) {
+	return f.Total, nil
 }
 
 func initTestWordService() *WordService {
@@ -44,4 +53,25 @@ func initTestWordService() *WordService {
 			{Word: "horizon", Definition: "where earth meets sky"},
 		},
 	}
+}
+
+type TestValues struct {
+	DB          *gorm.DB
+	Word        *WordService
+	Session     *SessionService
+	Leaderboard *LeaderboardService
+	Game        *GameService
+	Store       *core.SessionStore
+}
+
+func initTestServices(t *testing.T) TestValues {
+	db := testutils.SetupTestDB(t)
+
+	ws := initTestWordService()
+	ss := NewSessionService(db)
+	ls := NewLeaderboardService(ss, NewFakeLeaderboardClient())
+	store := core.NewSessionStore()
+	gs := NewGameService(ss, store, ws, ls, &AGSSyncService{}, testutils.TestSessionOptions)
+
+	return TestValues{db, ws, ss, ls, gs, store}
 }
