@@ -93,6 +93,7 @@ type StartGameRequest struct {
 // StartGameResponse defines model for StartGameResponse.
 type StartGameResponse struct {
 	AutoVoice               bool         `json:"autoVoice"`
+	Lang                    string       `json:"lang"`
 	Mode                    SessionMode  `json:"mode"`
 	RemainingSeconds        int32        `json:"remainingSeconds"`
 	ScrambledWord           string       `json:"scrambledWord"`

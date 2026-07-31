@@ -89,6 +89,10 @@ func TestWordService_TopicIsolation(t *testing.T) {
 				{Word: "pekerjaan", Definition: "Jika empat langkah tadi bisa penuhi akan terbuka 19 juta lapangan <template> — Rakabuming, Gibran (2023)"},
 			},
 		},
+		TopicLangs: map[string]string{
+			"english-words":               "en-US",
+			"indonesian-politician-quotes": "id-ID",
+		},
 	}
 
 	for range 10 {

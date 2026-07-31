@@ -21,6 +21,7 @@ export function GameScreen({
   remainingSeconds,
   settings,
   token,
+  lang,
   onSubmit,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
@@ -82,11 +83,11 @@ export function GameScreen({
   useEffect(() => {
     const speakTimeout = setTimeout(() => {
       if (settings.autoVoice) {
-        speakLetters(scrambled, definition);
+        speakLetters(scrambled, definition, lang);
       }
     }, 50);
     return () => clearTimeout(speakTimeout);
-  }, [scrambled, definition, settings.autoVoice]);
+  }, [scrambled, definition, settings.autoVoice, lang]);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
@@ -151,7 +152,7 @@ export function GameScreen({
 
       <button
         type="button"
-        onClick={() => speakLetters(scrambled, definition)}
+        onClick={() => speakLetters(scrambled, definition, lang)}
         className="bg-dark-interactive-primary text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-dark-interactive-hover hover:scale-110 active:scale-95"
         aria-label="Speak letters"
       >
@@ -194,7 +195,7 @@ export function GameScreen({
   );
 }
 
-function speakLetters(letters: string, definition: string) {
+function speakLetters(letters: string, definition: string, lang: string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
@@ -202,11 +203,13 @@ function speakLetters(letters: string, definition: string) {
     const speechDefinition = definition.replace('<template>', '...');
     const definitionUtterance = new SpeechSynthesisUtterance(speechDefinition);
     definitionUtterance.rate = 0.75;
+    definitionUtterance.lang = lang;
     window.speechSynthesis.speak(definitionUtterance);
   }
 
   letters.split('').forEach((letter) => {
     const utterance = new SpeechSynthesisUtterance(letter);
+    utterance.lang = lang;
     window.speechSynthesis.speak(utterance);
   });
 }

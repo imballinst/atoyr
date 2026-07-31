@@ -376,6 +376,8 @@ export interface components {
       sessionId: string;
       mode: components['schemas']['SessionMode'];
       topic: components['schemas']['SessionTopic'];
+      /** @example en-US */
+      lang: string;
       /** @example lpeap */
       scrambledWord: string;
       /** @example A fruit that is often red or green. */

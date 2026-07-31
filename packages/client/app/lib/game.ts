@@ -22,6 +22,7 @@ export interface GameState {
   correctAttemptTimestamps: string[][];
   remainingSeconds: number;
   usedWords: string[];
+  lang: string;
 }
 
 export type ErrorCode =

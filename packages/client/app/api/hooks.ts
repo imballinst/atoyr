@@ -27,6 +27,7 @@ const INITIAL_STATE: Omit<GameState, 'settings'> = {
   correctAttemptTimestamps: [],
   remainingSeconds: GAME_DURATION_SECONDS,
   usedWords: [],
+  lang: '',
 };
 const QUERY_OPTS = { retry: import.meta.env.DEV ? 0 : 3 };
 
@@ -73,6 +74,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
         remainingSeconds: response.remainingSeconds,
         usedWords: [],
         lastWordAnswer: null,
+        lang: response.lang,
         currentWord: {
           scrambled: response.scrambledWord,
           definition: response.scrambledWordDefinition,

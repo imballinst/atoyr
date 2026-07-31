@@ -10,7 +10,13 @@ import (
 )
 
 type WordService struct {
-	Words map[string][]WordDefinition
+	Words      map[string][]WordDefinition
+	TopicLangs map[string]string
+}
+
+type TopicFile struct {
+	Lang  string           `json:"lang"`
+	Words []WordDefinition `json:"words"`
 }
 
 type WordDefinition struct {
@@ -38,6 +44,7 @@ func (w *WordService) loadWords() error {
 	}
 
 	w.Words = make(map[string][]WordDefinition)
+	w.TopicLangs = make(map[string]string)
 
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
@@ -52,12 +59,13 @@ func (w *WordService) loadWords() error {
 			return fmt.Errorf("failed to read topic file %s: %w", entry.Name(), err)
 		}
 
-		var entries []WordDefinition
-		if err := json.Unmarshal(data, &entries); err != nil {
+		var topicFile TopicFile
+		if err := json.Unmarshal(data, &topicFile); err != nil {
 			return fmt.Errorf("failed to parse topic file %s: %w", entry.Name(), err)
 		}
 
-		w.Words[topic] = entries
+		w.Words[topic] = topicFile.Words
+		w.TopicLangs[topic] = topicFile.Lang
 	}
 
 	if len(w.Words) == 0 {
@@ -99,8 +107,15 @@ func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string
 	return available[idx], availableDefinitions[idx], nil
 }
 
+func (w *WordService) GetTopicLang(topic string) string {
+	return w.TopicLangs[topic]
+}
+
 func (w *WordService) SetWords(words []WordDefinition) {
 	w.Words = map[string][]WordDefinition{
 		"english-words": words,
+	}
+	w.TopicLangs = map[string]string{
+		"english-words": "en-US",
 	}
 }

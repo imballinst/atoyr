@@ -238,6 +238,7 @@ components:
         - remainingSeconds
         - autoVoice
         - topic
+        - lang
       properties:
         sessionId:
           type: string
@@ -247,6 +248,9 @@ components:
           $ref: "#/components/schemas/SessionMode"
         topic:
           $ref: "#/components/schemas/SessionTopic"
+        lang:
+          type: string
+          example: "en-US"
         scrambledWord:
           type: string
           example: 'lpeap'

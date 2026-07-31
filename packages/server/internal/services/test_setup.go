@@ -44,5 +44,8 @@ func initTestWordService() *WordService {
 				{Word: "horizon", Definition: "where earth meets sky"},
 			},
 		},
+		TopicLangs: map[string]string{
+			testTopic: "en-US",
+		},
 	}
 }

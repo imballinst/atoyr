@@ -1,7 +1,45 @@
-[
-  { "word": "gelap", "definition": "Kau yang <template>! — Pandjaitan, Luhut Binsar (2025)" },
-  { "word": "internet", "definition": "<template> cepat buat apa? — Sembiring, Tifatul (2014)" },
-  { "word": "obligasi", "definition": "<template> itu apa sih? — Widodo, Jokowi (2012)" },
-  { "word": "rapat", "definition": "Gua ini kagak pernah diajakin <template> — Deyang, Nanik Sudaryati (2026)" },
-  { "word": "pekerjaan", "definition": "Jika empat langkah tadi bisa penuhi akan terbuka 19 juta lapangan <template> — Rakabuming, Gibran (2023)" }
-]
+{
+  "lang": "id-ID",
+  "words": [
+    {
+      "word": "prihatin",
+      "definition": "Saya sangat <template> masih ada kasus-kasus yang melibatkan anggota DPR RI, pemerintah, DPRD, pejabat, bupati, wali kota — Yudhoyono, Susilo Bambang (2013)"
+    },
+    {
+      "word": "internet",
+      "definition": "Tweeps Budiman, memangnya kalau <template>nya cepat mau dipakai buat apa? — Sembiring, Tifatul (2014)"
+    },
+    {
+      "word": "obligasi",
+      "definition": "<template> itu apa sih? Wong duitnya aja banyak, ngapain harus ngutang-ngutang — Widodo, Jokowi (2012)"
+    },
+    {
+      "word": "pekerjaan",
+      "definition": "Jika empat langkah tadi bisa kita penuhi, insya Allah akan terbuka 19 juta lapangan <template> — Rakabuming Raka, Gibran (2023)"
+    },
+    {
+      "word": "gelap",
+      "definition": "Kalau ada yang bilang itu Indonesia <template>, yang <template> kau, bukan Indonesia — Pandjaitan, Luhut Binsar (2025)"
+    },
+    {
+      "word": "babi",
+      "definition": "Sudah dimasak aja, kepala <template> dimasak aja — Nasbi, Hasan (2025)"
+    },
+    {
+      "word": "kabur",
+      "definition": "Mau <template>, <template> sajalah. Kalau perlu jangan balik lagi — Ebenezer, Immanuel (2025)"
+    },
+    {
+      "word": "kampungan",
+      "definition": "Otak-otak pemikiran seperti ini, <template> menurut saya — Simanjuntak, Maruli (2025)"
+    },
+    {
+      "word": "pacar",
+      "definition": "Saya sudah 13 tahun tidak punya istri, cuma 3 <template> — Pigai, Natalius (2025)"
+    },
+    {
+      "word": "tersanjung",
+      "definition": "Yang salah Zulkifli Hasan. Ya saya bilang nggak apa-apa, saya <template> juga — Hasan, Zulkifli (2025)"
+    }
+  ]
+}

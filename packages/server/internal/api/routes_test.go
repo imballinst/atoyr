@@ -61,7 +61,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
+	server := NewServer(gameService, sessionService, leaderboardService, wordService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 
 	return router, sessionService
@@ -98,7 +98,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	router.Use(middleware.CORSMiddleware())
 	router.Use(middleware.Metrics(metricsCollector))
 
-	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
+	server := NewServer(gameService, sessionService, leaderboardService, wordService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 	RegisterAdminRoutes(router, statsService, middleware.NewNoopAuthMiddleware())
 

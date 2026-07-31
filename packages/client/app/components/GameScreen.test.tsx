@@ -35,6 +35,7 @@ const baseState: GameState = {
     scrambled: 'example',
   },
   lastWordAnswer: null,
+  lang: 'en-US',
   settings: {
     autoVoice: false,
     mode: 'vanilla',

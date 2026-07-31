@@ -69,6 +69,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		AutoVoice:               session.AutoVoice,
 		Mode:                    SessionMode(session.Mode),
 		Topic:                   SessionTopic(session.Topic),
+		Lang:                    gr.wordService.GetTopicLang(session.Topic),
 		Token:                   session.CurrentWordToken,
 		RemainingSeconds:        session.DurationSeconds,
 	})
@@ -114,6 +115,7 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		Token:                   session.CurrentWordToken,
 		Mode:                    SessionMode(session.Mode),
 		Topic:                   SessionTopic(session.Topic),
+		Lang:                    gr.wordService.GetTopicLang(session.Topic),
 		RemainingSeconds:        core.SessionDurationManager.Get(session.ID),
 		AutoVoice:               session.AutoVoice,
 	})
