@@ -103,9 +103,9 @@ describe('ResultsScreen', () => {
     expect(screen.getByRole('checkbox', { name: /Enabled/ })).toBeChecked();
   });
 
-  it('passes the current mode to useLeaderboardPercentile', () => {
+  it('passes the current settings to useLeaderboardPercentile', () => {
     renderScreen();
 
-    expect(useLeaderboardPercentile).toHaveBeenCalledWith('vanilla');
+    expect(useLeaderboardPercentile).toHaveBeenCalledWith({ mode: 'vanilla', topic: 'english-words', autoVoice: false });
   });
 });

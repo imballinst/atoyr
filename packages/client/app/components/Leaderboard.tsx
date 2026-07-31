@@ -1,24 +1,26 @@
 import { Loader2Icon } from 'lucide-react';
 import { useId, useState, type JSX } from 'react';
 
-import type { SessionMode } from '~/api/gen';
+import type { SessionMode, SessionTopic } from '~/api/gen';
 import { getFinalScore } from '~/lib/game';
 
-import { useLeaderboard } from '../api/hooks';
+import { useLeaderboard, type LeaderboardSettings } from '../api/hooks';
 
 export function Leaderboard({
-  mode: modeProps,
+  settings,
   limit,
   HeadingComponent,
 }: {
-  mode?: SessionMode;
+  settings?: LeaderboardSettings;
   limit?: number;
   HeadingComponent: keyof JSX.IntrinsicElements;
 }) {
-  const [mode, setMode] = useState(modeProps);
+  const [mode, setMode] = useState(settings?.mode);
   const modeId = useId();
+  const [topic, setTopic] = useState(settings?.topic);
+  const topicId = useId();
 
-  const leaderboardQuery = useLeaderboard(mode, undefined, limit);
+  const leaderboardQuery = useLeaderboard({ mode, topic }, undefined, limit);
   const leaderboardEntries = leaderboardQuery.data?.entries;
   let pretext = '';
 
@@ -40,24 +42,45 @@ export function Leaderboard({
         {pretext} Order priority: more correct answers → more accuracy → earlier record time.
       </p>
 
-      {!modeProps && (
-        <div className="text-dark-text-secondary">
-          <label htmlFor={modeId} className="sr-only">
-            Mode
-          </label>
+      <div className="flex gap-2">
+        {!settings?.mode && (
+          <div className="text-dark-text-secondary">
+            <label htmlFor={modeId} className="sr-only">
+              Mode
+            </label>
 
-          <select
-            className="text-sm"
-            onChange={(e) => {
-              setMode(e.target.value as SessionMode);
-            }}
-            value={mode}
-          >
-            <option value="vanilla">Vanilla</option>
-            <option value="blind">Blind</option>
-          </select>
-        </div>
-      )}
+            <select
+              className="text-sm"
+              onChange={(e) => {
+                setMode(e.target.value as SessionMode);
+              }}
+              value={mode}
+            >
+              <option value="vanilla">Vanilla</option>
+              <option value="blind">Blind</option>
+            </select>
+          </div>
+        )}
+
+        {!settings?.topic && (
+          <div className="text-dark-text-secondary">
+            <label htmlFor={topicId} className="sr-only">
+              Topic
+            </label>
+
+            <select
+              className="text-sm"
+              onChange={(e) => {
+                setTopic(e.target.value as SessionTopic);
+              }}
+              value={topic}
+            >
+              <option value="english-words">English Words</option>
+              <option value="indonesian-politician-quotes">Indonesian Quotes</option>
+            </select>
+          </div>
+        )}
+      </div>
 
       <div className="text-dark-text-secondary text-sm">
         {leaderboardQuery.error ? (
@@ -80,6 +103,7 @@ export function Leaderboard({
                       {getFinalScore(result.score, result.totalAttempts)}
                     </div>
                     <div className="font-semibold text-dark-interactive-success text-right min-w-11">{result.accuracy}%</div>
+                    <TopicChip topic={result.topic} />
                   </div>
                 </div>
               ))}
@@ -89,4 +113,12 @@ export function Leaderboard({
       </div>
     </div>
   );
+}
+
+function TopicChip({ topic }: { topic: SessionTopic }) {
+  if (topic === 'indonesian-politician-quotes') {
+    return <span className="text-[10px] px-1 py-0.5 rounded bg-amber-400/20 text-amber-400 font-medium leading-none">Quotes</span>;
+  }
+
+  return null;
 }

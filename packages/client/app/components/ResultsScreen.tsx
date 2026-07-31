@@ -27,7 +27,7 @@ export function ResultsScreen({
   settings,
   onUpdateSettings,
 }: ResultsScreenProps) {
-  const { data } = useLeaderboardPercentile(settings.mode);
+  const { data } = useLeaderboardPercentile(settings);
 
   const accuracy = totalAttempts > 0 ? Math.trunc((score / totalAttempts) * 10000) / 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
@@ -88,7 +88,7 @@ export function ResultsScreen({
       </div>
 
       <div className="pt-6 w-full min-h-[270px]">
-        <Leaderboard mode={settings.mode} limit={5} HeadingComponent="h2" />
+        <Leaderboard settings={settings} limit={5} HeadingComponent="h2" />
       </div>
     </>
   );
