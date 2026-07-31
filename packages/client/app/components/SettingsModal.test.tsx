@@ -49,7 +49,7 @@ describe('SettingsModal — share settings', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Share settings' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(
@@ -59,6 +59,6 @@ describe('SettingsModal — share settings', () => {
 
     expect(screen.getByRole('button', { name: 'Copied!' })).toBeInTheDocument();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Share settings' })).toBeInTheDocument(), { timeout: 2500 });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument(), { timeout: 2500 });
   });
 });

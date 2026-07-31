@@ -18,7 +18,10 @@ export function Keyboard({
               key={key}
               type="button"
               className="aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => onClick(key)}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onClick(key);
+              }}
               disabled={answer.length >= wordLength}
             >
               {key}
@@ -60,7 +63,10 @@ export function Keyboard({
           <button
             type="button"
             className="col-span-3 bg-dark-bg-primary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={onBackspace}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              onBackspace();
+            }}
             aria-label="Backspace"
           >
             ←

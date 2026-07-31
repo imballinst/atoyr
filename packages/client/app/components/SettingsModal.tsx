@@ -82,7 +82,7 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
               <select
                 disabled={isIndonesianTopic}
                 id={modeId}
-                className={'text-sm' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
+                className={`text-sm${isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : ''}`}
                 onChange={(e) => {
                   updateSettings({ mode: e.target.value as SessionMode });
                 }}
@@ -108,7 +108,12 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
             </label>
 
             <div>
-              <select id={topicId} className="text-sm text-right" onChange={handleTopicChange} value={settings.topic}>
+              <select
+                id={topicId}
+                className="text-sm text-right [text-align-last:right]"
+                onChange={handleTopicChange}
+                value={settings.topic}
+              >
                 <option value="english-words">English Words</option>
                 <option value="indonesian-politician-quotes">Indonesian Politician Quotes</option>
               </select>
@@ -148,13 +153,24 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
         </div>
 
         <div className="border-t border-dark-border-primary pt-4">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="w-full text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded px-3 py-2 transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
-          >
-            {copied ? 'Copied!' : 'Share settings'}
-          </button>
+          <p className="text-xs text-dark-text-secondary text-left mb-2">Share your current settings:</p>
+
+          <div className="flex">
+            <input
+              type="text"
+              readOnly
+              value={`${location.origin}/?settings=${encodeSettings(settings)}`}
+              className="flex-1 text-sm bg-dark-bg-tertiary border border-r-0 border-dark-border-primary rounded-l px-3 py-2 text-dark-text-secondary outline-none"
+              onFocus={(e) => e.target.select()}
+            />
+            <button
+              type="button"
+              onClick={handleShare}
+              className="text-sm font-medium bg-dark-interactive-primary text-white rounded-r px-4 py-2 transition duration-200 hover:bg-dark-interactive-hover border border-dark-border-primary min-w-[85px] whitespace-nowrap"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
         </div>
       </div>
     </SharedDialog>

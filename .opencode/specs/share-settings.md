@@ -8,7 +8,7 @@ Let a player share their game settings via a URL so a recipient's client adopts 
 
 ## Share affordance
 
-- A "Share settings" button in `SettingsModal` (`packages/client/app/components/SettingsModal.tsx`), visible for both the landing-screen and results-screen instances of the modal.
+- A text input + "Copy" button in `SettingsModal`, visible for both the landing-screen and results-screen instances of the modal. The input shows the share URL (readonly). Clicking "Copy" copies it to the clipboard and shows transient "Copied!" feedback (~2s).
 - On click: build `${location.origin}/?settings=${btoa(JSON.stringify(settings))}` and copy it to the clipboard via `navigator.clipboard.writeText`. Show transient "Copied!" feedback that reverts after ~2s.
 - No analytics events. The existing dashboard already covers session tracking; share is not a game lifecycle event.
 
@@ -35,7 +35,7 @@ The payload is the full `LatestSchema`. Apply is wholesale replace. When the sch
 ## Tests
 
 - Unit (`lib/settings.ts`): add pure `encodeSettings(s) → string` and `decodeSettings(str) → LatestSchema | null` and test round-trip plus invalid inputs: malformed base64, invalid JSON, schema-violating values.
-- Component (`SettingsModal.test.tsx`): clicking "Share settings" calls `navigator.clipboard.writeText` with the expected `${origin}/?settings=...` URL and surfaces the visible "Copied!" state. Use a semantic query for the button; assert the visible feedback.
+- Component (`SettingsModal.test.tsx`): clicking the "Copy" button calls `navigator.clipboard.writeText` with the expected `${origin}/?settings=...` URL and shows the visible "Copied!" state.
 - Route (`home.test.tsx`, per the assert-transitions/outcomes convention): visiting `/?settings=<valid blob>` with no in-progress game renders the shared `mode`/`topic` indirectly (e.g., the ModeBanner shows the shared combo); with an in-progress game (`gameEndsAt` set in the future) the shared settings do **not** take effect.
 
 ## Out of scope
