@@ -217,11 +217,21 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 				return false
 			}
 
-			c.SSEvent("finish", gin.H{
+			finishEvent := gin.H{
 				"lastWordAnswer": session.CurrentWord,
-			})
+			}
+
+			if session.Topic == string(IndonesianPoliticianQuotes) {
+				finishEvent["lastWordDefinition"] = resolveDefinition(session.CurrentWordDefinition, session.CurrentWord)
+			}
+
+			c.SSEvent("finish", finishEvent)
 		}
 
 		return false
 	})
+}
+
+func resolveDefinition(definition string, word string) string {
+	return strings.ReplaceAll(definition, "<template>", word)
 }

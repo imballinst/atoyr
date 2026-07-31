@@ -28,11 +28,12 @@ const INITIAL_STATE: Omit<GameState, 'settings'> = {
   remainingSeconds: GAME_DURATION_SECONDS,
   usedWords: [],
   lang: '',
+  lastWordDefinition: null,
 };
 const QUERY_OPTS = { retry: import.meta.env.DEV ? 0 : 3 };
 
 const TickEventSchema = z.object({ type: z.literal('tick'), remainingSeconds: z.number() });
-const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string() });
+const FinishEventSchema = z.object({ type: z.literal('finish'), lastWordAnswer: z.string(), lastWordDefinition: z.string().optional() });
 const EventSchema = z.union([TickEventSchema, FinishEventSchema]);
 
 export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSchema) {
@@ -74,6 +75,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
         remainingSeconds: response.remainingSeconds,
         usedWords: [],
         lastWordAnswer: null,
+        lastWordDefinition: null,
         lang: response.lang,
         currentWord: {
           scrambled: response.scrambledWord,
@@ -104,6 +106,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
               ...prev,
               phase: 'finished',
               lastWordAnswer: data.lastWordAnswer,
+              lastWordDefinition: data.lastWordDefinition ?? null,
             }));
             setShouldContinue(false);
           }

@@ -21,6 +21,7 @@ interface RenderOverrides {
   totalAttempts?: number;
   currentWord?: { scrambled: string; definition: string } | null;
   lastWordAnswer?: string | null;
+  lastWordDefinition?: string | null;
   correctAttemptTimestamps?: string[][];
 }
 
@@ -36,6 +37,7 @@ function renderScreen(overrides: RenderOverrides = {}) {
         totalAttempts={overrides.totalAttempts ?? 5}
         currentWord={overrides.currentWord ?? { scrambled: 'plepa', definition: 'A thin, flat cake.' }}
         lastWordAnswer={overrides.lastWordAnswer ?? 'apple'}
+        lastWordDefinition={overrides.lastWordDefinition ?? null}
         correctAttemptTimestamps={overrides.correctAttemptTimestamps ?? []}
         onPlayAgain={overrides.onPlayAgain ?? vi.fn()}
         onBackToHome={overrides.onBackToHome ?? vi.fn()}
@@ -107,5 +109,22 @@ describe('ResultsScreen', () => {
     renderScreen();
 
     expect(useLeaderboardPercentile).toHaveBeenCalledWith({ mode: 'vanilla', topic: 'english-words', autoVoice: false });
+  });
+
+  it('shows "Last quote:" with bolded answer for indonesian-politician-quotes topic', () => {
+    localStorage.setItem('atoyr:settings:v2', JSON.stringify({ autoVoice: false, mode: 'vanilla', topic: 'indonesian-politician-quotes' }));
+    const rawDef = 'Kalau ada yang bilang itu Indonesia <template>, yang <template> kau, bukan Indonesia';
+    renderScreen({
+      lastWordAnswer: 'gelap',
+      lastWordDefinition: rawDef.replace(/<template>/g, 'gelap'),
+      currentWord: { scrambled: 'lgepa', definition: rawDef },
+    });
+
+    expect(screen.getByText(/Last quote:/)).toBeInTheDocument();
+    const strongElements = screen.getAllByText('gelap');
+    expect(strongElements).toHaveLength(2);
+    strongElements.forEach((el) => {
+      expect(el.tagName).toBe('STRONG');
+    });
   });
 });

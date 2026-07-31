@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 
 import { useLeaderboardPercentile } from '~/api/hooks';
 import type { LatestSchema } from '~/lib/settings';
@@ -9,7 +9,7 @@ import { SettingsModal } from './SettingsModal';
 
 interface ResultsScreenProps extends Pick<
   GameState,
-  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer' | 'settings'
+  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer' | 'lastWordDefinition' | 'settings'
 > {
   onPlayAgain: () => void;
   onBackToHome: () => void;
@@ -24,6 +24,7 @@ export function ResultsScreen({
   onBackToHome,
   currentWord,
   lastWordAnswer,
+  lastWordDefinition,
   settings,
   onUpdateSettings,
 }: ResultsScreenProps) {
@@ -32,12 +33,23 @@ export function ResultsScreen({
   const accuracy = totalAttempts > 0 ? Math.trunc((score / totalAttempts) * 10000) / 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
+  const isIndonesianQuotes = settings.topic === 'indonesian-politician-quotes';
+
   return (
     <>
       <h1 className="text-4xl font-bold mb-2 text-dark-text-primary">Game Over!</h1>
 
       <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm mb-4">
-        Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
+        {lastWordAnswer &&
+          (isIndonesianQuotes && lastWordDefinition ? (
+            <p>
+              Last quote: <span className="italic text-dark-text-tertiary">{highlightAnswer(lastWordDefinition, lastWordAnswer)}</span>
+            </p>
+          ) : (
+            <p>
+              Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
+            </p>
+          ))}
       </div>
 
       <div className="flex flex-col gap-2 mb-6 w-full text-center">
@@ -119,4 +131,14 @@ function parseColor(percentile: number) {
   if (percentile >= 50) return 'text-blue-400';
   if (percentile >= 25) return 'text-emerald-400';
   return 'text-slate-400';
+}
+
+function highlightAnswer(definition: string, answer: string): ReactNode {
+  const parts = definition.split(answer);
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && <strong className="underline">{answer}</strong>}
+    </Fragment>
+  ));
 }

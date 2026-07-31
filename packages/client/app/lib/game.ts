@@ -17,6 +17,7 @@ export interface GameState {
   currentWord: WordEntry | null;
   currentWordToken: string | null;
   lastWordAnswer: string | null;
+  lastWordDefinition: string | null;
   score: number;
   totalAttempts: number;
   correctAttemptTimestamps: string[][];

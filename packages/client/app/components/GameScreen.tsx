@@ -127,8 +127,8 @@ export function GameScreen({
 
       <div
         className={
-          'border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 inline-flex items-center justify-center w-full' +
-          (isIndonesianTopic ? ' min-h-[94px]' : '')
+          'border border-dark-bg-tertiary p-4 rounded-lg justify-center items-center flex text-sm italic text-dark-text-secondary w-full' +
+          (isIndonesianTopic ? ' h-[114px] overflow-hidden line-clamp-4' : '')
         }
         hidden={settings.mode === 'blind' || settings.autoVoice}
       >
