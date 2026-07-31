@@ -5,6 +5,12 @@ import type { GameState } from '~/lib/game';
 
 import { Keyboard } from './Keyboard';
 
+const DEFAULT_LANG = 'en-US';
+const TEMPLATE_PRONUNCIATION: Record<string, string> = {
+  [DEFAULT_LANG]: 'dot dot dot',
+  'id-ID': 'titik titik titik',
+};
+
 interface GameScreenProps extends GameState {
   scrambled: string;
   definition: string;
@@ -73,6 +79,7 @@ export function GameScreen({
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      window.speechSynthesis.cancel();
     };
     // handleLetterClick/handleBackspace read answerRef.current (always latest);
     // submitIfComplete closes over onSubmit/token from this render.
@@ -123,7 +130,7 @@ export function GameScreen({
           'border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 inline-flex items-center justify-center w-full' +
           (isIndonesianTopic ? ' min-h-[94px]' : '')
         }
-        hidden={settings.mode === 'blind'}
+        hidden={settings.mode === 'blind' || settings.autoVoice}
       >
         {definitionContent}
       </div>
@@ -204,16 +211,20 @@ function speakLetters(letters: string, definition: string, lang: string) {
   window.speechSynthesis.cancel();
 
   if (definition) {
-    const speechDefinition = definition.replace('<template>', '...');
+    const speechDefinition = definition.replace(/<template>(-<template>)?/g, TEMPLATE_PRONUNCIATION[lang] ?? '...');
     const definitionUtterance = new SpeechSynthesisUtterance(speechDefinition);
+    if (lang !== DEFAULT_LANG) definitionUtterance.lang = lang;
+
     definitionUtterance.rate = 0.75;
-    definitionUtterance.lang = lang;
+    definitionUtterance.volume = 0.75;
     window.speechSynthesis.speak(definitionUtterance);
   }
 
   letters.split('').forEach((letter) => {
     const utterance = new SpeechSynthesisUtterance(letter);
-    utterance.lang = lang;
+    if (lang !== DEFAULT_LANG) utterance.lang = lang;
+
+    utterance.volume = 0.75;
     window.speechSynthesis.speak(utterance);
   });
 }

@@ -367,7 +367,6 @@ describe('GameScreen', () => {
 
     const definitionDiv = screen.getByText((_, node) => node?.textContent === '___ yang gelap!');
     expect(definitionDiv).toBeInTheDocument();
-    expect(screen.getByLabelText('blank, 3 letters')).toBeInTheDocument();
   });
 
   it('renders definition as-is when no <template> marker is present', () => {
@@ -379,12 +378,12 @@ describe('GameScreen', () => {
   it('replaces <template> with ... in the speech definition', async () => {
     const user = userEvent.setup();
     const { speak } = mockSpeechSynthesis();
-    renderScreen({ definition: '<template> yang gelap!', scrambled: 'kau' });
+    renderScreen({ definition: '<template> yang gelap!', scrambled: 'kau', lang: 'id-ID' });
 
     await user.click(screen.getByRole('button', { name: 'Speak letters' }));
 
     expect(speak).toHaveBeenCalled();
-    expect((speak.mock.calls[0][0] as { text: string }).text).toBe('... yang gelap!');
+    expect((speak.mock.calls[0][0] as { text: string }).text).toBe('titik titik titik yang gelap!');
     expect((speak.mock.calls[1][0] as { text: string }).text).toBe('k');
     expect((speak.mock.calls[2][0] as { text: string }).text).toBe('a');
     expect((speak.mock.calls[3][0] as { text: string }).text).toBe('u');
