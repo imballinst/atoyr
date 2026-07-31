@@ -21,7 +21,7 @@ func NewSessionService(db *gorm.DB) *SessionService {
 	return &SessionService{db: db}
 }
 
-func (s *SessionService) Create(autoVoice bool, itemsUsed []string, mode string, durationSeconds int32) (*domainmodels.SessionDomain, error) {
+func (s *SessionService) Create(autoVoice bool, itemsUsed []string, mode string, topic string, durationSeconds int32) (*domainmodels.SessionDomain, error) {
 	initialRemainingSeconds := durationSeconds
 	if autoVoice {
 		initialRemainingSeconds += 5
@@ -33,6 +33,7 @@ func (s *SessionService) Create(autoVoice bool, itemsUsed []string, mode string,
 		Score:                    0,
 		TotalAttempts:            0,
 		Mode:                     mode,
+		Topic:                    topic,
 		Accuracy:                 0,
 		DurationSeconds:          initialRemainingSeconds,
 		AutoVoice:                autoVoice,

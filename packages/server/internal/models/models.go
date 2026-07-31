@@ -57,6 +57,7 @@ type SessionEntity struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	EndsAt    time.Time
+	Topic     string
 	Mode      string
 	// Available phases: idle, playing, finished.
 	Phase                    string

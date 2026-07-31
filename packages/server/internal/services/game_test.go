@@ -11,7 +11,7 @@ import (
 func TestGameService_StartGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	started, err := testServices.Game.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -26,7 +26,7 @@ func TestGameService_StartGame(t *testing.T) {
 func TestGameService_ContinueGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	started, err := testServices.Game.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestGameService_SubmitCorrectAnswer(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			testServices := initTestServices(t)
 
-			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
+			session, _ := testServices.Session.Create(false, []string{}, mode, testTopic, testutils.TestSessionOptions.Duration+5)
 			testServices.Game.StartGame(session.ID)
 
 			session, _ = testServices.Session.FindByID(session.ID)
@@ -76,7 +76,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			testServices := initTestServices(t)
 
-			session, _ := testServices.Session.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration+5)
+			session, _ := testServices.Session.Create(false, []string{}, mode, testTopic, testutils.TestSessionOptions.Duration+5)
 			testServices.Game.StartGame(session.ID)
 
 			session, _ = testServices.Session.FindByID(session.ID)
@@ -98,7 +98,7 @@ func TestGameService_SubmitIncorrectAnswer(t *testing.T) {
 func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -113,7 +113,6 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	assert.Len(t, result.CorrectAttemptTimestamps[0], 1)
 	assert.Equal(t, int32(1), result.Attempts)
 
-	// Check session again to get the latest word.
 	session, _ = testServices.Session.FindByID(session.ID)
 	word = session.CurrentWord
 
@@ -130,7 +129,7 @@ func TestGameService_SubmitCorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	session, _ = testServices.Session.FindByID(session.ID)
@@ -145,7 +144,6 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 	assert.Len(t, result.CorrectAttemptTimestamps[0], 1)
 	assert.Equal(t, int32(1), result.Attempts)
 
-	// Check session again to get the latest word.
 	session, _ = testServices.Session.FindByID(session.ID)
 
 	result, err = testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)
@@ -162,7 +160,7 @@ func TestGameService_SubmitIncorrectAnswer_AfterCorrectAnswer(t *testing.T) {
 func TestGameService_FinishGame(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	_, err := testServices.Game.StartGame(session.ID)
 	assert.NoError(t, err)
 
@@ -175,7 +173,6 @@ func TestGameService_FinishGame(t *testing.T) {
 
 	err = testServices.Game.FinishGame(session.ID)
 
-	// Check session again to get the latest word.
 	session, err = testServices.Session.FindByID(session.ID)
 
 	assert.NoError(t, err)
@@ -190,7 +187,7 @@ func TestGameService_FinishGame(t *testing.T) {
 func TestGameService_StartGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "blind", testTopic, testutils.TestSessionOptions.Duration+5)
 	started, err := testServices.Game.StartGame(session.ID)
 
 	assert.NoError(t, err)
@@ -203,7 +200,7 @@ func TestGameService_StartGame_BlindMode(t *testing.T) {
 func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "blind", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "blind", testTopic, testutils.TestSessionOptions.Duration+5)
 	_, err := testServices.Game.StartGame(session.ID)
 	assert.NoError(t, err)
 
@@ -217,13 +214,11 @@ func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 func TestGameService_TokenGeneration(t *testing.T) {
 	testServices := initTestServices(t)
 
-	// Same word should generate same token
 	token1 := testServices.Game.generateToken("test")
 	token2 := testServices.Game.generateToken("test")
 
 	assert.Equal(t, token1, token2)
 
-	// Different words should generate different tokens
 	token3 := testServices.Game.generateToken("test2")
 
 	assert.NotEqual(t, token1, token3)
@@ -232,7 +227,7 @@ func TestGameService_TokenGeneration(t *testing.T) {
 func TestGameService_AttemptCounting(t *testing.T) {
 	testServices := initTestServices(t)
 
-	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testutils.TestSessionOptions.Duration+5)
+	session, _ := testServices.Session.Create(false, []string{}, "vanilla", testTopic, testutils.TestSessionOptions.Duration+5)
 	testServices.Game.StartGame(session.ID)
 
 	testServices.Game.SubmitAnswer(session.ID, "wronganswer", session.CurrentWordToken)

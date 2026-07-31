@@ -13,6 +13,7 @@ type SessionDomain struct {
 	EndsAt                   time.Time
 	Phase                    string
 	Mode                     string
+	Topic                    string
 	Score                    int32
 	TotalAttempts            int32
 	Accuracy                 float32
@@ -45,6 +46,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		EndsAt:                   session.EndsAt,
 		Phase:                    session.Phase,
 		Mode:                     session.Mode,
+		Topic:                    session.Topic,
 		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
@@ -79,6 +81,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		Phase:                    session.Phase,
 		Score:                    session.Score,
 		Mode:                     session.Mode,
+		Topic:                    session.Topic,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
 		DurationSeconds:          session.DurationSeconds,

@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 type WordService struct {
-	Words []WordDefinition
+	Words map[string][]WordDefinition
 }
 
 type WordDefinition struct {
@@ -26,44 +27,67 @@ func NewWordService() (*WordService, error) {
 }
 
 func (w *WordService) loadWords() error {
-	wordsPath := os.Getenv("WORDS_PATH")
-	if wordsPath == "" {
-		return fmt.Errorf("WORDS_PATH environment variable is not set")
+	topicsDir := os.Getenv("TOPICS_DIR")
+	if topicsDir == "" {
+		return fmt.Errorf("TOPICS_DIR environment variable is not set")
 	}
 
-	data, err := os.ReadFile(wordsPath)
+	entries, err := os.ReadDir(topicsDir)
 	if err != nil {
-		return fmt.Errorf("failed to read words file: %w", err)
+		return fmt.Errorf("failed to read topics directory: %w", err)
 	}
 
-	var dbContent []WordDefinition
+	w.Words = make(map[string][]WordDefinition)
 
-	if err := json.Unmarshal(data, &dbContent); err != nil {
-		return fmt.Errorf("failed to parse words file: %w", err)
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		topic := strings.TrimSuffix(entry.Name(), ".json")
+		filePath := filepath.Join(topicsDir, entry.Name())
+
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read topic file %s: %w", entry.Name(), err)
+		}
+
+		var entries []WordDefinition
+		if err := json.Unmarshal(data, &entries); err != nil {
+			return fmt.Errorf("failed to parse topic file %s: %w", entry.Name(), err)
+		}
+
+		w.Words[topic] = entries
 	}
 
-	w.Words = dbContent
+	if len(w.Words) == 0 {
+		return fmt.Errorf("no topic files found in %s", topicsDir)
+	}
+
 	return nil
 }
 
-func (w *WordService) GetRandomWord(excludeWords []string) (string, string, error) {
-	if len(w.Words) == 0 {
-		return "", "", fmt.Errorf("no words available")
+func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string, string, error) {
+	topicWords, ok := w.Words[topic]
+	if !ok {
+		return "", "", fmt.Errorf("unknown topic: %s", topic)
 	}
 
-	// Create a map for excluded words for O(1) lookup
+	if len(topicWords) == 0 {
+		return "", "", fmt.Errorf("no words available for topic: %s", topic)
+	}
+
 	excluded := make(map[string]bool)
 	for _, word := range excludeWords {
 		excluded[strings.ToLower(word)] = true
 	}
 
-	// Find available words
 	available := []string{}
 	availableDefinitions := []string{}
-	for _, word := range w.Words {
-		if !excluded[strings.ToLower(word.Word)] {
-			available = append(available, word.Word)
-			availableDefinitions = append(availableDefinitions, word.Definition)
+	for _, wd := range topicWords {
+		if !excluded[strings.ToLower(wd.Word)] {
+			available = append(available, wd.Word)
+			availableDefinitions = append(availableDefinitions, wd.Definition)
 		}
 	}
 
@@ -76,5 +100,7 @@ func (w *WordService) GetRandomWord(excludeWords []string) (string, string, erro
 }
 
 func (w *WordService) SetWords(words []WordDefinition) {
-	w.Words = words
+	w.Words = map[string][]WordDefinition{
+		"english-words": words,
+	}
 }

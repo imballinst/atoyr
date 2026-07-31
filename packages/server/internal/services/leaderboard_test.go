@@ -318,7 +318,7 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 
 	// Create 3 finished sessions with scores
 	for i := range 3 {
-		session, err := sessionService.Create(false, []string{}, "vanilla", 30)
+		session, err := sessionService.Create(false, []string{}, "vanilla", testTopic, 30)
 		assert.NoError(t, err)
 
 		session.Score = int32(30 - i*10)
@@ -329,7 +329,7 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	}
 
 	// Player's session — properly finished
-	playerSession, err := sessionService.Create(false, []string{}, "vanilla", 30)
+	playerSession, err := sessionService.Create(false, []string{}, "vanilla", testTopic, 30)
 	assert.NoError(t, err)
 
 	playerSession.Score = 5

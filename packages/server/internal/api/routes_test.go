@@ -347,7 +347,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	sessionIDs := []string{}
 	for range 5 {
-		session, _ := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+		session, _ := sessionService.Create(false, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 		sessionIDs = append(sessionIDs, session.ID)
 	}
 
@@ -410,7 +410,7 @@ func TestLeaderboardRoutes_GetLeaderboard_DifferentModes(t *testing.T) {
 	for _, mode := range []string{string(Vanilla), string(Blind)} {
 		sessionIDs := []string{}
 		for range 5 {
-			session, _ := sessionService.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration)
+			session, _ := sessionService.Create(false, []string{}, mode, "english-words", testutils.TestSessionOptions.Duration)
 			sessionIDs = append(sessionIDs, session.ID)
 		}
 
@@ -483,14 +483,14 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 	router, _, sessionService, _ := setupAdminTestRouter(t)
 
 	// Create sessions
-	session, err := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+	session, err := sessionService.Create(false, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen today.
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 1, 0, time.UTC)
 	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 31, 0, time.UTC)
 	sessionService.Update(session)
 
-	session, err = sessionService.Create(true, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+	session, err = sessionService.Create(true, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen for some times this month (but not today and not this week).
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.UTC)

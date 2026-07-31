@@ -32,7 +32,7 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 	}
 
 	// Create session
-	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), gr.sessionOptions.Duration)
+	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), "english-words", gr.sessionOptions.Duration)
 	if err != nil {
 		log.Println("Failed to create session:", err)
 
