@@ -97,3 +97,111 @@ The two topics share the same `{ word, definition }` data shape and the same scr
 - Per-topic subdirectories / metadata files, and any topic-level scoring weights.
 - K-threshold percentile fallback (hard partition only this iteration).
 - A mixed-topic unified board view (the API exposes `topic` per entry but the client filters).
+
+---
+
+## Task Breakdown
+
+### Phase 1 — Data Layer & Persistence
+
+**1.1 Rename data directory and words file**
+- Rename `packages/server/data/` → `packages/server/topics/`
+- Rename `packages/server/topics/words.json` → `packages/server/topics/english-words.json`
+- Update Dockerfile, Makefile, and env configs: replace `WORDS_PATH` with `TOPICS_DIR`
+
+**1.2 Migration 005 — add `topic` column + new index**
+- Create `005_session_topic.up.sql`: `ALTER TABLE session_entities ADD COLUMN topic TEXT NOT NULL DEFAULT 'english-words'`; drop `idx_mode_phase_score_accuracy`, create `idx_topic_mode_phase_score_accuracy(topic, mode, phase, score, accuracy)`
+- Create `005_session_topic.down.sql`: revert both
+
+**1.3 Add `Topic` to GORM model and domain model**
+- `models/models.go`: add `Topic string` field to `SessionEntity`
+- `domainmodels/conversion.go`: add `Topic string` to `SessionDomain`; carry through conversion functions
+
+**1.4 Refactor WordService for multi-topic loading**
+- `word.service.go`: replace `WORDS_PATH` env with `TOPICS_DIR`; load entire directory at startup; partition entries by filename stem; `GetRandomWord` gains `topic string` param and filters the in-memory pool
+- Remove dead code: `word_definitions` column usage
+
+**1.5 Update SessionService.Create to accept `topic`**
+- `session.service.go`: add `topic string` param, write to new column on session creation
+
+### Phase 2 — API & Codegen
+
+**2.1 Update OpenAPI spec**
+- `api.yaml`: add `SessionTopic` enum (`english-words | indonesian-politician-quotes`); add `topic: SessionTopic` to `StartGameRequest` and `StartGameResponse`; add `topic` query param to leaderboard endpoints
+
+**2.2 Regenerate server and client codegen**
+- Run `go tool oapi-codegen` for `gen.go`
+- Run `openapi-typescript` for `gen.ts`
+
+### Phase 3 — Server Logic
+
+**3.1 Validate topic on game start**
+- `game_routes.go`: validate `req.Topic.Valid()`; forward to `SessionService.Create` and `GameService.StartGame`
+
+**3.2 GameService passes topic to WordService**
+- `game.service.go`: pass `session.Topic` to `wordService.GetRandomWord`
+- Remove redundant `CurrentWordToken` assignments
+
+**3.3 Update leaderboard service for topic partitioning**
+- `leaderboard.service.go`: add `topic` param to `GetLeaderboard`, `GetTotalEntries`, `GetPercentile`; add `AND topic = ?` to WHERE clauses
+- `leaderboard_routes.go`: read `topic` from query params, default to `"english-words"`
+- `conversion.go`: add `Topic` to `ToApiLeaderboardEntry`
+
+### Phase 4 — Client: Settings & Banners
+
+**4.1 Update settings with topic field**
+- `lib/settings.ts`: add `topic: z.enum([...])` to schema; bump localStorage key to `atoyr:settings:v2`; add migration (v1 → v2 injects `topic: 'english-words'`)
+
+**4.2 Add topic selector to SettingsModal**
+- `SettingsModal.tsx`: add `<select>` for topic (mirrors existing mode selector)
+
+**4.3 Create TopicBanner component**
+- New `components/TopicBanner.tsx`: mirrors `ModeBanner` pattern — renders active topic name
+
+**4.4 Render TopicBanner at route level**
+- `routes/home.tsx`: render `TopicBanner` alongside `ModeBanner` during gameplay
+
+### Phase 5 — Client: GameScreen Generalization
+
+**5.1 Replace hardcoded length assumptions**
+- `GameScreen.tsx`: remove `ORDINAL_LABELS`; generate ordinal array from `scrambled.length`; `submitIfComplete` checks `=== scrambled.length`; `handleLetterClick` caps at `scrambled.length`; slot rows render `scrambled.length` cells
+
+**5.2 Definition `<template>` replacement (visual)**
+- `GameScreen.tsx`: replace `<template>` with `n` underscores; keep surrounding text; add `aria-label="blank, N letters"` on the underscore region
+
+**5.3 Definition `<template>` replacement (speech)**
+- `GameScreen.tsx` — `speakLetters`: replace `<template>` with `...` in the definition utterance
+
+### Phase 6 — Client: Leaderboard
+
+**6.1 Add topic param to leaderboard hooks**
+- `hooks.ts`: `useLeaderboard` and `useLeaderboardPercentile` gain `topic` param
+
+**6.2 Pass topic from settings to leaderboard**
+- `ResultsScreen.tsx`: invoke leaderboard hooks with `settings.topic`
+- `Leaderboard.tsx`: expose topic selector; render topic chip per entry
+
+### Phase 7 — Tests
+
+**7.1 Server unit tests**
+- Unknown topic returns validation error; known topic stores `topic` on session
+- `GetRandomWord` only returns words from requested topic and excludes `usedWords`
+- `GetLeaderboard`/`GetPercentile`/`GetTotalEntries` filter by `topic`; cross-topic sessions don't contaminate
+- Indonesian-politician-quotes definition is returned verbatim with `<template>` marker
+
+**7.2 Client unit tests**
+- Settings: migrating v1 → v2 yields `topic: 'english-words'`
+- GameScreen: variable-length words render correct slot count and auto-submit at that length; `<template>` → `n` underscores with correct `aria-label`; TTS uses `...`
+- TopicBanner: renders active topic
+- Leaderboard: passes `topic` to hooks
+
+**7.3 Route-level test**
+- `home.test.tsx`: selecting a topic transitions landing screen to gameplay with topic banner visible
+
+### Phase 8 — Docs & Cleanup
+
+**8.1 Update roadmap.md**
+- Rename baseline `common` → `english-words`; flip "Topic as partition key" to yes; note hard-partition (no K fallback)
+
+**8.2 Update AGENTS.md**
+- Add Topics entry under "Implemented Architecture Decisions"; remove this spec file (after user confirms)
