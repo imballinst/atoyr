@@ -246,6 +246,7 @@ export interface paths {
           page?: number;
           limit?: number;
           mode?: components['schemas']['SessionMode'];
+          topic?: components['schemas']['SessionTopic'];
         };
         header?: never;
         path?: never;
@@ -301,6 +302,7 @@ export interface paths {
       parameters: {
         query?: {
           mode?: components['schemas']['SessionMode'];
+          topic?: components['schemas']['SessionTopic'];
         };
         header?: never;
         path?: never;
@@ -366,12 +368,14 @@ export interface components {
     StartGameRequest: {
       autoVoice?: boolean;
       mode: components['schemas']['SessionMode'];
+      topic: components['schemas']['SessionTopic'];
       itemsUsed: string[];
     };
     StartGameResponse: {
       /** Format: uuid */
       sessionId: string;
       mode: components['schemas']['SessionMode'];
+      topic: components['schemas']['SessionTopic'];
       /** @example lpeap */
       scrambledWord: string;
       /** @example A fruit that is often red or green. */
@@ -427,6 +431,7 @@ export interface components {
     LeaderboardEntry: {
       /** Format: uuid */
       id: string;
+      topic: components['schemas']['SessionTopic'];
       /** @example false */
       isSessionSameAsCurrentUser?: boolean;
       /**
@@ -457,6 +462,8 @@ export interface components {
     };
     /** @enum {string} */
     SessionMode: 'vanilla' | 'blind';
+    /** @enum {string} */
+    SessionTopic: 'english-words' | 'indonesian-politician-quotes';
   };
   responses: never;
   parameters: never;
@@ -473,5 +480,6 @@ export type GetLeaderboardResponse = components['schemas']['GetLeaderboardRespon
 export type GetLeaderboardPercentileResponse = components['schemas']['GetLeaderboardPercentileResponse'];
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
 export type SessionMode = components['schemas']['SessionMode'];
+export type SessionTopic = components['schemas']['SessionTopic'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

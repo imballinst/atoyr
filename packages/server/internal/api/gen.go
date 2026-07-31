@@ -30,6 +30,24 @@ func (e SessionMode) Valid() bool {
 	}
 }
 
+// Defines values for SessionTopic.
+const (
+	EnglishWords               SessionTopic = "english-words"
+	IndonesianPoliticianQuotes SessionTopic = "indonesian-politician-quotes"
+)
+
+// Valid indicates whether the value is a known member of the SessionTopic enum.
+func (e SessionTopic) Valid() bool {
+	switch e {
+	case EnglishWords:
+		return true
+	case IndonesianPoliticianQuotes:
+		return true
+	default:
+		return false
+	}
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error map[string]interface{} `json:"error"`
@@ -48,34 +66,40 @@ type GetLeaderboardResponse struct {
 
 // LeaderboardEntry defines model for LeaderboardEntry.
 type LeaderboardEntry struct {
-	Accuracy                   float32 `json:"accuracy"`
-	Id                         string  `json:"id"`
-	IsSessionSameAsCurrentUser *bool   `json:"isSessionSameAsCurrentUser,omitempty"`
-	Rank                       int32   `json:"rank"`
-	Score                      int32   `json:"score"`
-	Timestamp                  int64   `json:"timestamp"`
-	TotalAttempts              int32   `json:"totalAttempts"`
+	Accuracy                   float32      `json:"accuracy"`
+	Id                         string       `json:"id"`
+	IsSessionSameAsCurrentUser *bool        `json:"isSessionSameAsCurrentUser,omitempty"`
+	Rank                       int32        `json:"rank"`
+	Score                      int32        `json:"score"`
+	Timestamp                  int64        `json:"timestamp"`
+	Topic                      SessionTopic `json:"topic"`
+	TotalAttempts              int32        `json:"totalAttempts"`
 }
 
 // SessionMode defines model for SessionMode.
 type SessionMode string
 
+// SessionTopic defines model for SessionTopic.
+type SessionTopic string
+
 // StartGameRequest defines model for StartGameRequest.
 type StartGameRequest struct {
-	AutoVoice *bool       `json:"autoVoice,omitempty"`
-	ItemsUsed []string    `json:"itemsUsed"`
-	Mode      SessionMode `json:"mode"`
+	AutoVoice *bool        `json:"autoVoice,omitempty"`
+	ItemsUsed []string     `json:"itemsUsed"`
+	Mode      SessionMode  `json:"mode"`
+	Topic     SessionTopic `json:"topic"`
 }
 
 // StartGameResponse defines model for StartGameResponse.
 type StartGameResponse struct {
-	AutoVoice               bool        `json:"autoVoice"`
-	Mode                    SessionMode `json:"mode"`
-	RemainingSeconds        int32       `json:"remainingSeconds"`
-	ScrambledWord           string      `json:"scrambledWord"`
-	ScrambledWordDefinition string      `json:"scrambledWordDefinition"`
-	SessionId               string      `json:"sessionId"`
-	Token                   string      `json:"token"`
+	AutoVoice               bool         `json:"autoVoice"`
+	Mode                    SessionMode  `json:"mode"`
+	RemainingSeconds        int32        `json:"remainingSeconds"`
+	ScrambledWord           string       `json:"scrambledWord"`
+	ScrambledWordDefinition string       `json:"scrambledWordDefinition"`
+	SessionId               string       `json:"sessionId"`
+	Token                   string       `json:"token"`
+	Topic                   SessionTopic `json:"topic"`
 }
 
 // SubmitAnswerRequest defines model for SubmitAnswerRequest.
@@ -98,14 +122,16 @@ type SubmitAnswerResponse struct {
 
 // GetApiV1LeaderboardParams defines parameters for GetApiV1Leaderboard.
 type GetApiV1LeaderboardParams struct {
-	Page  *int         `form:"page,omitempty" json:"page,omitempty"`
-	Limit *int         `form:"limit,omitempty" json:"limit,omitempty"`
-	Mode  *SessionMode `form:"mode,omitempty" json:"mode,omitempty"`
+	Page  *int          `form:"page,omitempty" json:"page,omitempty"`
+	Limit *int          `form:"limit,omitempty" json:"limit,omitempty"`
+	Mode  *SessionMode  `form:"mode,omitempty" json:"mode,omitempty"`
+	Topic *SessionTopic `form:"topic,omitempty" json:"topic,omitempty"`
 }
 
 // GetApiV1LeaderboardPercentileParams defines parameters for GetApiV1LeaderboardPercentile.
 type GetApiV1LeaderboardPercentileParams struct {
-	Mode *SessionMode `form:"mode,omitempty" json:"mode,omitempty"`
+	Mode  *SessionMode  `form:"mode,omitempty" json:"mode,omitempty"`
+	Topic *SessionTopic `form:"topic,omitempty" json:"topic,omitempty"`
 }
 
 // PostApiV1GameStartJSONRequestBody defines body for PostApiV1GameStart for application/json ContentType.
@@ -230,6 +256,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1Leaderboard(c *gin.Context) {
 		return
 	}
 
+	// ------------- Optional query parameter "topic" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "topic", c.Request.URL.Query(), &params.Topic, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter topic: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -254,6 +288,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1LeaderboardPercentile(c *gin.Context)
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "mode", c.Request.URL.Query(), &params.Mode, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter mode: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "topic" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "topic", c.Request.URL.Query(), &params.Topic, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter topic: %w", err), http.StatusBadRequest)
 		return
 	}
 

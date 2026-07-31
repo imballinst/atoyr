@@ -137,6 +137,10 @@ paths:
           name: mode
           schema:
             $ref: "#/components/schemas/SessionMode"
+        - in: query
+          name: topic
+          schema:
+            $ref: "#/components/schemas/SessionTopic"
       responses:
         '200':
           description: Leaderboard data retrieved successfully
@@ -163,6 +167,10 @@ paths:
           name: mode
           schema:
             $ref: "#/components/schemas/SessionMode"
+        - in: query
+          name: topic
+          schema:
+            $ref: "#/components/schemas/SessionTopic"
       tags:
         - leaderboard
       responses:
@@ -205,11 +213,14 @@ components:
       required:
         - mode
         - itemsUsed
+        - topic
       properties:
         autoVoice:
           type: boolean
         mode:
           $ref: "#/components/schemas/SessionMode"
+        topic:
+          $ref: "#/components/schemas/SessionTopic"
         itemsUsed:
           type: array
           items:
@@ -226,6 +237,7 @@ components:
         - mode
         - remainingSeconds
         - autoVoice
+        - topic
       properties:
         sessionId:
           type: string
@@ -233,6 +245,8 @@ components:
           x-go-type: string
         mode:
           $ref: "#/components/schemas/SessionMode"
+        topic:
+          $ref: "#/components/schemas/SessionTopic"
         scrambledWord:
           type: string
           example: 'lpeap'
@@ -335,11 +349,14 @@ components:
         - totalAttempts
         - accuracy
         - timestamp
+        - topic
       properties:
         id:
           type: string
           format: uuid
           x-go-type: string
+        topic:
+          $ref: "#/components/schemas/SessionTopic"
         isSessionSameAsCurrentUser:
           type: boolean
           example: false
@@ -368,3 +385,8 @@ components:
       enum:
         - vanilla
         - blind
+    SessionTopic:
+      type: string
+      enum:
+        - english-words
+        - indonesian-politician-quotes
