@@ -137,7 +137,6 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		Attempts:                 session.TotalAttempts + 1,
 		DurationSeconds:          session.DurationSeconds,
 		CorrectAttemptTimestamps: session.CorrectAttemptTimestamps,
-		Token:                    session.CurrentWordToken,
 	}
 
 	if !isTokenCorrect {
@@ -237,7 +236,7 @@ func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.Se
 		return nil, err
 	}
 
-	word, definition, err := g.wordService.GetRandomWord(session.UsedWords)
+	word, definition, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
 	if err != nil {
 		// All words used, finish game
 		return nil, g.FinishGame(sessionID)
@@ -246,7 +245,6 @@ func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.Se
 	token := g.generateToken(word)
 	newUsedWords := append(session.UsedWords, word)
 
-	session.CurrentWordToken = word
 	session.UsedWords = newUsedWords
 	session.CurrentWordToken = token
 	session.CurrentWordDefinition = definition
@@ -279,7 +277,7 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 		return session, nil
 	}
 
-	word, definition, err := g.wordService.GetRandomWord(session.UsedWords)
+	word, definition, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
 	if err != nil {
 		// All words used, finish game
 		return nil, g.FinishGame(sessionID)
@@ -288,7 +286,6 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 	token := g.generateToken(word)
 	newUsedWords := append(session.UsedWords, word)
 
-	session.CurrentWordToken = word
 	session.UsedWords = newUsedWords
 	session.CurrentWordToken = token
 	session.CurrentWordDefinition = definition

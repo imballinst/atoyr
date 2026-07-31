@@ -30,6 +30,8 @@ vi.mock('~/api/client', () => ({
 const mockStartResponse1: StartGameResponse = {
   sessionId: 'session-1',
   mode: 'vanilla',
+  topic: 'english-words',
+  lang: 'en-US',
   remainingSeconds: 30,
   scrambledWord: 'plepa',
   scrambledWordDefinition: 'A thin, flat cake made from batter.',
@@ -40,6 +42,8 @@ const mockStartResponse1: StartGameResponse = {
 const mockStartResponse2: StartGameResponse = {
   sessionId: 'session-2',
   mode: 'vanilla',
+  topic: 'english-words',
+  lang: 'en-US',
   remainingSeconds: 30,
   scrambledWord: 'rhcea',
   scrambledWordDefinition: 'A sweet baked food.',
@@ -85,7 +89,10 @@ describe('Home — game lifecycle', () => {
   });
 
   it('preserves auto-voice preference from localStorage when playing again', async () => {
-    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: true, mode: 'vanilla' } satisfies LatestSchema));
+    localStorage.setItem(
+      LATEST_STORAGE_KEY,
+      JSON.stringify({ autoVoice: true, mode: 'vanilla', topic: 'english-words' } satisfies LatestSchema),
+    );
     vi.mocked(apiStartGame)
       .mockResolvedValueOnce({ ...mockStartResponse1, autoVoice: true })
       .mockResolvedValueOnce({ ...mockStartResponse2, autoVoice: true });
@@ -98,8 +105,8 @@ describe('Home — game lifecycle', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
-    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: true, mode: 'vanilla' }, []);
-    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: true, mode: 'vanilla', topic: 'english-words' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla', topic: 'english-words' }, []);
   });
 
   it('keeps app on results screen when replay start fails', async () => {
@@ -119,11 +126,28 @@ describe('Home — game lifecycle', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('selecting indonesian-politician-quotes topic transitions landing screen to gameplay with topic banner visible', async () => {
+    localStorage.setItem(
+      LATEST_STORAGE_KEY,
+      JSON.stringify({ autoVoice: false, mode: 'vanilla', topic: 'indonesian-politician-quotes' } satisfies LatestSchema),
+    );
+    vi.mocked(apiStartGame).mockResolvedValueOnce({
+      ...mockStartResponse1,
+      topic: 'indonesian-politician-quotes',
+    });
+    renderHome();
+
+    await startGame();
+
+    const banners = screen.getAllByRole('status');
+    expect(banners[0].textContent).toContain('Indonesian Politician Quotes');
+  });
+
   it.each([
     { mode: 'vanilla' as const, wordDefinition: mockStartResponse1.scrambledWordDefinition, bannerText: '' as const },
-    { mode: 'blind' as const, wordDefinition: '' as const, bannerText: '🚫 BLIND MODE 🚫' as const },
+    { mode: 'blind' as const, wordDefinition: '' as const, bannerText: 'BLIND MODE' as const },
   ])('shows feedback and updates the scrambled word after a correct answer in $mode mode', async ({ mode, wordDefinition, bannerText }) => {
-    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: false, mode } satisfies LatestSchema));
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: false, mode, topic: 'english-words' } satisfies LatestSchema));
     vi.mocked(apiStartGame).mockResolvedValue({
       ...mockStartResponse1,
       mode,
@@ -143,7 +167,7 @@ describe('Home — game lifecycle', () => {
 
     await startGame();
 
-    if (bannerText) expect(screen.getByText(bannerText)).toBeInTheDocument();
+    if (bannerText) expect(screen.getByText(bannerText, { exact: false })).toBeInTheDocument();
 
     for (const letter of ['P', 'L', 'E', 'P', 'A']) {
       await userEvent.click(screen.getByRole('button', { name: letter }));
@@ -172,8 +196,8 @@ describe('Home — game lifecycle', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
-    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: false, mode: 'vanilla' }, []);
-    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: false, mode: 'vanilla', topic: 'english-words' }, []);
+    expect(apiStartGame).toHaveBeenNthCalledWith(2, { autoVoice: true, mode: 'vanilla', topic: 'english-words' }, []);
   });
 });
 

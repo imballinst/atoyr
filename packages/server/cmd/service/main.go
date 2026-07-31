@@ -99,7 +99,7 @@ func main() {
 
 	router.Use(middleware.Metrics(metricsCollector))
 
-	server := api.NewServer(gameService, sessionService, leaderboardService, sessionOptions)
+	server := api.NewServer(gameService, sessionService, leaderboardService, wordService, sessionOptions)
 	api.RegisterHandlers(router, server)
 
 	staticFilesPath := os.Getenv("STATIC_FILES_PATH")

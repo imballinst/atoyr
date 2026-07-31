@@ -14,12 +14,9 @@ export function HowToPlayModal() {
         </button>
       }
     >
-      <ul className="text-sm text-dark-text-secondary space-y-3">
-        {['You have 30 seconds', 'Wrong answers cost 1 second', 'Type using external keyboard or on-screen buttons'].map((rule, idx) => (
-          <li key={idx} className="flex gap-2">
-            <span className="text-dark-interactive-success font-bold shrink-0">✓</span>
-            <span>{rule}</span>
-          </li>
+      <ul className="text-sm text-dark-text-secondary space-y-3 list-disc pl-3">
+        {['You have 30 seconds', 'Wrong answers cost 1 second', 'Type using external keyboard or on-screen buttons'].map((rule) => (
+          <li key={rule}>{rule}</li>
         ))}
       </ul>
     </SharedDialog>

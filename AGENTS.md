@@ -121,6 +121,23 @@ The landing and results screens use a shared `radix-ui` Dialog wrapper for "How 
 
 Key files: `packages/client/app/components/Dialog.tsx`, `packages/client/app/components/HowToPlayModal.tsx`, `packages/client/app/components/SettingsModal.tsx`, `packages/client/app/components/StartScreen.tsx`, `packages/client/app/components/ResultsScreen.tsx`.
 
+### Topics & Variable-Length Content
+
+The game supports multiple content categories via the `topic` axis, generalizing away from a hardcoded 5-letter English scramble:
+
+- **Topic model**: `topic` is a single-choice category selector (not stackable). The baseline sentinel is `english-words` (renamed from `common`). Current topics: `english-words` (5-letter scramble with dictionary definitions) and `indonesian-politician-quotes` (fill-in-the-blank quotes; definition contains `<template>` marker for client-side rendering).
+- **Data layout**: Per-topic JSON files live in `packages/server/topics/` (formerly `data/`). `WordService` loads the entire directory at startup via `TOPICS_DIR` env var (replaced `WORDS_PATH`), partitions entries by filename stem. `GetRandomWord(excludeWords, topic)` filters to the requested topic's pool.
+- **Persistence**: Migration `005_session_topic.up.sql` adds `topic TEXT NOT NULL DEFAULT 'english-words'` column and replaces the leaderboard composite index with `idx_topic_mode_phase_score_accuracy(topic, mode, phase, score, accuracy)` — topic is the leading column. The `word_definitions` column is dropped (definitions are in JSON files).
+- **Leaderboard hard-partition**: `GetLeaderboard`, `GetPercentile`, and `GetTotalEntries` all filter by `topic` in their WHERE clauses (in addition to `mode`). Boards are hard-partitioned — no K-threshold fallback, cross-topic scores are never compared.
+- **GameScreen generalization**: Answer-slots and scrambled-letter rows render `scrambled.length` cells (not fixed at 5). `submitIfComplete` checks `=== scrambled.length`. `handleLetterClick` caps at `scrambled.length`.
+- **Definition template rendering** (client-side only): `<template>` in definitions is replaced with `n` underscores (visual) with `aria-label="blank, N letters"`, and with `...` (TTS). The server sends the definition verbatim; the client owns rendering. Blind mode interaction remains unchanged — the server strips `definition` to `""` for `mode=blind` independent of topic.
+- **ModeBanner**: Now shows both mode and topic (e.g., `🚫 BLIND MODE + English Words 🚫`). Topic label is derived from a `TOPIC_LABELS` map. Rendered at route level alongside the navbar.
+- **Topic selector**: Lives in `SettingsModal` alongside the mode selector. Switching to `indonesian-politician-quotes` forces mode to `vanilla` (blind is unsupported for quotes — validated server-side). Settings stored in localStorage under `atoyr:settings:v2` with a v1→v2 migration injecting `topic: 'english-words'`.
+- **Leaderboard topic chip**: `Leaderboard.tsx` accepts optional `settings.topic` — when omitted, a standalone topic selector is shown. Quote-topic entries get a `"Quotes"` badge.
+- **Indonesian-politician-quotes + blind guard**: `game_routes.go` rejects `topic=indonesian-politician-quotes, mode=blind` with HTTP 400. This is intentional — the fill-in-the-blank mechanic depends on seeing the quote context.
+
+Key files: `packages/server/internal/services/word.service.go`, `packages/server/internal/services/game.service.go`, `packages/server/internal/services/session.service.go`, `packages/server/internal/services/leaderboard.service.go`, `packages/server/internal/api/game_routes.go`, `packages/server/internal/api/leaderboard_routes.go`, `packages/server/migrations/005_session_topic.up.sql`, `packages/client/app/components/GameScreen.tsx`, `packages/client/app/components/ModeBanner.tsx`, `packages/client/app/components/SettingsModal.tsx`, `packages/client/app/components/Leaderboard.tsx`, `packages/client/app/lib/settings.ts`.
+
 ## Tests
 
 Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
@@ -140,6 +157,16 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 ### Avoid Testing Implementation Details in Component Tests
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
+
+Also, do **not** mock internal hooks (e.g. `useLeaderboard`) just to assert what params they receive. Such assertions couple the test to internal wiring rather than user-visible outcomes. If a hook's parameter contract needs coverage, test it indirectly through a rendered UI assertion (e.g. the leaderboard table shows entries for the correct topic), or in a route-level integration test that exercises the full data flow.
+
+### Go Test Entities: Fill All Required Fields Explicitly
+
+When constructing GORM model structs in tests, always set every field that has a DB constraint (NOT NULL, DEFAULT, etc.) explicitly. GORM v2 includes zero-value strings (`""`) in INSERTs, which bypasses the DB-level DEFAULT. Relying on GORM's `default` tag or the migration's column default leads to silent zero-values in tests when the field isn't set explicitly in the struct literal.
+
+### Quote Data Must Match Canonical JSON
+
+When tests reference Indonesian-politician-quote word/definition data, use the exact entries from `packages/server/topics/indonesian-politician-quotes.json`. Do **not** invent fake quotes in tests — misattributing a fabricated quote to a real politician is irresponsible. If the test needs quote data that is not yet in the JSON file, add the entry to the file first, then reference it from the test.
 
 ### Route-Level Tests: Assert Transitions, Not Rendering
 

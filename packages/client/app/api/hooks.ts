@@ -11,7 +11,6 @@ import { readStoredSettings, writeStoredSettings, type LatestSchema } from '~/li
 
 import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
 import { apiQuery, apiResumeGame, apiStartGame, apiSubmitAnswer, apiSubscribeToSSE } from './client';
-import type { SessionMode } from './gen';
 
 interface ServerGameSession {
   sessionId: string;
@@ -28,6 +27,7 @@ const INITIAL_STATE: Omit<GameState, 'settings'> = {
   correctAttemptTimestamps: [],
   remainingSeconds: GAME_DURATION_SECONDS,
   usedWords: [],
+  lang: '',
 };
 const QUERY_OPTS = { retry: import.meta.env.DEV ? 0 : 3 };
 
@@ -74,6 +74,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
         remainingSeconds: response.remainingSeconds,
         usedWords: [],
         lastWordAnswer: null,
+        lang: response.lang,
         currentWord: {
           scrambled: response.scrambledWord,
           definition: response.scrambledWordDefinition,
@@ -193,7 +194,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
     queryFn: async () => {
       try {
         const response = await apiResumeGame();
-        await startGame({ autoVoice: response.autoVoice, mode: response.mode }, 'resume');
+        await startGame({ autoVoice: response.autoVoice, mode: response.mode, topic: response.topic }, 'resume');
         return response;
       } catch (err) {
         console.warn('No active session to resume');
@@ -222,14 +223,17 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
   };
 }
 
-export function useLeaderboard(mode?: SessionMode, page = 1, limit = 10) {
+export type LeaderboardSettings = Partial<Pick<LatestSchema, 'mode' | 'topic'>>;
+
+export function useLeaderboard(settings?: LeaderboardSettings, page = 1, limit = 10) {
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard',
     {
       params: {
         query: {
-          mode,
+          mode: settings?.mode,
+          topic: settings?.topic,
           page,
           limit,
         },
@@ -239,14 +243,15 @@ export function useLeaderboard(mode?: SessionMode, page = 1, limit = 10) {
   );
 }
 
-export function useLeaderboardPercentile(mode?: SessionMode) {
+export function useLeaderboardPercentile(settings?: LeaderboardSettings) {
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard/percentile',
     {
       params: {
         query: {
-          mode,
+          mode: settings?.mode,
+          topic: settings?.topic,
         },
       },
     },

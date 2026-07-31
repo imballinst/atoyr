@@ -13,6 +13,7 @@ type SessionDomain struct {
 	EndsAt                   time.Time
 	Phase                    string
 	Mode                     string
+	Topic                    string
 	Score                    int32
 	TotalAttempts            int32
 	Accuracy                 float32
@@ -20,7 +21,6 @@ type SessionDomain struct {
 	CorrectAttemptTimestamps [][]string
 	AutoVoice                bool
 	UsedWords                []string
-	WordDefinitions          []string
 	CurrentWord              string
 	CurrentScrambledWord     string
 	CurrentWordDefinition    string
@@ -45,6 +45,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		EndsAt:                   session.EndsAt,
 		Phase:                    session.Phase,
 		Mode:                     session.Mode,
+		Topic:                    session.Topic,
 		Score:                    session.Score,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
@@ -53,7 +54,6 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		AutoVoice:                session.AutoVoice,
 		UsedItemIDs:              []string(session.UsedItemIDs),
 		UsedWords:                []string(session.UsedWords),
-		WordDefinitions:          []string(session.WordDefinitions),
 		CurrentWord:              session.CurrentWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentScrambledWord:     session.CurrentScrambledWord,
@@ -79,6 +79,7 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		Phase:                    session.Phase,
 		Score:                    session.Score,
 		Mode:                     session.Mode,
+		Topic:                    session.Topic,
 		TotalAttempts:            session.TotalAttempts,
 		Accuracy:                 session.Accuracy,
 		DurationSeconds:          session.DurationSeconds,
@@ -86,7 +87,6 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		AutoVoice:                session.AutoVoice,
 		UsedWords:                session.UsedWords,
 		UsedItemIDs:              session.UsedItemIDs,
-		WordDefinitions:          session.WordDefinitions,
 		CurrentWord:              session.CurrentWord,
 		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,

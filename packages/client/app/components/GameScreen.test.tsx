@@ -35,9 +35,11 @@ const baseState: GameState = {
     scrambled: 'example',
   },
   lastWordAnswer: null,
+  lang: 'en-US',
   settings: {
     autoVoice: false,
     mode: 'vanilla',
+    topic: 'english-words',
   },
 };
 
@@ -259,14 +261,14 @@ describe('GameScreen', () => {
 
   it('does not auto-speak on mount when autoVoice is off', () => {
     mockSpeechSynthesis();
-    renderScreen({ settings: { autoVoice: false, mode: 'vanilla' } });
+    renderScreen({ settings: { autoVoice: false, mode: 'vanilla', topic: 'english-words' } });
 
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
   it('auto-speaks on mount when autoVoice is on', async () => {
     const { speak } = mockSpeechSynthesis();
-    renderScreen({ settings: { autoVoice: true, mode: 'vanilla' } });
+    renderScreen({ settings: { autoVoice: true, mode: 'vanilla', topic: 'english-words' } });
 
     await waitFor(() => expect(speak).toHaveBeenCalled());
   });
@@ -313,7 +315,7 @@ describe('GameScreen', () => {
   });
 
   it('hides the definition in blind mode', () => {
-    renderScreen({ settings: { autoVoice: false, mode: 'blind' }, definition: DEFAULT_DEFINITION });
+    renderScreen({ settings: { autoVoice: false, mode: 'blind', topic: 'english-words' }, definition: DEFAULT_DEFINITION });
 
     expect(screen.getByText(DEFAULT_DEFINITION)).toHaveAttribute('hidden');
   });
@@ -327,5 +329,63 @@ describe('GameScreen', () => {
 
     expect(cancel).toHaveBeenCalled();
     expect(speak.mock.calls.map((c) => (c[0] as { text: string }).text)).toEqual(['p', 'l', 'e', 'p', 'a']);
+  });
+
+  it('renders variable-length answer slots based on scrambled length', () => {
+    const { container } = renderScreen({ scrambled: 'aku' });
+
+    expect(scrambledTileCount(container)).toBe(3);
+    expect(emptyAnswerSlotCount(container)).toBe(3);
+  });
+
+  it('auto-submits when letters typed equal scrambled length for variable-length word', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn<SubmitFn>();
+    renderScreen({ scrambled: 'aku', onSubmit });
+
+    for (const letter of ['A', 'K', 'U']) {
+      await user.click(screen.getByRole('button', { name: letter }));
+    }
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith('AKU', 'token-1', expect.objectContaining({ onSuccess: expect.any(Function) }));
+  });
+
+  it('does not auto-submit before scrambled.length letters are typed for variable-length word', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn<SubmitFn>();
+    renderScreen({ scrambled: 'aku', onSubmit });
+
+    await user.click(screen.getByRole('button', { name: 'A' }));
+    await user.click(screen.getByRole('button', { name: 'K' }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('replaces <template> with underscores in the visual definition', () => {
+    renderScreen({ definition: '<template> yang gelap!', scrambled: 'kau' });
+
+    const definitionDiv = screen.getByText((_, node) => node?.textContent === '___ yang gelap!');
+    expect(definitionDiv).toBeInTheDocument();
+  });
+
+  it('renders definition as-is when no <template> marker is present', () => {
+    renderScreen({ definition: 'A thin, flat cake made from batter.', scrambled: 'plepa' });
+
+    expect(screen.getByText('A thin, flat cake made from batter.')).toBeInTheDocument();
+  });
+
+  it('replaces <template> with ... in the speech definition', async () => {
+    const user = userEvent.setup();
+    const { speak } = mockSpeechSynthesis();
+    renderScreen({ definition: '<template> yang gelap!', scrambled: 'kau', lang: 'id-ID' });
+
+    await user.click(screen.getByRole('button', { name: 'Speak letters' }));
+
+    expect(speak).toHaveBeenCalled();
+    expect((speak.mock.calls[0][0] as { text: string }).text).toBe('titik titik titik yang gelap!');
+    expect((speak.mock.calls[1][0] as { text: string }).text).toBe('k');
+    expect((speak.mock.calls[2][0] as { text: string }).text).toBe('a');
+    expect((speak.mock.calls[3][0] as { text: string }).text).toBe('u');
   });
 });

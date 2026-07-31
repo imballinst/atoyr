@@ -31,8 +31,18 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
+	if !req.Topic.Valid() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request, topic is invalid"})
+		return
+	}
+
+	if req.Mode == Blind && req.Topic == IndonesianPoliticianQuotes {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "blind mode is not supported for the indonesian-politician-quotes topic"})
+		return
+	}
+
 	// Create session
-	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), gr.sessionOptions.Duration)
+	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), string(req.Topic), gr.sessionOptions.Duration)
 	if err != nil {
 		log.Println("Failed to create session:", err)
 
@@ -58,6 +68,8 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		AutoVoice:               session.AutoVoice,
 		Mode:                    SessionMode(session.Mode),
+		Topic:                   SessionTopic(session.Topic),
+		Lang:                    gr.wordService.GetTopicLang(session.Topic),
 		Token:                   session.CurrentWordToken,
 		RemainingSeconds:        session.DurationSeconds,
 	})
@@ -102,6 +114,8 @@ func (gr *Server) PostApiV1GameContinue(c *gin.Context) {
 		ScrambledWordDefinition: session.CurrentWordDefinition,
 		Token:                   session.CurrentWordToken,
 		Mode:                    SessionMode(session.Mode),
+		Topic:                   SessionTopic(session.Topic),
+		Lang:                    gr.wordService.GetTopicLang(session.Topic),
 		RemainingSeconds:        core.SessionDurationManager.Get(session.ID),
 		AutoVoice:               session.AutoVoice,
 	})

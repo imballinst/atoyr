@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react';
 
-import type { SessionMode } from '~/api/gen';
+import type { SessionMode, SessionTopic } from '~/api/gen';
 import { type LatestSchema } from '~/lib/settings';
 
 import { SharedDialog } from './Dialog';
@@ -14,10 +14,21 @@ interface Props {
 
 export function SettingsModal({ triggerText = 'Settings', triggerClassnames = '', settings, updateSettings }: Props) {
   const modeId = useId();
+  const topicId = useId();
+  const isIndonesianTopic = settings.topic === 'indonesian-politician-quotes';
 
   const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
     updateSettings({ autoVoice: newValue });
+  };
+
+  const handleTopicChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const topic = e.target.value as SessionTopic;
+    if (topic === 'indonesian-politician-quotes') {
+      updateSettings({ topic, mode: 'vanilla' });
+    } else {
+      updateSettings({ topic });
+    }
   };
 
   return (
@@ -38,17 +49,21 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
       }
     >
       <div className="flex flex-col gap-y-6">
+        {isIndonesianTopic && (
+          <p className="text-xs text-dark-text-secondary text-left border rounded p-2 bg-amber-900 border-amber-900">
+            Some modes are unavailable with the current topic.
+          </p>
+        )}
+
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-x-2">
             <div className="text-sm">Mode</div>
 
             <div>
-              <label htmlFor={modeId} className="sr-only">
-                Mode
-              </label>
-
               <select
-                className="text-sm"
+                disabled={isIndonesianTopic}
+                id={modeId}
+                className={'text-sm' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
                 onChange={(e) => {
                   updateSettings({ mode: e.target.value as SessionMode });
                 }}
@@ -64,6 +79,27 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
             {settings.mode === 'vanilla'
               ? 'Default game mode. Each scramble word will have a definition as a clue.'
               : 'Harder game mode. Each scramble word will NOT have a definition as a clue.'}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-x-2">
+            <label htmlFor={topicId} className="text-sm">
+              Topic
+            </label>
+
+            <div>
+              <select id={topicId} className="text-sm text-right" onChange={handleTopicChange} value={settings.topic}>
+                <option value="english-words">English Words</option>
+                <option value="indonesian-politician-quotes">Indonesian Politician Quotes</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-xs text-dark-text-secondary text-left">
+            {settings.topic === 'english-words'
+              ? 'Rearrange scrambled letters into English words.'
+              : 'Fill in the missing word in quotes attributed to Indonesian politicians. The words in this topic are purely Indonesian.'}
           </p>
         </div>
 

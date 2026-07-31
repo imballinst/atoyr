@@ -61,7 +61,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 	router.Use(middleware.CORSMiddleware())
 
 	// Register routes
-	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
+	server := NewServer(gameService, sessionService, leaderboardService, wordService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 
 	return router, sessionService
@@ -98,7 +98,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	router.Use(middleware.CORSMiddleware())
 	router.Use(middleware.Metrics(metricsCollector))
 
-	server := NewServer(gameService, sessionService, leaderboardService, testutils.TestSessionOptions)
+	server := NewServer(gameService, sessionService, leaderboardService, wordService, testutils.TestSessionOptions)
 	RegisterHandlers(router, server)
 	RegisterAdminRoutes(router, statsService, middleware.NewNoopAuthMiddleware())
 
@@ -109,7 +109,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := false
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -148,7 +148,7 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -187,7 +187,7 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -202,11 +202,43 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 	assert.Empty(t, cookie)
 }
 
+func TestGameRoutes_StartGame_WithInvalidTopic(t *testing.T) {
+	router, _ := setupTestRouter(t)
+
+	autoVoice := true
+	payload := StartGameRequest{Topic: SessionTopic("invalid-topic"), Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func TestGameRoutes_StartGame_BlindModeWithIndonesianTopic(t *testing.T) {
+	router, _ := setupTestRouter(t)
+
+	autoVoice := false
+	payload := StartGameRequest{Topic: IndonesianPoliticianQuotes, Mode: Blind, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
 func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -249,7 +281,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	})
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -304,7 +336,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 
 	// Start a game first
 	autoVoice := false
-	startPayload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice}
+	startPayload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(startBody))
@@ -347,7 +379,7 @@ func TestLeaderboardRoutes_GetLeaderboard(t *testing.T) {
 
 	sessionIDs := []string{}
 	for range 5 {
-		session, _ := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+		session, _ := sessionService.Create(false, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 		sessionIDs = append(sessionIDs, session.ID)
 	}
 
@@ -410,7 +442,7 @@ func TestLeaderboardRoutes_GetLeaderboard_DifferentModes(t *testing.T) {
 	for _, mode := range []string{string(Vanilla), string(Blind)} {
 		sessionIDs := []string{}
 		for range 5 {
-			session, _ := sessionService.Create(false, []string{}, mode, testutils.TestSessionOptions.Duration)
+			session, _ := sessionService.Create(false, []string{}, mode, "english-words", testutils.TestSessionOptions.Duration)
 			sessionIDs = append(sessionIDs, session.ID)
 		}
 
@@ -483,14 +515,14 @@ func TestAdminRoutes_GetStats(t *testing.T) {
 	router, _, sessionService, _ := setupAdminTestRouter(t)
 
 	// Create sessions
-	session, err := sessionService.Create(false, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+	session, err := sessionService.Create(false, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen today.
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 1, 0, time.UTC)
 	session.EndsAt = time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 31, 0, time.UTC)
 	sessionService.Update(session)
 
-	session, err = sessionService.Create(true, []string{}, string(Vanilla), testutils.TestSessionOptions.Duration)
+	session, err = sessionService.Create(true, []string{}, string(Vanilla), "english-words", testutils.TestSessionOptions.Duration)
 	assert.NoError(t, err)
 	// Update the session to happen for some times this month (but not today and not this week).
 	session.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), 20, 0, 0, 0, 0, time.UTC)

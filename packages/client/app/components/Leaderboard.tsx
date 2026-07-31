@@ -1,24 +1,26 @@
 import { Loader2Icon } from 'lucide-react';
 import { useId, useState, type JSX } from 'react';
 
-import type { SessionMode } from '~/api/gen';
+import type { SessionMode, SessionTopic } from '~/api/gen';
 import { getFinalScore } from '~/lib/game';
 
-import { useLeaderboard } from '../api/hooks';
+import { useLeaderboard, type LeaderboardSettings } from '../api/hooks';
 
 export function Leaderboard({
-  mode: modeProps,
+  settings,
   limit,
   HeadingComponent,
 }: {
-  mode?: SessionMode;
+  settings?: LeaderboardSettings;
   limit?: number;
   HeadingComponent: keyof JSX.IntrinsicElements;
 }) {
-  const [mode, setMode] = useState(modeProps);
+  const [mode, setMode] = useState(settings?.mode);
   const modeId = useId();
+  const [topic, setTopic] = useState(settings?.topic);
+  const topicId = useId();
 
-  const leaderboardQuery = useLeaderboard(mode, undefined, limit);
+  const leaderboardQuery = useLeaderboard({ mode, topic }, undefined, limit);
   const leaderboardEntries = leaderboardQuery.data?.entries;
   let pretext = '';
 
@@ -32,6 +34,8 @@ export function Leaderboard({
     }
   }
 
+  const isIndonesianTopic = topic === 'indonesian-politician-quotes';
+
   return (
     <div className="flex flex-col h-full w-full gap-y-2">
       <HeadingComponent className="text-lg font-semibold text-dark-text-primary">Leaderboard</HeadingComponent>
@@ -40,24 +44,51 @@ export function Leaderboard({
         {pretext} Order priority: more correct answers → more accuracy → earlier record time.
       </p>
 
-      {!modeProps && (
-        <div className="text-dark-text-secondary">
-          <label htmlFor={modeId} className="sr-only">
-            Mode
-          </label>
+      <div className="flex gap-2">
+        {!settings?.mode && (
+          <div className="text-dark-text-secondary">
+            <label htmlFor={modeId} className="sr-only">
+              Mode
+            </label>
 
-          <select
-            className="text-sm"
-            onChange={(e) => {
-              setMode(e.target.value as SessionMode);
-            }}
-            value={mode}
-          >
-            <option value="vanilla">Vanilla</option>
-            <option value="blind">Blind</option>
-          </select>
-        </div>
-      )}
+            <select
+              className={'text-sm text-right' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
+              onChange={(e) => {
+                setMode(e.target.value as SessionMode);
+              }}
+              disabled={isIndonesianTopic}
+              value={mode}
+            >
+              <option value="vanilla">Vanilla</option>
+              <option value="blind">Blind</option>
+            </select>
+          </div>
+        )}
+
+        {!settings?.topic && (
+          <div className="text-dark-text-secondary">
+            <label htmlFor={topicId} className="sr-only">
+              Topic
+            </label>
+
+            <select
+              className="text-sm text-right"
+              onChange={(e) => {
+                const newTopic = e.target.value as SessionTopic;
+
+                setTopic(newTopic);
+                if (newTopic === 'indonesian-politician-quotes') {
+                  setMode('vanilla' as SessionMode);
+                }
+              }}
+              value={topic}
+            >
+              <option value="english-words">English Words</option>
+              <option value="indonesian-politician-quotes">Indonesian Quotes</option>
+            </select>
+          </div>
+        )}
+      </div>
 
       <div className="text-dark-text-secondary text-sm">
         {leaderboardQuery.error ? (

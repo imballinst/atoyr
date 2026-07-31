@@ -1,11 +1,15 @@
 import { nanoid } from 'nanoid';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 
 import type { GameState } from '~/lib/game';
 
 import { Keyboard } from './Keyboard';
 
-const ORDINAL_LABELS = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
+const DEFAULT_LANG = 'en-US';
+const TEMPLATE_PRONUNCIATION: Record<string, string> = {
+  [DEFAULT_LANG]: 'dot dot dot',
+  'id-ID': 'titik titik titik',
+};
 
 interface GameScreenProps extends GameState {
   scrambled: string;
@@ -23,6 +27,7 @@ export function GameScreen({
   remainingSeconds,
   settings,
   token,
+  lang,
   onSubmit,
 }: GameScreenProps) {
   const [answer, setAnswer] = useState('');
@@ -37,8 +42,8 @@ export function GameScreen({
     setTimeout(() => setFeedback((prev) => prev.filter((item) => item.id !== id)), 1500);
   };
 
-  const submitIfComplete = (nextAnswer: string, token: string) => {
-    if (nextAnswer.trim().length !== 5) return;
+  const submitIfComplete = (nextAnswer: string, token: string, wordLen: number) => {
+    if (nextAnswer.trim().length !== wordLen) return;
 
     onSubmit(nextAnswer, token, {
       onSuccess: () => showFeedback(true),
@@ -48,13 +53,13 @@ export function GameScreen({
     setAnswer('');
   };
 
-  const handleLetterClick = (letter: string, token: string) => {
-    if (answerRef.current.length >= 5) return;
+  const handleLetterClick = (letter: string, token: string, wordLen: number) => {
+    if (answerRef.current.length >= wordLen) return;
 
     const next = answerRef.current + letter;
     answerRef.current = next;
     setAnswer(next);
-    submitIfComplete(next, token);
+    submitIfComplete(next, token, wordLen);
   };
 
   const handleBackspace = () => {
@@ -68,12 +73,13 @@ export function GameScreen({
       if (e.key === 'Backspace') return handleBackspace();
 
       const lowerCased = e.key.toLowerCase();
-      if (/^[a-z]$/.test(lowerCased)) handleLetterClick(lowerCased, token);
+      if (/^[a-z]$/.test(lowerCased)) handleLetterClick(lowerCased, token, scrambled.length);
     }
 
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      window.speechSynthesis.cancel();
     };
     // handleLetterClick/handleBackspace read answerRef.current (always latest);
     // submitIfComplete closes over onSubmit/token from this render.
@@ -84,14 +90,16 @@ export function GameScreen({
   useEffect(() => {
     const speakTimeout = setTimeout(() => {
       if (settings.autoVoice) {
-        speakLetters(scrambled, definition);
+        speakLetters(scrambled, definition, lang);
       }
     }, 50);
     return () => clearTimeout(speakTimeout);
-  }, [scrambled, definition, settings.autoVoice]);
+  }, [scrambled, definition, settings.autoVoice, lang]);
 
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
+  const definitionContent = renderDefinitionVisual(definition, scrambled.length);
+  const isIndonesianTopic = settings.topic === 'indonesian-politician-quotes';
 
   return (
     <div className="w-full h-full flex flex-col gap-4 justify-end items-center">
@@ -118,10 +126,13 @@ export function GameScreen({
       </div>
 
       <div
-        className="border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 flex items-center justify-center w-full"
-        hidden={settings.mode === 'blind'}
+        className={
+          'border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 inline-flex items-center justify-center w-full' +
+          (isIndonesianTopic ? ' min-h-[94px]' : '')
+        }
+        hidden={settings.mode === 'blind' || settings.autoVoice}
       >
-        {definition}
+        {definitionContent}
       </div>
 
       <div
@@ -133,17 +144,17 @@ export function GameScreen({
       >
         {settings.autoVoice ? (
           <div className="sr-only">
-            {ORDINAL_LABELS.map((label, i) => (
-              <span key={label}>{scrambled[i]}</span>
+            {scrambled.split('').map((letter, i) => (
+              <span key={i}>{letter}</span>
             ))}
           </div>
         ) : (
-          ORDINAL_LABELS.map((label, i) => (
+          Array.from({ length: scrambled.length }, (_, i) => (
             <div
-              key={label}
+              key={i}
               className="w-12 h-12 flex items-center justify-center bg-dark-interactive-primary text-white font-bold text-2xl rounded-lg shadow uppercase"
             >
-              <div className="sr-only">{label} char: </div>
+              <div className="sr-only">{ordinalLabel(i)} char: </div>
               {scrambled[i]}
             </div>
           ))
@@ -152,7 +163,7 @@ export function GameScreen({
 
       <button
         type="button"
-        onClick={() => speakLetters(scrambled, definition)}
+        onClick={() => speakLetters(scrambled, definition, lang)}
         className="bg-dark-interactive-primary text-white w-12 h-12 rounded-full text-2xl transition duration-200 hover:bg-dark-interactive-hover hover:scale-110 active:scale-95"
         aria-label="Speak letters"
       >
@@ -160,22 +171,23 @@ export function GameScreen({
       </button>
 
       <div className="flex gap-2 justify-center w-full" data-testid="answer-slots">
-        {ORDINAL_LABELS.slice(0, answer.length).map((label, i) => (
-          <div
-            key={label}
-            className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
-          >
-            <div className="sr-only">{label} char: </div>
-            {answer[i].toUpperCase()}
-          </div>
-        ))}
-        {answer.length < 5 &&
-          ORDINAL_LABELS.slice(answer.length).map((label) => (
-            <div key={label} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />
-          ))}
+        {Array.from({ length: scrambled.length }, (_, i) => {
+          if (i < answer.length) {
+            return (
+              <div
+                key={i}
+                className="w-12 h-12 flex items-center justify-center bg-dark-bg-tertiary border-2 border-dark-border-primary font-bold text-2xl rounded-lg text-dark-text-primary"
+              >
+                <div className="sr-only">{ordinalLabel(i)} char: </div>
+                {answer[i].toUpperCase()}
+              </div>
+            );
+          }
+          return <div key={i} className="w-12 h-12 bg-dark-bg-accent border-2 border-dark-border-primary rounded-lg" />;
+        })}
       </div>
 
-      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={(letter) => handleLetterClick(letter, token)} />
+      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={(letter) => handleLetterClick(letter, token, scrambled.length)} />
 
       {feedback.map(({ id, isCorrect, classNames }) => {
         const className =
@@ -194,20 +206,61 @@ export function GameScreen({
   );
 }
 
-function speakLetters(letters: string, definition: string) {
+function speakLetters(letters: string, definition: string, lang: string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
   if (definition) {
-    const definitionUtterance = new SpeechSynthesisUtterance(definition);
+    const speechDefinition = definition.replace(/<template>(-<template>)?/g, TEMPLATE_PRONUNCIATION[lang] ?? '...');
+    const definitionUtterance = new SpeechSynthesisUtterance(speechDefinition);
+    if (lang !== DEFAULT_LANG) definitionUtterance.lang = lang;
+
     definitionUtterance.rate = 0.75;
+    definitionUtterance.volume = 0.75;
     window.speechSynthesis.speak(definitionUtterance);
   }
 
   letters.split('').forEach((letter) => {
     const utterance = new SpeechSynthesisUtterance(letter);
+    if (lang !== DEFAULT_LANG) utterance.lang = lang;
+
+    utterance.volume = 0.75;
     window.speechSynthesis.speak(utterance);
   });
+}
+
+function ordinalLabel(i: number): string {
+  const labels = [
+    'First',
+    'Second',
+    'Third',
+    'Fourth',
+    'Fifth',
+    'Sixth',
+    'Seventh',
+    'Eighth',
+    'Ninth',
+    'Tenth',
+    'Eleventh',
+    'Twelfth',
+    'Thirteenth',
+    'Fourteenth',
+    'Fifteenth',
+    'Sixteenth',
+    'Seventeenth',
+    'Eighteenth',
+    'Nineteenth',
+    'Twentieth',
+  ];
+  return i < labels.length ? labels[i] : `${i + 1}th`;
+}
+
+function renderDefinitionVisual(definition: string, scrambledLength: number): ReactNode {
+  const template = '<template>';
+  if (!definition.includes(template)) return definition;
+
+  const underscores = '_'.repeat(scrambledLength);
+  return definition.replace(/<template>/g, underscores);
 }
 
 function getClassNames() {

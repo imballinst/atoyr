@@ -1,19 +1,26 @@
 import z from 'zod';
 
-export const LATEST_STORAGE_KEY = 'atoyr:settings:v1';
+export const LATEST_STORAGE_KEY = 'atoyr:settings:v2';
 
 const V1Schema = z.boolean();
 const V1SettingsSchema = z.object({
   autoVoice: z.boolean(),
   mode: z.enum(['vanilla', 'blind']),
 });
-type V1SettingsSchema = z.infer<typeof V1SettingsSchema>;
+export type V1SettingsSchema = z.infer<typeof V1SettingsSchema>;
+const V2SettingsSchema = z.object({
+  autoVoice: z.boolean(),
+  mode: z.enum(['vanilla', 'blind']),
+  topic: z.enum(['english-words', 'indonesian-politician-quotes']),
+});
+type V2SettingsSchema = z.infer<typeof V2SettingsSchema>;
 
-export type LatestSchema = V1SettingsSchema;
+export type LatestSchema = V2SettingsSchema;
 
-export const DEFAULT_LATEST_SCHEMA: V1SettingsSchema = {
+export const DEFAULT_LATEST_SCHEMA: V2SettingsSchema = {
   autoVoice: false,
   mode: 'vanilla',
+  topic: 'english-words',
 };
 
 const MIGRATIONS = {
@@ -27,29 +34,28 @@ const MIGRATIONS = {
   },
   'atoyr:settings:v1': {
     schema: V1SettingsSchema,
-    up: null,
+    up: (cur: V1SettingsSchema) => ({ ...cur, topic: 'english-words' }) satisfies V2SettingsSchema,
   },
 };
 
-function parseSettings(value: string | null): V1SettingsSchema {
+function parseSettings(value: string | null): V2SettingsSchema {
   if (value === null) return DEFAULT_LATEST_SCHEMA;
 
   try {
     const parsed = JSON.parse(value);
-    return V1SettingsSchema.parse(parsed);
+    return V2SettingsSchema.parse(parsed);
   } catch {
     return DEFAULT_LATEST_SCHEMA;
   }
 }
 
-export function readStoredSettings(): z.infer<typeof V1SettingsSchema> {
+export function readStoredSettings(): z.infer<typeof V2SettingsSchema> {
   try {
     const latestStored = localStorage.getItem(LATEST_STORAGE_KEY);
     if (latestStored !== null) {
       return parseSettings(latestStored);
     }
 
-    // If no latest stored, then find out old values.
     const entries = Object.entries(MIGRATIONS);
     const finalMigratedData = entries.reduce((migrated, [curKey, curValue]) => {
       if (curValue.up === null) return migrated;
@@ -59,7 +65,7 @@ export function readStoredSettings(): z.infer<typeof V1SettingsSchema> {
       if (stored === null) return null;
 
       const parsed = curValue.schema.safeParse(JSON.parse(stored));
-      if (parsed.success) return parsed.data;
+      if (parsed.success) return (curValue.up as any)(parsed.data);
 
       return null;
     }, null as any);
@@ -73,13 +79,12 @@ export function readStoredSettings(): z.infer<typeof V1SettingsSchema> {
 
     return DEFAULT_LATEST_SCHEMA;
   } finally {
-    // In any case, during errors, cleanup old keys.
     for (const key in MIGRATIONS) {
       if (key !== LATEST_STORAGE_KEY) localStorage.removeItem(key);
     }
   }
 }
 
-export function writeStoredSettings(value: V1SettingsSchema): void {
+export function writeStoredSettings(value: LatestSchema): void {
   localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify(value));
 }
