@@ -252,6 +252,138 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	assert.Equal(t, int64(5), total)
 }
 
+func TestLeaderboardService_GetLeaderboard_DifferentTopics(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	englishSession := models.SessionEntity{
+		ID:                       "s01",
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    100,
+		TotalAttempts:            10,
+		Accuracy:                 90,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	indonesianSession := models.SessionEntity{
+		ID:                       "s02",
+		Mode:                     "vanilla",
+		Topic:                    "indonesian-politician-quotes",
+		Score:                    200,
+		TotalAttempts:            20,
+		Accuracy:                 95,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+
+	db.Create(&englishSession)
+	db.Create(&indonesianSession)
+
+	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 1)
+	assert.Equal(t, "s01", entries[0].ID)
+
+	entries, err = service.GetLeaderboard("vanilla", "indonesian-politician-quotes", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 1)
+	assert.Equal(t, "s02", entries[0].ID)
+}
+
+func TestLeaderboardService_CrossTopic_GetTotalEntries(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	db.Create(&models.SessionEntity{
+		ID:                       "s01",
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    100,
+		TotalAttempts:            10,
+		Accuracy:                 90,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	})
+
+	total, err := service.GetTotalEntries("vanilla", "indonesian-politician-quotes")
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), total)
+
+	total, err = service.GetTotalEntries("vanilla", "english-words")
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+}
+
+func TestLeaderboardService_CrossTopic_Percentile(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	englishHigh := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    100,
+		TotalAttempts:            10,
+		Accuracy:                 90,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	englishMid := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    50,
+		TotalAttempts:            10,
+		Accuracy:                 80,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	englishLow := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    10,
+		TotalAttempts:            10,
+		Accuracy:                 70,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	indonesianSession := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "indonesian-politician-quotes",
+		Score:                    200,
+		TotalAttempts:            10,
+		Accuracy:                 100,
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+
+	db.Create(&englishHigh)
+	db.Create(&englishMid)
+	db.Create(&englishLow)
+	db.Create(&indonesianSession)
+
+	percentile, err := service.GetPercentile(englishMid.ID, "vanilla", "english-words", englishMid.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, float32(50), percentile)
+}
+
 func TestLeaderboardService_GetPercentile(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)

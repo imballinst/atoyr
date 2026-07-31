@@ -202,6 +202,22 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 	assert.Empty(t, cookie)
 }
 
+func TestGameRoutes_StartGame_WithInvalidTopic(t *testing.T) {
+	router, _ := setupTestRouter(t)
+
+	autoVoice := true
+	payload := StartGameRequest{Topic: SessionTopic("invalid-topic"), Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := testutils.CreateTestResponseRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
 func TestGameRoutes_StartGame_BlindModeWithIndonesianTopic(t *testing.T) {
 	router, _ := setupTestRouter(t)
 

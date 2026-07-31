@@ -124,9 +124,26 @@ describe('Home — game lifecycle', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('selecting indonesian-politician-quotes topic transitions landing screen to gameplay with topic banner visible', async () => {
+    localStorage.setItem(
+      LATEST_STORAGE_KEY,
+      JSON.stringify({ autoVoice: false, mode: 'vanilla', topic: 'indonesian-politician-quotes' } satisfies LatestSchema),
+    );
+    vi.mocked(apiStartGame).mockResolvedValueOnce({
+      ...mockStartResponse1,
+      topic: 'indonesian-politician-quotes',
+    });
+    renderHome();
+
+    await startGame();
+
+    const banners = screen.getAllByRole('status');
+    expect(banners[0].textContent).toContain('Indonesian Politician Quotes');
+  });
+
   it.each([
     { mode: 'vanilla' as const, wordDefinition: mockStartResponse1.scrambledWordDefinition, bannerText: '' as const },
-    { mode: 'blind' as const, wordDefinition: '' as const, bannerText: '🚫 BLIND MODE 🚫' as const },
+    { mode: 'blind' as const, wordDefinition: '' as const, bannerText: 'BLIND MODE' as const },
   ])('shows feedback and updates the scrambled word after a correct answer in $mode mode', async ({ mode, wordDefinition, bannerText }) => {
     localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify({ autoVoice: false, mode, topic: 'english-words' } satisfies LatestSchema));
     vi.mocked(apiStartGame).mockResolvedValue({

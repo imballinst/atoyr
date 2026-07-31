@@ -7,7 +7,7 @@ const V1SettingsSchema = z.object({
   autoVoice: z.boolean(),
   mode: z.enum(['vanilla', 'blind']),
 });
-type V1SettingsSchema = z.infer<typeof V1SettingsSchema>;
+export type V1SettingsSchema = z.infer<typeof V1SettingsSchema>;
 const V2SettingsSchema = z.object({
   autoVoice: z.boolean(),
   mode: z.enum(['vanilla', 'blind']),
@@ -65,7 +65,7 @@ export function readStoredSettings(): z.infer<typeof V2SettingsSchema> {
       if (stored === null) return null;
 
       const parsed = curValue.schema.safeParse(JSON.parse(stored));
-      if (parsed.success) return parsed.data;
+      if (parsed.success) return (curValue.up as any)(parsed.data);
 
       return null;
     }, null as any);

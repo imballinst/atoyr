@@ -141,9 +141,15 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
 
+Also, do **not** mock internal hooks (e.g. `useLeaderboard`) just to assert what params they receive. Such assertions couple the test to internal wiring rather than user-visible outcomes. If a hook's parameter contract needs coverage, test it indirectly through a rendered UI assertion (e.g. the leaderboard table shows entries for the correct topic), or in a route-level integration test that exercises the full data flow.
+
 ### Go Test Entities: Fill All Required Fields Explicitly
 
 When constructing GORM model structs in tests, always set every field that has a DB constraint (NOT NULL, DEFAULT, etc.) explicitly. GORM v2 includes zero-value strings (`""`) in INSERTs, which bypasses the DB-level DEFAULT. Relying on GORM's `default` tag or the migration's column default leads to silent zero-values in tests when the field isn't set explicitly in the struct literal.
+
+### Quote Data Must Match Canonical JSON
+
+When tests reference Indonesian-politician-quote word/definition data, use the exact entries from `packages/server/topics/indonesian-politician-quotes.json`. Do **not** invent fake quotes in tests — misattributing a fabricated quote to a real politician is irresponsible. If the test needs quote data that is not yet in the JSON file, add the entry to the file first, then reference it from the test.
 
 ### Route-Level Tests: Assert Transitions, Not Rendering
 

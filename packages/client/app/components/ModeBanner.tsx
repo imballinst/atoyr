@@ -12,7 +12,8 @@ const TOPIC_LABELS: Record<SessionTopic, string> = {
 
 export function ModeBanner({ mode, topic }: ModeBannerProps) {
   const isBlind = mode === 'blind';
-  const displayMode = isBlind ? '🚫 BLIND MODE 🚫' : '🍦 Vanilla mode 🍦';
+  const emoji = isBlind ? '🚫' : '🍦';
+  const modeLabel = isBlind ? 'BLIND MODE' : 'Vanilla mode';
 
   return (
     <div
@@ -22,7 +23,7 @@ export function ModeBanner({ mode, topic }: ModeBannerProps) {
       role="status"
       aria-label={`${isBlind ? 'Blind' : 'Vanilla'} mode, ${TOPIC_LABELS[topic]} topic`}
     >
-      {displayMode} &mdash; {TOPIC_LABELS[topic]}
+      {emoji} {modeLabel} + {TOPIC_LABELS[topic]} {emoji}
     </div>
   );
 }

@@ -211,6 +211,36 @@ func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 	assert.Equal(t, "", continued.CurrentWordDefinition)
 }
 
+func TestGameService_QuotesDefinitionWithTemplate(t *testing.T) {
+	ws := &WordService{
+		Words: map[string][]WordDefinition{
+			"indonesian-politician-quotes": {
+				{Word: "gelap", Definition: "Kau yang <template>! — Pandjaitan, Luhut Binsar (2025)"},
+				{Word: "internet", Definition: "<template> cepat buat apa? — Sembiring, Tifatul (2014)"},
+			},
+		},
+	}
+
+	db := testutils.SetupTestDB(t)
+	ss := NewSessionService(db)
+	ls := NewLeaderboardService(db)
+	gs := NewGameService(ss, ws, ls, testutils.TestSessionOptions)
+
+	session, _ := ss.Create(false, []string{}, "vanilla", "indonesian-politician-quotes", testutils.TestSessionOptions.Duration+5)
+	started, err := gs.StartGame(session.ID)
+
+	assert.NoError(t, err)
+	assert.Contains(t, started.CurrentWordDefinition, "<template>")
+
+	session, _ = ss.FindByID(session.ID)
+	word := session.CurrentWord
+	result, err := gs.SubmitAnswer(session.ID, word, session.CurrentWordToken)
+
+	assert.NoError(t, err)
+	assert.True(t, result.Correct)
+	assert.Contains(t, result.ScrambledWordDefinition, "<template>")
+}
+
 func TestGameService_TokenGeneration(t *testing.T) {
 	testServices := initTestServices(t)
 

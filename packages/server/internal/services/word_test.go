@@ -62,3 +62,44 @@ func TestWordService_CaseInsensitive(t *testing.T) {
 	assert.NotEqual(t, "world", word)
 	assert.NotEqual(t, "apple", word)
 }
+
+func TestWordService_UnknownTopic(t *testing.T) {
+	ws := initTestWordService()
+
+	_, _, err := ws.GetRandomWord([]string{}, "unknown-topic")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown topic")
+}
+
+func TestWordService_TopicIsolation(t *testing.T) {
+	ws := &WordService{
+		Words: map[string][]WordDefinition{
+			"english-words": {
+				{Word: "hello", Definition: "a greeting"},
+				{Word: "world", Definition: "the earth"},
+				{Word: "apple", Definition: "a fruit"},
+				{Word: "banana", Definition: "a yellow fruit"},
+				{Word: "cherry", Definition: "a red fruit"},
+			},
+			"indonesian-politician-quotes": {
+				{Word: "gelap", Definition: "Kau yang <template>! — Pandjaitan, Luhut Binsar (2025)"},
+				{Word: "internet", Definition: "<template> cepat buat apa? — Sembiring, Tifatul (2014)"},
+				{Word: "obligasi", Definition: "<template> itu apa sih? — Widodo, Jokowi (2012)"},
+				{Word: "rapat", Definition: "Gua ini kagak pernah diajakin <template> — Deyang, Nanik Sudaryati (2026)"},
+				{Word: "pekerjaan", Definition: "Jika empat langkah tadi bisa penuhi akan terbuka 19 juta lapangan <template> — Rakabuming, Gibran (2023)"},
+			},
+		},
+	}
+
+	for range 10 {
+		word, _, err := ws.GetRandomWord([]string{}, "english-words")
+		assert.NoError(t, err)
+		assert.Contains(t, []string{"hello", "world", "apple", "banana", "cherry"}, word)
+	}
+
+	for range 10 {
+		word, _, err := ws.GetRandomWord([]string{}, "indonesian-politician-quotes")
+		assert.NoError(t, err)
+		assert.Contains(t, []string{"gelap", "internet", "obligasi", "rapat", "pekerjaan"}, word)
+	}
+}

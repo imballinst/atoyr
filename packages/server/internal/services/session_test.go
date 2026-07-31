@@ -21,6 +21,7 @@ func TestSessionService_Create(t *testing.T) {
 	assert.Equal(t, int32(6), session.DurationSeconds)
 	assert.Equal(t, true, session.AutoVoice)
 	assert.Equal(t, "test-item-id", session.UsedItemIDs[0])
+	assert.Equal(t, "english-words", session.Topic)
 }
 
 func TestSessionService_FindByID(t *testing.T) {
