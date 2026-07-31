@@ -50,7 +50,9 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
     >
       <div className="flex flex-col gap-y-6">
         {isIndonesianTopic && (
-          <p className="text-xs text-dark-text-secondary text-left">Some modes are not available with the current topic.</p>
+          <p className="text-xs text-dark-text-secondary text-left border rounded p-2 bg-amber-900 border-amber-900">
+            Some modes are unavailable with the current topic.
+          </p>
         )}
 
         <div className="flex flex-col gap-2">
@@ -58,23 +60,18 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
             <div className="text-sm">Mode</div>
 
             <div>
-              <label className="text-sm">Mode</label>
-
-              {isIndonesianTopic ? (
-                <span className="text-sm ml-4 text-dark-text-secondary">Vanilla</span>
-              ) : (
-                <select
-                  id={modeId}
-                  className="text-sm"
-                  onChange={(e) => {
-                    updateSettings({ mode: e.target.value as SessionMode });
-                  }}
-                  value={settings.mode}
-                >
-                  <option value="vanilla">Vanilla</option>
-                  <option value="blind">Blind</option>
-                </select>
-              )}
+              <select
+                disabled={isIndonesianTopic}
+                id={modeId}
+                className={'text-sm' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
+                onChange={(e) => {
+                  updateSettings({ mode: e.target.value as SessionMode });
+                }}
+                value={settings.mode}
+              >
+                <option value="vanilla">Vanilla</option>
+                <option value="blind">Blind</option>
+              </select>
             </div>
           </div>
 
@@ -87,14 +84,12 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-x-2">
-            <div className="text-sm">Topic</div>
+            <label htmlFor={topicId} className="text-sm">
+              Topic
+            </label>
 
             <div>
-              <label htmlFor={topicId} className="sr-only">
-                Topic
-              </label>
-
-              <select id={topicId} className="text-sm" onChange={handleTopicChange} value={settings.topic}>
+              <select id={topicId} className="text-sm text-right" onChange={handleTopicChange} value={settings.topic}>
                 <option value="english-words">English Words</option>
                 <option value="indonesian-politician-quotes">Indonesian Politician Quotes</option>
               </select>

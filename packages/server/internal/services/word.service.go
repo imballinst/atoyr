@@ -94,7 +94,7 @@ func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string
 	availableDefinitions := []string{}
 	for _, wd := range topicWords {
 		if !excluded[strings.ToLower(wd.Word)] {
-			available = append(available, wd.Word)
+			available = append(available, strings.ToLower(wd.Word))
 			availableDefinitions = append(availableDefinitions, wd.Definition)
 		}
 	}

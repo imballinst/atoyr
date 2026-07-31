@@ -92,6 +92,7 @@ export function GameScreen({
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const currentStreak = correctAttemptTimestamps[correctAttemptTimestamps.length - 1] ?? [];
   const definitionContent = renderDefinitionVisual(definition, scrambled.length);
+  const isIndonesianTopic = settings.topic === 'indonesian-politician-quotes';
 
   return (
     <div className="w-full h-full flex flex-col gap-4 justify-end items-center">
@@ -118,7 +119,10 @@ export function GameScreen({
       </div>
 
       <div
-        className="border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 flex items-center justify-center w-full"
+        className={
+          'border border-dark-bg-tertiary p-4 rounded-lg text-center text-sm italic text-dark-text-secondary min-h-10 inline-flex items-center justify-center w-full' +
+          (isIndonesianTopic ? ' min-h-[94px]' : '')
+        }
         hidden={settings.mode === 'blind'}
       >
         {definitionContent}
@@ -244,15 +248,8 @@ function renderDefinitionVisual(definition: string, scrambledLength: number): Re
   const template = '<template>';
   if (!definition.includes(template)) return definition;
 
-  const [before, after] = definition.split(template);
   const underscores = '_'.repeat(scrambledLength);
-  return (
-    <>
-      {before}
-      <span aria-label={`blank, ${scrambledLength} letters`}>{underscores}</span>
-      {after}
-    </>
-  );
+  return definition.replace(/<template>/g, underscores);
 }
 
 function getClassNames() {

@@ -14,7 +14,7 @@ export function HowToPlayModal() {
         </button>
       }
     >
-      <ul className="text-sm text-dark-text-secondary space-y-3 list-disc">
+      <ul className="text-sm text-dark-text-secondary space-y-3 list-disc pl-3">
         {['You have 30 seconds', 'Wrong answers cost 1 second', 'Type using external keyboard or on-screen buttons'].map((rule) => (
           <li key={rule}>{rule}</li>
         ))}

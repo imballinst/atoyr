@@ -34,6 +34,8 @@ export function Leaderboard({
     }
   }
 
+  const isIndonesianTopic = topic === 'indonesian-politician-quotes';
+
   return (
     <div className="flex flex-col h-full w-full gap-y-2">
       <HeadingComponent className="text-lg font-semibold text-dark-text-primary">Leaderboard</HeadingComponent>
@@ -50,10 +52,11 @@ export function Leaderboard({
             </label>
 
             <select
-              className="text-sm"
+              className={'text-sm text-right' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
               onChange={(e) => {
                 setMode(e.target.value as SessionMode);
               }}
+              disabled={isIndonesianTopic}
               value={mode}
             >
               <option value="vanilla">Vanilla</option>
@@ -69,9 +72,14 @@ export function Leaderboard({
             </label>
 
             <select
-              className="text-sm"
+              className="text-sm text-right"
               onChange={(e) => {
-                setTopic(e.target.value as SessionTopic);
+                const newTopic = e.target.value as SessionTopic;
+
+                setTopic(newTopic);
+                if (newTopic === 'indonesian-politician-quotes') {
+                  setMode('vanilla' as SessionMode);
+                }
               }}
               value={topic}
             >
@@ -103,7 +111,6 @@ export function Leaderboard({
                       {getFinalScore(result.score, result.totalAttempts)}
                     </div>
                     <div className="font-semibold text-dark-interactive-success text-right min-w-11">{result.accuracy}%</div>
-                    <TopicChip topic={result.topic} />
                   </div>
                 </div>
               ))}
@@ -113,12 +120,4 @@ export function Leaderboard({
       </div>
     </div>
   );
-}
-
-function TopicChip({ topic }: { topic: SessionTopic }) {
-  if (topic === 'indonesian-politician-quotes') {
-    return <span className="text-[10px] px-1 py-0.5 rounded bg-amber-400/20 text-amber-400 font-medium leading-none">Quotes</span>;
-  }
-
-  return null;
 }
