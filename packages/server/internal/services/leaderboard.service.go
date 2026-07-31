@@ -26,13 +26,14 @@ type LeaderboardEntry struct {
 	TotalAttempts int32   `json:"totalAttempts"`
 	Accuracy      float32 `json:"accuracy"`
 	Timestamp     int64   `json:"timestamp"`
+	Topic         string  `json:"topic"`
 }
 
-func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]LeaderboardEntry, error) {
+func (l *LeaderboardService) GetLeaderboard(mode, topic string, limit, offset int) ([]LeaderboardEntry, error) {
 	var results []models.SessionEntity
 
 	if err := l.db.
-		Where("mode = ? AND phase = ? AND score > 0", mode, core.SessionPhaseFinished).
+		Where("mode = ? AND topic = ? AND phase = ? AND score > 0", mode, topic, core.SessionPhaseFinished).
 		Order("score DESC, accuracy DESC, ends_at ASC").
 		Limit(limit).
 		Offset(offset).
@@ -49,24 +50,25 @@ func (l *LeaderboardService) GetLeaderboard(mode string, limit, offset int) ([]L
 			TotalAttempts: result.TotalAttempts,
 			Accuracy:      utils.ToPercentage(result.Accuracy),
 			Timestamp:     result.EndsAt.UnixMilli(),
+			Topic:         result.Topic,
 		}
 	}
 
 	return entries, nil
 }
 
-func (l *LeaderboardService) GetTotalEntries(mode string) (int64, error) {
+func (l *LeaderboardService) GetTotalEntries(mode, topic string) (int64, error) {
 	var totalEntries int64
 
 	if err := l.db.
-		Raw("SELECT COUNT(*) FROM session_entities WHERE mode = ? AND phase = ? AND score > 0;", mode, core.SessionPhaseFinished).Find(&totalEntries).Error; err != nil {
+		Raw("SELECT COUNT(*) FROM session_entities WHERE mode = ? AND topic = ? AND phase = ? AND score > 0;", mode, topic, core.SessionPhaseFinished).Find(&totalEntries).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
 
 	return totalEntries, nil
 }
 
-func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) (float32, error) {
+func (l *LeaderboardService) GetPercentile(sessionId, mode, topic string, score int32) (float32, error) {
 	// 1. Fetch the current session's tiebreaker fields
 	type sessionMeta struct {
 		Accuracy float32
@@ -83,8 +85,8 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
 	var totalEligible int32
 	if err := l.db.
 		Raw(`SELECT COUNT(*) FROM session_entities
-             WHERE phase = ? AND mode = ? AND score > 0 AND id != ?`,
-			core.SessionPhaseFinished, mode, sessionId).
+             WHERE phase = ? AND mode = ? AND topic = ? AND score > 0 AND id != ?`,
+			core.SessionPhaseFinished, mode, topic, sessionId).
 		Scan(&totalEligible).Error; err != nil {
 		return 0, fmt.Errorf("failed to fetch leaderboard: %w", err)
 	}
@@ -93,13 +95,13 @@ func (l *LeaderboardService) GetPercentile(sessionId, mode string, score int32) 
 	var totalBelowCurrentScore int32
 	if err := l.db.
 		Raw(`SELECT COUNT(*) FROM session_entities
-             WHERE phase = ? AND mode = ? AND score > 0 AND id != ?
+             WHERE phase = ? AND mode = ? AND topic = ? AND score > 0 AND id != ?
                AND (
-                     score < ?
-                     OR (score = ? AND accuracy < ?)
-                     OR (score = ? AND accuracy = ? AND ends_at > ?)
+                    score < ?
+                    OR (score = ? AND accuracy < ?)
+                    OR (score = ? AND accuracy = ? AND ends_at > ?)
                )`,
-			core.SessionPhaseFinished, mode, sessionId,
+			core.SessionPhaseFinished, mode, topic, sessionId,
 			score,
 			score, meta.Accuracy,
 			score, meta.Accuracy, meta.EndsAt).

@@ -137,7 +137,6 @@ func (g *GameService) SubmitAnswer(sessionID, answer, token string) (*SubmitAnsw
 		Attempts:                 session.TotalAttempts + 1,
 		DurationSeconds:          session.DurationSeconds,
 		CorrectAttemptTimestamps: session.CorrectAttemptTimestamps,
-		Token:                    session.CurrentWordToken,
 	}
 
 	if !isTokenCorrect {

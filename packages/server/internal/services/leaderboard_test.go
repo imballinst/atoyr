@@ -23,48 +23,48 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 		{
 			ID:                       "session1",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    100,
 			TotalAttempts:            10,
 			Accuracy:                 90,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session2",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    150,
 			TotalAttempts:            15,
 			Accuracy:                 95,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session3",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    80,
 			TotalAttempts:            8,
 			Accuracy:                 85.12345,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "session4",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    0,
 			TotalAttempts:            8,
 			Accuracy:                 0,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
@@ -75,7 +75,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 3)
 
@@ -97,24 +97,24 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 		{
 			ID:                       "s01",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    100,
 			TotalAttempts:            10,
 			Accuracy:                 90,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "s02",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    100,
 			TotalAttempts:            9,
 			Accuracy:                 95,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
@@ -125,7 +125,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 2)
 
@@ -146,24 +146,24 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 		{
 			ID:                       "s01",
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    100,
 			TotalAttempts:            10,
 			Accuracy:                 90,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
 		{
 			ID:                       "s02",
 			Mode:                     "blind",
+			Topic:                    "english-words",
 			Score:                    100,
 			TotalAttempts:            9,
 			Accuracy:                 95,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		},
@@ -174,7 +174,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 
@@ -182,7 +182,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	assert.Equal(t, float32(90), entries[0].Accuracy)
 
 	// Get leaderboard, blind mode
-	entries, err = service.GetLeaderboard("blind", 10, 0)
+	entries, err = service.GetLeaderboard("blind", "english-words", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 
@@ -199,12 +199,12 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    int32(100 + i),
 			TotalAttempts:            int32(10),
 			Accuracy:                 90,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		}
@@ -212,15 +212,15 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 	}
 
 	// Get first page (limit 10)
-	entries, _ := service.GetLeaderboard("vanilla", 10, 0)
+	entries, _ := service.GetLeaderboard("vanilla", "english-words", 10, 0)
 	assert.Len(t, entries, 10)
 
 	// Get second page
-	entries, _ = service.GetLeaderboard("vanilla", 10, 10)
+	entries, _ = service.GetLeaderboard("vanilla", "english-words", 10, 10)
 	assert.Len(t, entries, 10)
 
 	// Get third page (should have 5)
-	entries, _ = service.GetLeaderboard("vanilla", 10, 20)
+	entries, _ = service.GetLeaderboard("vanilla", "english-words", 10, 20)
 	assert.Len(t, entries, 5)
 }
 
@@ -228,7 +228,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
-	total, _ := service.GetTotalEntries("vanilla")
+	total, _ := service.GetTotalEntries("vanilla", "english-words")
 	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
@@ -236,19 +236,19 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 		result := models.SessionEntity{
 			ID:                       "session" + string(rune(i)),
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    int32(100 + i),
 			TotalAttempts:            10,
 			Accuracy:                 90,
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		}
 		db.Create(&result)
 	}
 
-	total, _ = service.GetTotalEntries("vanilla")
+	total, _ = service.GetTotalEntries("vanilla", "english-words")
 	assert.Equal(t, int64(5), total)
 }
 
@@ -262,12 +262,12 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		result := models.SessionEntity{
 			ID:                       utils.GenerateUUID(),
 			Mode:                     "vanilla",
+			Topic:                    "english-words",
 			Score:                    int32(i * 10),
 			TotalAttempts:            int32(10),
 			Accuracy:                 float32(100 - (i * 10)),
 			CorrectAttemptTimestamps: models.JSON{},
 			UsedWords:                pq.StringArray{},
-			WordDefinitions:          pq.StringArray{},
 			UsedItemIDs:              pq.StringArray{},
 			Phase:                    core.SessionPhaseFinished,
 		}
@@ -284,7 +284,6 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		Accuracy:                 100,
 		CorrectAttemptTimestamps: models.JSON{},
 		UsedWords:                pq.StringArray{},
-		WordDefinitions:          pq.StringArray{},
 		UsedItemIDs:              pq.StringArray{},
 		Phase:                    core.SessionPhaseFinished,
 	}
@@ -298,13 +297,13 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
 
-		percentile, err := service.GetPercentile(id, "vanilla", score)
+		percentile, err := service.GetPercentile(id, "vanilla", "english-words", score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
 	}
 
 	// A blind session should only be compared against other blind sessions.
-	percentile, err := service.GetPercentile(blindSession.ID, "blind", blindSession.Score)
+	percentile, err := service.GetPercentile(blindSession.ID, "blind", "english-words", blindSession.Score)
 	assert.NoError(t, err)
 	assert.Equal(t, float32(0), percentile)
 }
@@ -339,10 +338,10 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	assert.NoError(t, sessionService.Update(playerSession))
 
 	// Fetch leaderboard
-	entries, err := leaderboardService.GetLeaderboard("vanilla", 10, 0)
+	entries, err := leaderboardService.GetLeaderboard("vanilla", "english-words", 10, 0)
 	assert.NoError(t, err)
 
-	total, err := leaderboardService.GetTotalEntries("vanilla")
+	total, err := leaderboardService.GetTotalEntries("vanilla", "english-words")
 	assert.NoError(t, err)
 
 	// Correct: 4 entries
@@ -359,15 +358,15 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	sqlDB, _ := db.DB()
 	txn, _ := sqlDB.Begin()
 	stmt, _ := txn.Prepare(`INSERT INTO session_entities 
-		(id, score, total_attempts, accuracy, correct_attempt_timestamps, used_words, word_definitions, used_item_ids, phase)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+		(id, mode, topic, score, total_attempts, accuracy, correct_attempt_timestamps, used_words, used_item_ids, phase)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 
 	var firstID string
 	var firstScore int32
 	for i := range 50_000 {
 		id := utils.GenerateUUID()
 		score := int32(rand.Intn(100))
-		stmt.Exec(id, score, rand.Intn(100), rand.Float32()*100, "[]", "{}", "{}", "{}", core.SessionPhaseFinished)
+		stmt.Exec(id, "vanilla", "english-words", score, rand.Intn(100), rand.Float32()*100, "[]", "{}", "{}", core.SessionPhaseFinished)
 		if i == 0 {
 			firstID = id
 			firstScore = score
@@ -381,7 +380,7 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	for b.Loop() {
 		start := time.Now()
 
-		_, err := service.GetPercentile(firstID, "vanilla", firstScore)
+		_, err := service.GetPercentile(firstID, "vanilla", "english-words", firstScore)
 		if err != nil {
 			b.Fatal(err)
 		}

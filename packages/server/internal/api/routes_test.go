@@ -109,7 +109,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := false
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -148,7 +148,7 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -187,7 +187,7 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -206,7 +206,7 @@ func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -249,7 +249,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	})
 
 	autoVoice := true
-	payload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -304,7 +304,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 
 	// Start a game first
 	autoVoice := false
-	startPayload := StartGameRequest{Mode: Vanilla, AutoVoice: &autoVoice}
+	startPayload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(startBody))

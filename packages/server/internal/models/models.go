@@ -68,7 +68,6 @@ type SessionEntity struct {
 	CorrectAttemptTimestamps JSON `gorm:"type:jsonb"`
 	AutoVoice                bool
 	UsedWords                pq.StringArray `gorm:"type:text"`
-	WordDefinitions          pq.StringArray `gorm:"type:text"`
 	CurrentWord              string
 	CurrentScrambledWord     string
 	CurrentWordDefinition    string

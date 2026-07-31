@@ -21,7 +21,6 @@ type SessionDomain struct {
 	CorrectAttemptTimestamps [][]string
 	AutoVoice                bool
 	UsedWords                []string
-	WordDefinitions          []string
 	CurrentWord              string
 	CurrentScrambledWord     string
 	CurrentWordDefinition    string
@@ -55,7 +54,6 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		AutoVoice:                session.AutoVoice,
 		UsedItemIDs:              []string(session.UsedItemIDs),
 		UsedWords:                []string(session.UsedWords),
-		WordDefinitions:          []string(session.WordDefinitions),
 		CurrentWord:              session.CurrentWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentScrambledWord:     session.CurrentScrambledWord,
@@ -89,7 +87,6 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		AutoVoice:                session.AutoVoice,
 		UsedWords:                session.UsedWords,
 		UsedItemIDs:              session.UsedItemIDs,
-		WordDefinitions:          session.WordDefinitions,
 		CurrentWord:              session.CurrentWord,
 		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,

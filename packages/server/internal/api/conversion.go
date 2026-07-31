@@ -16,5 +16,6 @@ func ToApiLeaderboardEntry(domainEntry services.LeaderboardEntry, sessionId stri
 		TotalAttempts:              domainEntry.TotalAttempts,
 		Accuracy:                   domainEntry.Accuracy,
 		Timestamp:                  domainEntry.Timestamp,
+		Topic:                      SessionTopic(domainEntry.Topic),
 	}
 }

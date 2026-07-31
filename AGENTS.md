@@ -141,6 +141,10 @@ For elements whose visible text is split across siblings (e.g. an `sr-only` labe
 
 Component tests should verify user-observable behavior, not internal attributes or wiring. For example, do **not** assert on `data-ga-label`, `data-testid` values, CSS classes, or other implementation-specific hooks in component tests. If an analytics label or tracking contract needs regression coverage, test it in a dedicated analytics/tracking test or an integration test instead. See `packages/client/app/components/ResultsScreen.test.tsx` as an example of what not to do.
 
+### Go Test Entities: Fill All Required Fields Explicitly
+
+When constructing GORM model structs in tests, always set every field that has a DB constraint (NOT NULL, DEFAULT, etc.) explicitly. GORM v2 includes zero-value strings (`""`) in INSERTs, which bypasses the DB-level DEFAULT. Relying on GORM's `default` tag or the migration's column default leads to silent zero-values in tests when the field isn't set explicitly in the struct literal.
+
 ### Route-Level Tests: Assert Transitions, Not Rendering
 
 Route-level tests (e.g., `home.test.tsx`) orchestrate screen transitions. They should assert on **which screen is visible**, not on rendering details of the child component. Component-level tests (`StartScreen.test.tsx`, `GameScreen.test.tsx`) own the rendering assertions.
