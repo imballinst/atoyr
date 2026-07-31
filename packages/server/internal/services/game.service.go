@@ -236,21 +236,27 @@ func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.Se
 		return nil, err
 	}
 
+	if err := g.assignNextWord(session); err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (g *GameService) assignNextWord(session *domainmodels.SessionDomain) error {
 	word, definition, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
 	if err != nil {
-		// All words used, finish game
-		return nil, g.FinishGame(sessionID)
+		return g.FinishGame(session.ID)
 	}
 
 	token := g.generateToken(word)
-	newUsedWords := append(session.UsedWords, word)
 
-	session.UsedWords = newUsedWords
+	session.UsedWords = append(session.UsedWords, word)
 	session.CurrentWordToken = token
 	session.CurrentWordDefinition = definition
 	session.CurrentWord = word
 
-	return session, nil
+	return nil
 }
 
 func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorrect bool) (*domainmodels.SessionDomain, error) {
@@ -277,20 +283,11 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 		return session, nil
 	}
 
-	word, definition, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
-	if err != nil {
-		// All words used, finish game
-		return nil, g.FinishGame(sessionID)
+	if err := g.assignNextWord(session); err != nil {
+		return nil, err
 	}
 
-	token := g.generateToken(word)
-	newUsedWords := append(session.UsedWords, word)
-
-	session.UsedWords = newUsedWords
-	session.CurrentWordToken = token
-	session.CurrentWordDefinition = definition
-	session.CurrentWord = word
-	session.CurrentScrambledWord = utils.ScrambleWord(word)
+	session.CurrentScrambledWord = utils.ScrambleWord(session.CurrentWord)
 	session.Score += 1
 
 	if session.AutoVoice {
@@ -304,9 +301,7 @@ func (g *GameService) updateSessionBasedOnAnswerResult(sessionID string, isCorre
 
 	lastIdx := len(session.CorrectAttemptTimestamps) - 1
 
-	currentStreakTimestamps := session.CorrectAttemptTimestamps[lastIdx]
-	currentStreakTimestamps = append(currentStreakTimestamps, time.Now().Format(time.RFC3339))
-	session.CorrectAttemptTimestamps[lastIdx] = currentStreakTimestamps
+	session.CorrectAttemptTimestamps[lastIdx] = append(session.CorrectAttemptTimestamps[lastIdx], time.Now().Format(time.RFC3339))
 
 	if err := g.sessionService.Update(session); err != nil {
 		return nil, err

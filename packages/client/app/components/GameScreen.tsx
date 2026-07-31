@@ -206,26 +206,26 @@ export function GameScreen({
   );
 }
 
+function makeUtterance(text: string, lang: string) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  if (lang !== DEFAULT_LANG) utterance.lang = lang;
+  utterance.volume = 0.75;
+  return utterance;
+}
+
 function speakLetters(letters: string, definition: string, lang: string) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
 
   if (definition) {
     const speechDefinition = definition.replace(/<template>(-<template>)?/g, TEMPLATE_PRONUNCIATION[lang] ?? '...');
-    const definitionUtterance = new SpeechSynthesisUtterance(speechDefinition);
-    if (lang !== DEFAULT_LANG) definitionUtterance.lang = lang;
-
+    const definitionUtterance = makeUtterance(speechDefinition, lang);
     definitionUtterance.rate = 0.75;
-    definitionUtterance.volume = 0.75;
     window.speechSynthesis.speak(definitionUtterance);
   }
 
   letters.split('').forEach((letter) => {
-    const utterance = new SpeechSynthesisUtterance(letter);
-    if (lang !== DEFAULT_LANG) utterance.lang = lang;
-
-    utterance.volume = 0.75;
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(makeUtterance(letter, lang));
   });
 }
 

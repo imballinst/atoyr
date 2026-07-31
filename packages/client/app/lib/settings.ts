@@ -58,7 +58,6 @@ export function readStoredSettings(): z.infer<typeof V2SettingsSchema> {
 
     const entries = Object.entries(MIGRATIONS);
     const finalMigratedData = entries.reduce((migrated, [curKey, curValue]) => {
-      if (curValue.up === null) return migrated;
       if (migrated !== null) return curValue.up(migrated);
 
       const stored = localStorage.getItem(curKey);
