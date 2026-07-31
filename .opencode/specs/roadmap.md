@@ -4,20 +4,20 @@ Forward-looking doc for Atoyr. Not a build spec — it tracks the planned expans
 
 ## Three-Axis Session Model
 
-Every session is described by three independent axes. The baseline sentinel on each is `vanilla` (`common` for topic). New values slot into one axis without touching the others.
+Every session is described by three independent axes. The baseline sentinel on each is `vanilla` (`english-words` for topic). New values slot into one axis without touching the others.
 
 | Axis | Column | Drives | Baseline | Current non-baseline values |
 |---|---|---|---|---|
 | **`mode`** | visibility toggle | whether the definition is shown (definition-stripping branch) | `vanilla` | `blind` |
 | **`time_constraint`** | timer mechanic | what the timer does on a correct/wrong answer (answer/timer branch) | `vanilla` | — (survival planned, see `survival-mode.md`) |
-| **`topic`** | content category | which words are eligible (word-pool filter) | `common` | — |
+| **`topic`** | content category | which words are eligible (word-pool filter) | `english-words` | `indonesian-politician-quotes` |
 
 ### Rules of the model
 
 - Each axis owns exactly one branch site in the server. Adding a value on one axis never requires changes on another.
 - No axis enumerates the others. The combinatorial "every new value vs every existing one" problem does not exist under this split.
-- Leaderboards partition by `(time_constraint, mode)` with graceful fallback to `time_constraint`-only below threshold K (see `survival-mode.md`). Topic does not partition leaderboards in this iteration.
-- A session may combine any value on each axis, e.g. `mode=blind, time_constraint=survival, topic=common`.
+- Leaderboards partition by `(topic, mode)` — hard partition, no K-threshold fallback. Cross-topic scores are never compared. `time_constraint` is not yet implemented and will be folded in as a third key when it ships.
+- A session may combine any value on each axis, e.g. `mode=blind, time_constraint=survival, topic=english-words`.
 
 ## Backlog
 
@@ -34,9 +34,9 @@ Every session is described by three independent axes. The baseline sentinel on e
 
 ### `topic` axis (content category)
 
-- `common` — baseline. No filter; uses the default word pool.
-- Future values under consideration: `game`, … (to be defined when the word pool grows enough to support topic filtering). Topic values are a category selector, not a stackable toggle — a session picks one topic (or `common`).
-- Open: should `topic` ever partition leaderboards? Only revisit if a topic becomes dense enough to support its own boards.
+- `english-words` — baseline. 5-letter English scramble with dictionary-style definitions.
+- `indonesian-politician-quotes` — **shipped**. Fill-in-the-blank Indonesian politician quotes. Definition contains a `<template>` marker that the client renders as underscores.
+- Future values under consideration: `game`, … (to be defined). Topic values are a single-choice category selector — a session picks one topic.
 
 ## Non-Axis Backlog
 
@@ -52,8 +52,7 @@ Features outside the three-axis model.
 These are living decisions, not schema facts. Document the chosen value next to each and revisit only with evidence.
 
 - **K** (percentile-fallback threshold): value TBD after launch traffic observation. Currently unspecified.
-- **Leaderboard partition key**: `(time_constraint, mode)` with fallback. Revisit if a topic becomes dense.
-- **Topic as partition key**: no, for this iteration.
+- **Leaderboard partition key**: `(topic, mode)`, hard-partitioned without K-threshold fallback. Will add `time_constraint` when it ships.
 
 ## Out of Scope for Now
 
