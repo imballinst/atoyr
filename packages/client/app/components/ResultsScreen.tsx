@@ -56,18 +56,10 @@ export function ResultsScreen({
         <div className="border-dark-bg-tertiary text-dark-text-primary p-2 sm:p-4 rounded-lg col-span-5 text-sm">
           Your result was better than <Percentile value={data?.percentile} />% other players!
         </div>
-        <div className="grid grid-cols-6 gap-2">
-          <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-3 md:col-span-2">
-            <Stat label="Score">
-              {score} / {totalAttempts}
-            </Stat>
-          </div>
-          <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-3 md:col-span-2">
-            <Stat label="Accuracy">{accuracy}%</Stat>
-          </div>
-          <div className="bg-dark-bg-tertiary p-2 sm:p-4 rounded-lg col-span-6 md:col-span-2">
-            <Stat label="Best streak">{longestStreak}</Stat>
-          </div>
+        <div className="bg-dark-bg-tertiary rounded-lg flex divide-x divide-dark-border-primary">
+          <Stat label="Score" value={`${score} / ${totalAttempts}`} />
+          <Stat label="Accuracy" value={`${accuracy}%`} />
+          <Stat label="Best streak" value={longestStreak} />
         </div>
       </div>
 
@@ -115,12 +107,12 @@ function Percentile({ value }: { value: number | undefined }) {
   return <span className={`font-bold tabular-nums ${parseColor(value)}`}>{formatted}</span>;
 }
 
-function Stat({ label, children }: { label: ReactNode; children: ReactNode }) {
+function Stat({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
-    <>
-      <div className="text-xs text-dark-text-tertiary mb-2 font-medium">{label}</div>
-      <div className="text-3xl font-bold text-dark-interactive-success">{children}</div>
-    </>
+    <div className="flex-1 py-2 sm:py-4 px-2 text-center">
+      <div className="text-xs text-dark-text-tertiary mb-1 font-medium">{label}</div>
+      <div className="text-xl sm:text-3xl font-bold text-dark-interactive-success">{value}</div>
+    </div>
   );
 }
 

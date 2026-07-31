@@ -187,7 +187,12 @@ export function GameScreen({
         })}
       </div>
 
-      <Keyboard answer={answer} onBackspace={handleBackspace} onClick={(letter) => handleLetterClick(letter, token, scrambled.length)} />
+      <Keyboard
+        answer={answer}
+        wordLength={scrambled.length}
+        onBackspace={handleBackspace}
+        onClick={(letter) => handleLetterClick(letter, token, scrambled.length)}
+      />
 
       {feedback.map(({ id, isCorrect, classNames }) => {
         const className =

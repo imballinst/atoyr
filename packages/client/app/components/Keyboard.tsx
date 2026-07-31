@@ -1,4 +1,14 @@
-export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onClick: (letter: string) => void; onBackspace: () => void }) {
+export function Keyboard({
+  answer,
+  wordLength,
+  onBackspace,
+  onClick,
+}: {
+  answer: string;
+  wordLength: number;
+  onClick: (letter: string) => void;
+  onBackspace: () => void;
+}) {
   return (
     <div className="space-y-2 w-full">
       <div className="w-full flex flex-col gap-2">
@@ -9,7 +19,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
               type="button"
               className="aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
-              disabled={answer.length >= 5}
+              disabled={answer.length >= wordLength}
             >
               {key}
             </button>
@@ -24,7 +34,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
               type="button"
               className="col-span-2 aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
-              disabled={answer.length >= 5}
+              disabled={answer.length >= wordLength}
             >
               {key}
             </button>
@@ -41,7 +51,7 @@ export function Keyboard({ answer, onBackspace, onClick }: { answer: string; onC
               type="button"
               className="col-span-2 aspect-square bg-dark-bg-tertiary border border-dark-border-primary rounded font-semibold text-xs transition duration-200 text-dark-text-primary hover:bg-dark-interactive-primary hover:text-white hover:shadow-lg active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => onClick(key)}
-              disabled={answer.length >= 5}
+              disabled={answer.length >= wordLength}
             >
               {key}
             </button>

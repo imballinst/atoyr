@@ -142,6 +142,10 @@ Key files: `packages/server/internal/services/word.service.go`, `packages/server
 
 Run top level `yarn test` to run all tests in all packages. Otherwise, use `yarn workspaces <folder_name>` to run individual tests. If possible, ALWAYS add unit tests with `vitest` for any logic-related functionalities. For UI related functionalities (such as CSS), it is not necessary unless otherwise stated.
 
+### Prefer userEvent over fireEvent in Tests
+
+Use `userEvent` (from `@testing-library/user-event`) for simulating user interactions like clicks. It more accurately mimics real browser behavior (focus, hover, etc.). Reserve `fireEvent` only for events that cannot be dispatched through `userEvent` (e.g., `fireEvent.keyDown(window, ...)` for global keyboard listeners).
+
 ### Test Query Conventions
 
 When writing tests, prefer queries in this order:

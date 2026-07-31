@@ -7,8 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiStartGame, apiSubmitAnswer } from '~/api/client';
 import type { StartGameResponse, SubmitAnswerResponse } from '~/api/gen';
-import { LATEST_STORAGE_KEY, readStoredSettings, type LatestSchema } from '~/lib/settings';
-import Home from '~/routes/home';
+import { setGameEndsAt } from '~/lib/game';
+import { encodeSettings, LATEST_STORAGE_KEY, readStoredSettings, type LatestSchema } from '~/lib/settings';
+import Home, { clientLoader } from '~/routes/home';
 
 const sseRef = vi.hoisted(() => ({
   onEvent: (_data: Record<string, unknown>) => {},
@@ -264,3 +265,66 @@ async function finishCurrentGame() {
   sseRef.onEvent({ type: 'finish', lastWordAnswer: 'apple' });
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Game Over!' })).toBeInTheDocument());
 }
+
+describe('clientLoader — share settings', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.spyOn(window.history, 'replaceState').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const sharedSettings: LatestSchema = { autoVoice: true, mode: 'blind', topic: 'indonesian-politician-quotes' };
+
+  it('applies shared settings when no game is in progress and strips the URL param', () => {
+    setGameEndsAt(-10);
+
+    const result = clientLoader({ request: new Request(`http://localhost/?settings=${encodeSettings(sharedSettings)}`) });
+
+    expect(JSON.parse(localStorage.getItem(LATEST_STORAGE_KEY)!)).toEqual(sharedSettings);
+    expect(result).toEqual({ shouldFetch: false, settings: sharedSettings });
+
+    expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '/');
+  });
+
+  it('ignores shared settings when a game is in progress but still strips the URL param', () => {
+    setGameEndsAt(30);
+    const existing: LatestSchema = { autoVoice: false, mode: 'vanilla', topic: 'english-words' };
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify(existing));
+
+    const result = clientLoader({ request: new Request(`http://localhost/?settings=${encodeSettings(sharedSettings)}`) });
+
+    expect(JSON.parse(localStorage.getItem(LATEST_STORAGE_KEY)!)).toEqual(existing);
+    expect(result).toEqual({ shouldFetch: true, settings: existing });
+
+    expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '/');
+  });
+
+  it('ignores invalid base64 payloads', () => {
+    setGameEndsAt(-10);
+    const existing: LatestSchema = { autoVoice: false, mode: 'vanilla', topic: 'english-words' };
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify(existing));
+
+    const result = clientLoader({ request: new Request('http://localhost/?settings=!!!not-base64') });
+
+    expect(JSON.parse(localStorage.getItem(LATEST_STORAGE_KEY)!)).toEqual(existing);
+    expect(result).toEqual({ shouldFetch: false, settings: existing });
+
+    expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '/');
+  });
+
+  it('does nothing when settings param is absent', () => {
+    setGameEndsAt(-10);
+    const existing: LatestSchema = { autoVoice: false, mode: 'vanilla', topic: 'english-words' };
+    localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify(existing));
+
+    const result = clientLoader({ request: new Request('http://localhost/') });
+
+    expect(JSON.parse(localStorage.getItem(LATEST_STORAGE_KEY)!)).toEqual(existing);
+    expect(result).toEqual({ shouldFetch: false, settings: existing });
+
+    expect(window.history.replaceState).not.toHaveBeenCalled();
+  });
+});

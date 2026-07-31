@@ -1,5 +1,5 @@
 import { Keyboard } from '~/components/Keyboard';
 
 export default function Playground() {
-  return <Keyboard answer="" onBackspace={() => {}} onClick={() => {}} />;
+  return <Keyboard answer="" wordLength={5} onBackspace={() => {}} onClick={() => {}} />;
 }

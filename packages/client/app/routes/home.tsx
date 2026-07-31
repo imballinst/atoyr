@@ -7,13 +7,25 @@ import { ModeBanner } from '~/components/ModeBanner';
 import { ResultsScreen } from '~/components/ResultsScreen';
 import { StartScreen } from '~/components/StartScreen';
 import { hasGameEnded } from '~/lib/game';
-import { readStoredSettings } from '~/lib/settings';
+import { decodeSettings, readStoredSettings, writeStoredSettings } from '~/lib/settings';
 
 export function meta() {
   return [{ title: 'Game | Atoyr' }, { name: 'description', content: 'Test your reflexes, climb the leaderboard.' }];
 }
 
-export function clientLoader() {
+export function clientLoader({ request }: { request: Request }) {
+  const url = new URL(request.url);
+  const settingsParam = url.searchParams.get('settings');
+
+  if (settingsParam !== null) {
+    if (hasGameEnded()) {
+      const parsed = decodeSettings(settingsParam);
+      if (parsed !== null) writeStoredSettings(parsed);
+    }
+
+    window.history.replaceState(null, '', url.pathname + url.hash);
+  }
+
   return { shouldFetch: !hasGameEnded(), settings: readStoredSettings() };
 }
 

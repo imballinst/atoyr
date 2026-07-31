@@ -87,3 +87,15 @@ export function readStoredSettings(): z.infer<typeof V2SettingsSchema> {
 export function writeStoredSettings(value: LatestSchema): void {
   localStorage.setItem(LATEST_STORAGE_KEY, JSON.stringify(value));
 }
+
+export function encodeSettings(settings: LatestSchema): string {
+  return btoa(JSON.stringify(settings));
+}
+
+export function decodeSettings(payload: string): LatestSchema | null {
+  try {
+    return V2SettingsSchema.parse(JSON.parse(atob(payload)));
+  } catch {
+    return null;
+  }
+}

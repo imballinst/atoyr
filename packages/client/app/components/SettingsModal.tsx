@@ -1,7 +1,7 @@
-import { useId, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 import type { SessionMode, SessionTopic } from '~/api/gen';
-import { type LatestSchema } from '~/lib/settings';
+import { encodeSettings, type LatestSchema } from '~/lib/settings';
 
 import { SharedDialog } from './Dialog';
 
@@ -16,6 +16,8 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
   const modeId = useId();
   const topicId = useId();
   const isIndonesianTopic = settings.topic === 'indonesian-politician-quotes';
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleAutoVoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
@@ -30,6 +32,23 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
       updateSettings({ topic });
     }
   };
+
+  const handleShare = async () => {
+    const url = `${location.origin}/?settings=${encodeSettings(settings)}`;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, []);
 
   return (
     <SharedDialog
@@ -126,6 +145,16 @@ export function SettingsModal({ triggerText = 'Settings', triggerClassnames = ''
             Uses your browser's built-in text-to-speech functionality. You will get 5 extra seconds for each word, but the scrambled letters
             will only be shown for screen readers.
           </p>
+        </div>
+
+        <div className="border-t border-dark-border-primary pt-4">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-full text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded px-3 py-2 transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
+          >
+            {copied ? 'Copied!' : 'Share settings'}
+          </button>
         </div>
       </div>
     </SharedDialog>
