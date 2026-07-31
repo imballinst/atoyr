@@ -70,7 +70,7 @@ export default function Home() {
 
   return (
     <>
-      <ModeBanner mode={state.settings.mode} />
+      <ModeBanner mode={state.settings.mode} topic={state.settings.topic} />
       {content()}
     </>
   );

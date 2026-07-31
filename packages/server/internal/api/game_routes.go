@@ -36,6 +36,11 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
+	if req.Mode == Blind && req.Topic == IndonesianPoliticianQuotes {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "blind mode is not supported for the indonesian-politician-quotes topic"})
+		return
+	}
+
 	// Create session
 	session, err := gr.sessionService.Create(*req.AutoVoice, req.ItemsUsed, string(req.Mode), string(req.Topic), gr.sessionOptions.Duration)
 	if err != nil {

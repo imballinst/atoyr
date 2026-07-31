@@ -193,7 +193,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
     queryFn: async () => {
       try {
         const response = await apiResumeGame();
-        await startGame({ autoVoice: response.autoVoice, mode: response.mode }, 'resume');
+        await startGame({ autoVoice: response.autoVoice, mode: response.mode, topic: response.topic }, 'resume');
         return response;
       } catch (err) {
         console.warn('No active session to resume');

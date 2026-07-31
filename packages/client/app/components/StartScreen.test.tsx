@@ -76,7 +76,7 @@ describe('StartScreen', () => {
   });
 
   it('uses the persisted auto-voice value in the settings modal', async () => {
-    writeStoredSettings({ autoVoice: true, mode: 'vanilla' });
+    writeStoredSettings({ autoVoice: true, mode: 'vanilla', topic: 'english-words' });
     const user = userEvent.setup();
     renderScreen();
 

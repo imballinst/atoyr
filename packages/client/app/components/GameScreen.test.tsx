@@ -38,6 +38,7 @@ const baseState: GameState = {
   settings: {
     autoVoice: false,
     mode: 'vanilla',
+    topic: 'english-words',
   },
 };
 
@@ -259,14 +260,14 @@ describe('GameScreen', () => {
 
   it('does not auto-speak on mount when autoVoice is off', () => {
     mockSpeechSynthesis();
-    renderScreen({ settings: { autoVoice: false, mode: 'vanilla' } });
+    renderScreen({ settings: { autoVoice: false, mode: 'vanilla', topic: 'english-words' } });
 
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
   it('auto-speaks on mount when autoVoice is on', async () => {
     const { speak } = mockSpeechSynthesis();
-    renderScreen({ settings: { autoVoice: true, mode: 'vanilla' } });
+    renderScreen({ settings: { autoVoice: true, mode: 'vanilla', topic: 'english-words' } });
 
     await waitFor(() => expect(speak).toHaveBeenCalled());
   });
@@ -313,7 +314,7 @@ describe('GameScreen', () => {
   });
 
   it('hides the definition in blind mode', () => {
-    renderScreen({ settings: { autoVoice: false, mode: 'blind' }, definition: DEFAULT_DEFINITION });
+    renderScreen({ settings: { autoVoice: false, mode: 'blind', topic: 'english-words' }, definition: DEFAULT_DEFINITION });
 
     expect(screen.getByText(DEFAULT_DEFINITION)).toHaveAttribute('hidden');
   });
