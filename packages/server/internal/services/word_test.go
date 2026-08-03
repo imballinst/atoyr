@@ -15,7 +15,7 @@ func TestWordService_GetRandomWord(t *testing.T) {
 
 	// Verify word is in the list
 	found := false
-	for _, w := range ws.Words["english-words"] {
+	for _, w := range ws.words["english-words"] {
 		if w.Word == word {
 			found = true
 			break
@@ -40,7 +40,7 @@ func TestWordService_AllWordsUsed(t *testing.T) {
 
 	// Exclude all words
 	excluded := []string{}
-	for _, w := range ws.Words["english-words"] {
+	for _, w := range ws.words["english-words"] {
 		excluded = append(excluded, w.Word)
 	}
 
@@ -73,7 +73,7 @@ func TestWordService_UnknownTopic(t *testing.T) {
 
 func TestWordService_TopicIsolation(t *testing.T) {
 	ws := &WordService{
-		Words: map[string][]WordDefinition{
+		words: map[string][]WordDefinition{
 			"english-words": {
 				{Word: "hello", Definition: "a greeting"},
 				{Word: "world", Definition: "the earth"},
@@ -89,7 +89,7 @@ func TestWordService_TopicIsolation(t *testing.T) {
 				{Word: "pekerjaan", Definition: "Jika empat langkah tadi bisa penuhi akan terbuka 19 juta lapangan <template> — Rakabuming, Gibran (2023)"},
 			},
 		},
-		TopicLangs: map[string]string{
+		topicLangs: map[string]string{
 			"english-words":               "en-US",
 			"indonesian-politician-quotes": "id-ID",
 		},

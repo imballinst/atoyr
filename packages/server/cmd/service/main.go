@@ -77,7 +77,7 @@ func main() {
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, sessionOptions)
-	statsService := services.NewStatsService(db)
+	statsService := services.NewStatsService(db, wordService.GetTopics())
 	healthService := services.NewHealthService(db, "atoyr", GitHash)
 
 	restoreActiveSessions(gameService, sessionService)

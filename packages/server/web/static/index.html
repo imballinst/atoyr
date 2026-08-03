@@ -23,11 +23,10 @@
         <table class="w-full text-left">
           <thead>
             <tr class="text-gray-400 text-sm border-b border-gray-700">
-              <th class="pb-3 px-6 font-medium">Mode</th>
+              <th class="pb-3 px-6 font-medium">Mode / Topic</th>
               <th class="pb-3 px-6 font-medium text-right tabular-nums">
                 Sessions Today
-              </th>
-              <th class="pb-3 px-6 font-medium text-right tabular-nums">
+              </th>              <th class="pb-3 px-6 font-medium text-right tabular-nums">
                 Sessions This Week
               </th>
               <th class="pb-3 px-6 font-medium text-right tabular-nums">
@@ -150,12 +149,21 @@
         { key: "totalSessions", label: "Total Sessions" },
       ];
 
+      const TOPIC_LABELS = {
+        "english-words": "English Words",
+        "indonesian-politician-quotes": "Indonesian Politician Quotes",
+      };
+
       function formatValue(v) {
         return v == null || v < 0 ? "-" : v;
       }
 
       function capitalize(s) {
         return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
+      function topicLabel(topic) {
+        return TOPIC_LABELS[topic] || topic;
       }
 
       google.accounts.id.initialize({
@@ -244,13 +252,26 @@
         return `<tr class="border-b border-gray-700 ${className || ""}">${cells}</tr>`;
       }
 
+      function topicRowHtml(topic) {
+        let cells = `<td class="py-3 px-6 pl-12 font-medium text-gray-400">${topicLabel(topic.topic)}</td>`;
+        for (const col of STAT_COLUMNS) {
+          cells += `<td class="py-3 px-6 text-right tabular-nums">${formatValue(topic[col.key])}</td>`;
+        }
+        return `<tr class="border-b border-gray-700">${cells}</tr>`;
+      }
+
       function updateStatsTable(stats) {
         let html = "";
 
-        // Mode breakdown rows
+        // Mode breakdown rows: one mode header row + one row per topic
         if (stats.modeBreakdown) {
           for (const ms of stats.modeBreakdown) {
-            html += rowHtml(capitalize(ms.mode), ms);
+            html += rowHtml(capitalize(ms.mode), ms, "bg-gray-800 font-bold");
+            if (ms.topics) {
+              for (const topic of ms.topics) {
+                html += topicRowHtml(topic);
+              }
+            }
           }
         }
 

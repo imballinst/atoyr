@@ -6,12 +6,14 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
 type WordService struct {
-	Words      map[string][]WordDefinition
-	TopicLangs map[string]string
+	words      map[string][]WordDefinition
+	topicLangs map[string]string
+	topics     []string
 }
 
 type TopicFile struct {
@@ -43,8 +45,8 @@ func (w *WordService) loadWords() error {
 		return fmt.Errorf("failed to read topics directory: %w", err)
 	}
 
-	w.Words = make(map[string][]WordDefinition)
-	w.TopicLangs = make(map[string]string)
+	w.words = make(map[string][]WordDefinition)
+	w.topicLangs = make(map[string]string)
 
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
@@ -64,11 +66,17 @@ func (w *WordService) loadWords() error {
 			return fmt.Errorf("failed to parse topic file %s: %w", entry.Name(), err)
 		}
 
-		w.Words[topic] = topicFile.Words
-		w.TopicLangs[topic] = topicFile.Lang
+		w.words[topic] = topicFile.Words
+		w.topicLangs[topic] = topicFile.Lang
 	}
 
-	if len(w.Words) == 0 {
+	w.topics = make([]string, 0, len(w.words))
+	for topic := range w.words {
+		w.topics = append(w.topics, topic)
+	}
+	slices.Sort(w.topics)
+
+	if len(w.words) == 0 {
 		return fmt.Errorf("no topic files found in %s", topicsDir)
 	}
 
@@ -76,7 +84,7 @@ func (w *WordService) loadWords() error {
 }
 
 func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string, string, error) {
-	topicWords, ok := w.Words[topic]
+	topicWords, ok := w.words[topic]
 	if !ok {
 		return "", "", fmt.Errorf("unknown topic: %s", topic)
 	}
@@ -108,14 +116,19 @@ func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string
 }
 
 func (w *WordService) GetTopicLang(topic string) string {
-	return w.TopicLangs[topic]
+	return w.topicLangs[topic]
+}
+
+func (w *WordService) GetTopics() []string {
+	return w.topics
 }
 
 func (w *WordService) SetWords(words []WordDefinition) {
-	w.Words = map[string][]WordDefinition{
+	w.words = map[string][]WordDefinition{
 		"english-words": words,
 	}
-	w.TopicLangs = map[string]string{
+	w.topicLangs = map[string]string{
 		"english-words": "en-US",
 	}
+	w.topics = []string{"english-words"}
 }

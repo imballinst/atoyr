@@ -36,8 +36,8 @@ func (gr *Server) PostApiV1GameStart(c *gin.Context) {
 		return
 	}
 
-	if req.Mode == Blind && req.Topic == IndonesianPoliticianQuotes {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "blind mode is not supported for the indonesian-politician-quotes topic"})
+	if req.Mode == Blind && !services.BlindSupportedTopics[string(req.Topic)] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "blind mode is not supported for the " + string(req.Topic) + " topic"})
 		return
 	}
 

@@ -90,7 +90,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	leaderboardService := services.NewLeaderboardService(db)
 	gameService := services.NewGameService(sessionService, wordService, leaderboardService, testutils.TestSessionOptions)
 	metricsCollector := middleware.NewMetricsCollector()
-	statsService := services.NewStatsService(db)
+	statsService := services.NewStatsService(db, wordService.GetTopics())
 
 	statsService.Now = testutils.NowMockFn
 

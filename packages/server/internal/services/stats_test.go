@@ -16,7 +16,7 @@ import (
 
 func TestStatsService_GetStats(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -66,7 +66,7 @@ func TestStatsService_GetStats(t *testing.T) {
 
 func TestStatsService_GetStats_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	stats, err := service.GetStats(false)
@@ -83,7 +83,7 @@ func TestStatsService_GetStats_Empty(t *testing.T) {
 
 func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -116,7 +116,7 @@ func TestStatsService_GetStats_IncludeTotalSessions(t *testing.T) {
 
 func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -126,19 +126,25 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 		{
 			ID: "vanilla-today", CreatedAt: today.Add(1 * time.Hour), UpdatedAt: today.Add(1 * time.Hour), EndsAt: today.Add(2 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 100, TotalAttempts: 10, DurationSeconds: 60,
-			Mode: "vanilla",
+			Mode: "vanilla", Topic: "english-words",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
 			ID: "vanilla-playing", CreatedAt: today.Add(2 * time.Hour), UpdatedAt: today.Add(2 * time.Hour), EndsAt: today.Add(3 * time.Hour),
 			Phase: core.SessionPhasePlaying, Score: 50, TotalAttempts: 5, DurationSeconds: 60,
-			Mode: "vanilla",
+			Mode: "vanilla", Topic: "english-words",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 		{
 			ID: "blind-today", CreatedAt: today.Add(3 * time.Hour), UpdatedAt: today.Add(3 * time.Hour), EndsAt: today.Add(4 * time.Hour),
 			Phase: core.SessionPhaseFinished, Score: 75, TotalAttempts: 8, DurationSeconds: 60,
-			Mode: "blind",
+			Mode: "blind", Topic: "english-words",
+			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
+		},
+		{
+			ID: "vanilla-quotes-today", CreatedAt: today.Add(4 * time.Hour), UpdatedAt: today.Add(4 * time.Hour), EndsAt: today.Add(5 * time.Hour),
+			Phase: core.SessionPhaseFinished, Score: 80, TotalAttempts: 6, DurationSeconds: 60,
+			Mode: "vanilla", Topic: "indonesian-politician-quotes",
 			CorrectAttemptTimestamps: models.JSON{}, UsedWords: pq.StringArray{}, UsedItemIDs: pq.StringArray{},
 		},
 	}
@@ -156,11 +162,28 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 
 		vanilla := stats.ModeBreakdown[0]
 		assert.Equal(t, "vanilla", vanilla.Mode)
-		assert.Equal(t, int64(2), vanilla.SessionsToday)
-		assert.Equal(t, int64(2), vanilla.SessionsThisWeek)
-		assert.Equal(t, int64(2), vanilla.SessionsThisMonth)
+		assert.Equal(t, int64(3), vanilla.SessionsToday)
+		assert.Equal(t, int64(3), vanilla.SessionsThisWeek)
+		assert.Equal(t, int64(3), vanilla.SessionsThisMonth)
 		assert.Equal(t, int64(1), vanilla.ActiveGames)
 		assert.Equal(t, int64(-1), vanilla.TotalSessions)
+		assert.Len(t, vanilla.Topics, 2)
+
+		vanillaEnglish := vanilla.Topics[0]
+		assert.Equal(t, "english-words", vanillaEnglish.Topic)
+		assert.Equal(t, int64(2), vanillaEnglish.SessionsToday)
+		assert.Equal(t, int64(2), vanillaEnglish.SessionsThisWeek)
+		assert.Equal(t, int64(2), vanillaEnglish.SessionsThisMonth)
+		assert.Equal(t, int64(1), vanillaEnglish.ActiveGames)
+		assert.Equal(t, int64(-1), vanillaEnglish.TotalSessions)
+
+		vanillaQuotes := vanilla.Topics[1]
+		assert.Equal(t, "indonesian-politician-quotes", vanillaQuotes.Topic)
+		assert.Equal(t, int64(1), vanillaQuotes.SessionsToday)
+		assert.Equal(t, int64(1), vanillaQuotes.SessionsThisWeek)
+		assert.Equal(t, int64(1), vanillaQuotes.SessionsThisMonth)
+		assert.Equal(t, int64(0), vanillaQuotes.ActiveGames)
+		assert.Equal(t, int64(-1), vanillaQuotes.TotalSessions)
 
 		blind := stats.ModeBreakdown[1]
 		assert.Equal(t, "blind", blind.Mode)
@@ -169,17 +192,26 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 		assert.Equal(t, int64(1), blind.SessionsThisMonth)
 		assert.Equal(t, int64(0), blind.ActiveGames)
 		assert.Equal(t, int64(-1), blind.TotalSessions)
+		assert.Len(t, blind.Topics, 1)
+
+		blindEnglish := blind.Topics[0]
+		assert.Equal(t, "english-words", blindEnglish.Topic)
+		assert.Equal(t, int64(1), blindEnglish.SessionsToday)
+		assert.Equal(t, int64(1), blindEnglish.SessionsThisWeek)
+		assert.Equal(t, int64(1), blindEnglish.SessionsThisMonth)
+		assert.Equal(t, int64(0), blindEnglish.ActiveGames)
+		assert.Equal(t, int64(-1), blindEnglish.TotalSessions)
 	})
 
 	t.Run("with total", func(t *testing.T) {
 		stats, err := service.GetStats(true)
 		assert.NoError(t, err)
 		assert.NotNil(t, stats)
-		assert.Equal(t, int64(3), stats.TotalSessions)
+		assert.Equal(t, int64(4), stats.TotalSessions)
 		assert.Len(t, stats.ModeBreakdown, 2)
 
 		vanilla := stats.ModeBreakdown[0]
-		assert.Equal(t, int64(2), vanilla.TotalSessions)
+		assert.Equal(t, int64(3), vanilla.TotalSessions)
 
 		blind := stats.ModeBreakdown[1]
 		assert.Equal(t, int64(1), blind.TotalSessions)
@@ -188,7 +220,7 @@ func TestStatsService_GetStats_ModeBreakdown(t *testing.T) {
 
 func TestStatsService_GetTimeSeries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	now := service.Now()
@@ -243,7 +275,7 @@ func TestStatsService_GetTimeSeries(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_Empty(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	result, err := service.GetTimeSeries("1h", "5m")
@@ -277,7 +309,7 @@ func TestStatsService_GetTimeSeries_Empty(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	_, err := service.GetTimeSeries("invalid", "5m")
@@ -287,7 +319,7 @@ func TestStatsService_GetTimeSeries_InvalidPeriod(t *testing.T) {
 
 func TestStatsService_GetTimeSeries_AutoGranularity(t *testing.T) {
 	db := testutils.SetupTestDB(t)
-	service := NewStatsService(db)
+	service := NewStatsService(db, []string{"english-words", "indonesian-politician-quotes"})
 	service.Now = testutils.NowMockFn
 
 	cases := []struct {

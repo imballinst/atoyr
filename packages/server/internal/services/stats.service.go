@@ -16,17 +16,28 @@ const (
 )
 
 type StatsService struct {
-	db  *gorm.DB
-	Now func() time.Time
+	db     *gorm.DB
+	Now    func() time.Time
+	topics []string
 }
 
-type ModeStats struct {
-	Mode              string `json:"mode"`
+type TopicStats struct {
+	Topic             string `json:"topic"`
 	SessionsToday     int64  `json:"sessionsToday"`
 	SessionsThisWeek  int64  `json:"sessionsThisWeek"`
 	SessionsThisMonth int64  `json:"sessionsThisMonth"`
 	ActiveGames       int64  `json:"activeGames"`
 	TotalSessions     int64  `json:"totalSessions"`
+}
+
+type ModeStats struct {
+	Mode              string       `json:"mode"`
+	SessionsToday     int64        `json:"sessionsToday"`
+	SessionsThisWeek  int64        `json:"sessionsThisWeek"`
+	SessionsThisMonth int64        `json:"sessionsThisMonth"`
+	ActiveGames       int64        `json:"activeGames"`
+	TotalSessions     int64        `json:"totalSessions"`
+	Topics            []TopicStats `json:"topics"`
 }
 
 type StatsResponse struct {
@@ -54,11 +65,36 @@ type TimeSeriesPoint struct {
 	MemoryUsage     float32   `json:"memoryUsage"`
 }
 
-func NewStatsService(db *gorm.DB) *StatsService {
+func NewStatsService(db *gorm.DB, topics []string) *StatsService {
 	return &StatsService{
-		db:  db,
-		Now: time.Now,
+		db:     db,
+		Now:    time.Now,
+		topics: topics,
 	}
+}
+
+// BlindSupportedTopics lists the topics that can be played in blind mode.
+// When adding a new topic, decide whether it supports blind mode and update
+// this set (mirrored by the game routes validation).
+var BlindSupportedTopics = map[string]bool{
+	"english-words": true,
+}
+
+func modeTopicKey(mode, topic string) string {
+	return mode + "\x00" + topic
+}
+
+func (s *StatsService) topicsForMode(mode string) []string {
+	if mode == "blind" {
+		result := []string{}
+		for _, topic := range s.topics {
+			if BlindSupportedTopics[topic] {
+				result = append(result, topic)
+			}
+		}
+		return result
+	}
+	return s.topics
 }
 
 func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, error) {
@@ -74,12 +110,12 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 	// 1. Single query: all sessions this month — categorize into today/week/month in Go
 	type monthlyRow struct {
 		Mode      string
-		Phase     string
+		Topic     string
 		CreatedAt time.Time
 	}
 	var monthly []monthlyRow
 	result := s.db.Model(&models.SessionEntity{}).
-		Select("mode, phase, created_at").
+		Select("mode, topic, created_at").
 		Where("created_at >= ? AND created_at < ?", monthStart, nextMonthStart).
 		Find(&monthly)
 	if result.Error != nil {
@@ -91,10 +127,7 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 	}
 
 	allCounts := periodCounts{}
-	modeCounts := map[string]*periodCounts{
-		"vanilla": {},
-		"blind":   {},
-	}
+	modeTopicCounts := map[string]*periodCounts{}
 
 	for _, row := range monthly {
 		allCounts.month++
@@ -105,14 +138,17 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 			allCounts.week++
 		}
 
-		if mc := modeCounts[row.Mode]; mc != nil {
-			mc.month++
-			if !row.CreatedAt.Before(today) && row.CreatedAt.Before(tomorrow) {
-				mc.today++
-			}
-			if !row.CreatedAt.Before(weekStart) && row.CreatedAt.Before(weekEnd) {
-				mc.week++
-			}
+		key := modeTopicKey(row.Mode, row.Topic)
+		if modeTopicCounts[key] == nil {
+			modeTopicCounts[key] = &periodCounts{}
+		}
+		mc := modeTopicCounts[key]
+		mc.month++
+		if !row.CreatedAt.Before(today) && row.CreatedAt.Before(tomorrow) {
+			mc.today++
+		}
+		if !row.CreatedAt.Before(weekStart) && row.CreatedAt.Before(weekEnd) {
+			mc.week++
 		}
 	}
 
@@ -120,45 +156,46 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 	stats.SessionsThisWeek = allCounts.week
 	stats.SessionsThisMonth = allCounts.month
 
-	// 2. Single query: active games grouped by mode
+	// 2. Single query: active games grouped by mode and topic
 	type groupCount struct {
 		Mode  string
+		Topic string
 		Count int64
 	}
 	var activeCounts []groupCount
 	result = s.db.Model(&models.SessionEntity{}).
-		Select("mode, COUNT(*) as count").
+		Select("mode, topic, COUNT(*) as count").
 		Where("phase != ?", "finished").
-		Group("mode").
+		Group("mode, topic").
 		Find(&activeCounts)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	activeByMode := map[string]int64{}
+	activeByModeTopic := map[string]int64{}
 	totalActive := int64(0)
 	for _, a := range activeCounts {
-		activeByMode[a.Mode] = a.Count
+		activeByModeTopic[modeTopicKey(a.Mode, a.Topic)] = a.Count
 		totalActive += a.Count
 	}
 	stats.ActiveGames = totalActive
 
-	// 3. Total sessions (on-demand, grouped by mode)
-	var totalByMode map[string]int64
+	// 3. Total sessions (on-demand, grouped by mode and topic)
+	var totalByModeTopic map[string]int64
 	if includeTotalSessions {
 		var totalCounts []groupCount
 		result = s.db.Model(&models.SessionEntity{}).
-			Select("mode, COUNT(*) as count").
-			Group("mode").
+			Select("mode, topic, COUNT(*) as count").
+			Group("mode, topic").
 			Find(&totalCounts)
 		if result.Error != nil {
 			return nil, result.Error
 		}
 
-		totalByMode = map[string]int64{}
+		totalByModeTopic = map[string]int64{}
 		totalAll := int64(0)
 		for _, t := range totalCounts {
-			totalByMode[t.Mode] = t.Count
+			totalByModeTopic[modeTopicKey(t.Mode, t.Topic)] = t.Count
 			totalAll += t.Count
 		}
 		stats.TotalSessions = totalAll
@@ -166,19 +203,35 @@ func (s *StatsService) GetStats(includeTotalSessions bool) (*StatsResponse, erro
 		stats.TotalSessions = -1
 	}
 
-	// Build mode breakdown
+	// Build mode breakdown with per-topic rows
 	for _, mode := range []string{"vanilla", "blind"} {
-		mc := modeCounts[mode]
 		ms := ModeStats{
-			Mode:              mode,
-			SessionsToday:     mc.today,
-			SessionsThisWeek:  mc.week,
-			SessionsThisMonth: mc.month,
-			ActiveGames:       activeByMode[mode],
+			Mode:   mode,
+			Topics: []TopicStats{},
 		}
-		if includeTotalSessions {
-			ms.TotalSessions = totalByMode[mode]
-		} else {
+		for _, topic := range s.topicsForMode(mode) {
+			key := modeTopicKey(mode, topic)
+			tc := modeTopicCounts[key]
+			ts := TopicStats{Topic: topic, ActiveGames: activeByModeTopic[key]}
+			if tc != nil {
+				ts.SessionsToday = tc.today
+				ts.SessionsThisWeek = tc.week
+				ts.SessionsThisMonth = tc.month
+			}
+			if includeTotalSessions {
+				ts.TotalSessions = totalByModeTopic[key]
+			} else {
+				ts.TotalSessions = -1
+			}
+
+			ms.SessionsToday += ts.SessionsToday
+			ms.SessionsThisWeek += ts.SessionsThisWeek
+			ms.SessionsThisMonth += ts.SessionsThisMonth
+			ms.ActiveGames += ts.ActiveGames
+			ms.TotalSessions += ts.TotalSessions
+			ms.Topics = append(ms.Topics, ts)
+		}
+		if !includeTotalSessions {
 			ms.TotalSessions = -1
 		}
 		stats.ModeBreakdown = append(stats.ModeBreakdown, ms)

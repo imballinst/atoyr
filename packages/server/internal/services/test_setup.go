@@ -30,7 +30,7 @@ const testTopic = "english-words"
 
 func initTestWordService() *WordService {
 	return &WordService{
-		Words: map[string][]WordDefinition{
+		words: map[string][]WordDefinition{
 			testTopic: {
 				{Word: "hello", Definition: "a greeting"},
 				{Word: "world", Definition: "the earth"},
@@ -44,7 +44,7 @@ func initTestWordService() *WordService {
 				{Word: "horizon", Definition: "where earth meets sky"},
 			},
 		},
-		TopicLangs: map[string]string{
+		topicLangs: map[string]string{
 			testTopic: "en-US",
 		},
 	}

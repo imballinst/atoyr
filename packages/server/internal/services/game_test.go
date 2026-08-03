@@ -213,7 +213,7 @@ func TestGameService_ContinueGame_BlindMode(t *testing.T) {
 
 func TestGameService_QuotesDefinitionWithTemplate(t *testing.T) {
 	ws := &WordService{
-		Words: map[string][]WordDefinition{
+		words: map[string][]WordDefinition{
 			"indonesian-politician-quotes": {
 				{Word: "gelap", Definition: "Kau yang <template>! — Pandjaitan, Luhut Binsar (2025)"},
 				{Word: "internet", Definition: "<template> cepat buat apa? — Sembiring, Tifatul (2014)"},
