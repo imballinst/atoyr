@@ -6,6 +6,7 @@ import type { LatestSchema } from '~/lib/settings';
 import { type GameState } from '../lib/game';
 import { Leaderboard } from './Leaderboard';
 import { SettingsModal } from './SettingsModal';
+import { StatsBar } from './StatsBar';
 
 interface ResultsScreenProps extends Pick<
   GameState,
@@ -37,8 +38,6 @@ export function ResultsScreen({
 
   return (
     <>
-      <h1 className="text-4xl font-bold mb-2 text-dark-text-primary">Game Over!</h1>
-
       <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm mb-4">
         {lastWordAnswer &&
           (isIndonesianQuotes && lastWordDefinition ? (
@@ -53,26 +52,28 @@ export function ResultsScreen({
       </div>
 
       <div className="flex flex-col gap-2 mb-6 w-full text-center">
-        <div className="border-dark-bg-tertiary text-dark-text-primary p-2 sm:p-4 rounded-lg col-span-5 text-sm">
-          Your result was better than <Percentile value={data?.percentile} />% other players!
+        <div className="border-dark-bg-tertiary text-dark-text-primary rounded-lg col-span-5 text-sm mb-2">
+          Game over: your result was better than <Percentile value={data?.percentile} />% other players!
         </div>
-        <div className="bg-dark-bg-tertiary rounded-lg flex divide-x divide-dark-border-primary">
-          <Stat label="Score" value={`${score} / ${totalAttempts}`} />
-          <Stat label="Accuracy" value={`${accuracy}%`} />
-          <Stat label="Best streak" value={longestStreak} />
-        </div>
+        <StatsBar
+          stats={[
+            { label: 'Score', value: `${score} / ${totalAttempts}` },
+            { label: 'Accuracy', value: `${accuracy}%` },
+            { label: 'Best streak', value: longestStreak },
+          ]}
+        />
       </div>
 
-      <div className="grid grid-cols-6 gap-2 w-full">
+      <div className="grid grid-cols-10 gap-2 w-full">
         <button
           type="button"
           onClick={onBackToHome}
-          className="col-span-2 py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
+          className="col-span-4 py-2 px-4 text-sm font-medium text-dark-text-secondary border border-dark-border-primary rounded transition duration-200 hover:bg-dark-bg-tertiary hover:text-dark-text-primary"
           data-ga-label="ga-back-to-home-button"
         >
           Back to home
         </button>
-        <div className="col-span-4 flex">
+        <div className="col-span-6 flex">
           <SettingsModal
             triggerText={'⚙️'}
             triggerClassnames="border-r-0 rounded-r-none"
@@ -105,15 +106,6 @@ function Percentile({ value }: { value: number | undefined }) {
 
   const formatted = value === Math.trunc(value) ? value : value.toFixed(2);
   return <span className={`font-bold tabular-nums ${parseColor(value)}`}>{formatted}</span>;
-}
-
-function Stat({ label, value }: { label: ReactNode; value: ReactNode }) {
-  return (
-    <div className="flex-1 py-2 sm:py-4 px-2 text-center">
-      <div className="text-xs text-dark-text-tertiary mb-1 font-medium">{label}</div>
-      <div className="text-xl sm:text-3xl font-bold text-dark-interactive-success">{value}</div>
-    </div>
-  );
 }
 
 function parseColor(percentile: number) {

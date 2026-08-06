@@ -74,7 +74,7 @@ describe('Home — game lifecycle', () => {
     await finishCurrentGame();
 
     await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Timer' })).toBeInTheDocument());
   });
 
   it('transitions from finished to idle when Back to home is clicked', async () => {
@@ -103,7 +103,7 @@ describe('Home — game lifecycle', () => {
     await finishCurrentGame();
 
     await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Timer' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
     expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: true, mode: 'vanilla', topic: 'english-words' }, []);
@@ -122,7 +122,7 @@ describe('Home — game lifecycle', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
     await waitFor(() => expect(alertSpy).toHaveBeenCalled());
 
-    expect(screen.getByRole('heading', { name: 'Game Over!' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Play Again' })).toBeInTheDocument();
     alertSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
@@ -194,7 +194,7 @@ describe('Home — game lifecycle', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     await userEvent.click(screen.getByRole('button', { name: 'Play Again' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Timer' })).toBeInTheDocument());
 
     expect(apiStartGame).toHaveBeenCalledTimes(2);
     expect(apiStartGame).toHaveBeenNthCalledWith(1, { autoVoice: false, mode: 'vanilla', topic: 'english-words' }, []);
@@ -257,13 +257,13 @@ function renderHome(shouldFetch = false) {
 
 async function startGame() {
   await userEvent.click(screen.getByRole('button', { name: 'Start Game' }));
-  await waitFor(() => expect(screen.getByRole('heading', { name: 'Remaining seconds' })).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Timer' })).toBeInTheDocument());
 }
 
 async function finishCurrentGame() {
   await waitFor(() => expect(sseRef.onEvent).not.toBeNull());
   sseRef.onEvent({ type: 'finish', lastWordAnswer: 'apple' });
-  await waitFor(() => expect(screen.getByRole('heading', { name: 'Game Over!' })).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Play Again' })).toBeInTheDocument());
 }
 
 describe('clientLoader — share settings', () => {

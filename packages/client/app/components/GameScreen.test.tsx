@@ -114,11 +114,11 @@ describe('GameScreen', () => {
     renderScreen();
 
     expect(screen.getByText('A thin, flat cake made from batter.')).toBeInTheDocument();
-    expect(within(screen.getByRole('heading', { name: 'Remaining seconds' }).closest('section')!).getByText('20s')).toBeInTheDocument();
-    const scoreSection = screen.getByRole('heading', { name: 'Score' }).closest('section')!;
-    expect(within(scoreSection).getByText('2/4 correct')).toBeInTheDocument();
+    const timerSection = screen.getByRole('heading', { name: 'Timer' }).closest('section')!;
+    expect(within(timerSection).getByText('20s')).toBeInTheDocument();
+    const scoreSection = screen.getByRole('heading', { name: '2/4 correct' }).closest('section')!;
     expect(within(scoreSection).getByText('50.0%')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Streak' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Best streak' })).toBeInTheDocument();
   });
 
   it('renders 5 scrambled letter tiles when autoVoice is off', () => {
@@ -306,12 +306,12 @@ describe('GameScreen', () => {
     expect(within(answerSlots).queryByText(answerSlotMatcher('First char: P'))).not.toBeInTheDocument();
   });
 
-  it('keeps the streak display in sync with the last correct attempt group', () => {
+  it('shows the best streak across correct attempt groups', () => {
     renderScreen({
-      correctAttemptTimestamps: [['2024-01-01T00:00:00Z'], ['2024-01-01T00:00:10Z', '2024-01-01T00:00:15Z', '2024-01-01T00:00:20Z']],
+      correctAttemptTimestamps: [['2024-01-01T00:00:00Z', '2024-01-01T00:00:05Z', '2024-01-01T00:00:10Z'], ['2024-01-01T00:00:15Z']],
     });
 
-    const streakSection = screen.getByRole('heading', { name: 'Streak' }).closest('section')!;
+    const streakSection = screen.getByRole('heading', { name: 'Best streak' }).closest('section')!;
     expect(within(streakSection).getByText('3')).toBeInTheDocument();
   });
 
