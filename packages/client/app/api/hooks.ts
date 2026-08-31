@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
+import type { LeaderboardPeriod } from '~/api/gen';
 import { readStoredSettings, writeStoredSettings, type LatestSchema } from '~/lib/settings';
 
 import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
@@ -228,7 +229,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
 
 export type LeaderboardSettings = Partial<Pick<LatestSchema, 'mode' | 'topic'>>;
 
-export function useLeaderboard(settings?: LeaderboardSettings, page = 1, limit = 10) {
+export function useLeaderboard(settings?: LeaderboardSettings, period: LeaderboardPeriod = 'alltime', page = 1, limit = 10) {
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard',
@@ -237,6 +238,7 @@ export function useLeaderboard(settings?: LeaderboardSettings, page = 1, limit =
         query: {
           mode: settings?.mode,
           topic: settings?.topic,
+          period,
           page,
           limit,
         },
@@ -246,7 +248,7 @@ export function useLeaderboard(settings?: LeaderboardSettings, page = 1, limit =
   );
 }
 
-export function useLeaderboardPercentile(settings?: LeaderboardSettings) {
+export function useLeaderboardPercentile(settings?: LeaderboardSettings, period: LeaderboardPeriod = 'alltime') {
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard/percentile',
@@ -255,6 +257,7 @@ export function useLeaderboardPercentile(settings?: LeaderboardSettings) {
         query: {
           mode: settings?.mode,
           topic: settings?.topic,
+          period,
         },
       },
     },

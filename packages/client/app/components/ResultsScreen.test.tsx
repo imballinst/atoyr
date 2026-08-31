@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useGame, useLeaderboardPercentile } from '~/api/hooks';
+import { useGame, useLeaderboard, useLeaderboardPercentile } from '~/api/hooks';
 import { readStoredSettings } from '~/lib/settings';
 
 import { ResultsScreen } from './ResultsScreen';
@@ -11,7 +11,7 @@ import { ResultsScreen } from './ResultsScreen';
 vi.mock('~/api/hooks', async (importOriginal) => ({
   ...((await importOriginal()) as any),
   useLeaderboardPercentile: vi.fn(() => ({ data: undefined })),
-  useLeaderboard: () => ({ data: undefined, isFetching: false, error: null }),
+  useLeaderboard: vi.fn(() => ({ data: undefined, isFetching: false, error: null })),
 }));
 
 interface RenderOverrides {
@@ -105,10 +105,10 @@ describe('ResultsScreen', () => {
     expect(screen.getByRole('checkbox', { name: /Enabled/ })).toBeChecked();
   });
 
-  it('passes the current settings to useLeaderboardPercentile', () => {
+  it('prefixes the last word line with "Game over!" for the english-words topic', () => {
     renderScreen();
 
-    expect(useLeaderboardPercentile).toHaveBeenCalledWith({ mode: 'vanilla', topic: 'english-words', autoVoice: false });
+    expect(screen.getByText(/Game over! Last word:/)).toBeInTheDocument();
   });
 
   it('shows "Last quote:" with bolded answer for indonesian-politician-quotes topic', () => {
@@ -120,11 +120,87 @@ describe('ResultsScreen', () => {
       currentWord: { scrambled: 'lgepa', definition: rawDef },
     });
 
-    expect(screen.getByText(/Last quote:/)).toBeInTheDocument();
+    expect(screen.getByText(/Game over! Last quote:/)).toBeInTheDocument();
     const strongElements = screen.getAllByText('gelap');
     expect(strongElements).toHaveLength(2);
     strongElements.forEach((el) => {
       expect(el.tagName).toBe('STRONG');
     });
+  });
+
+  it('renders an All-time / This month button group in the leaderboard section', () => {
+    renderScreen();
+
+    const radiogroup = screen.getByRole('radiogroup', { name: 'Leaderboard period' });
+    expect(within(radiogroup).getByRole('radio', { name: 'All-time' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(radiogroup).getByRole('radio', { name: 'This month' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('switches the leaderboard and percentile queries to monthly when This month is selected', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(screen.getByRole('radio', { name: 'This month' }));
+
+    expect(useLeaderboard).toHaveBeenCalledWith(expect.any(Object), 'monthly', undefined, 5);
+    expect(useLeaderboardPercentile).toHaveBeenCalledWith(expect.any(Object), 'monthly');
+  });
+
+  it('shows the placement message when percentile + rank are returned', () => {
+    vi.mocked(useLeaderboardPercentile).mockReturnValue({ data: { percentile: 75, rank: 3 } } as any);
+    vi.mocked(useLeaderboard).mockReturnValue({
+      data: {
+        entries: [
+          {
+            id: 'current-session',
+            isSessionSameAsCurrentUser: true,
+            topic: 'english-words',
+            score: 10,
+            totalAttempts: 5,
+            accuracy: 80,
+            timestamp: 0,
+            rank: 3,
+          },
+        ],
+        total: 5,
+      },
+      isFetching: false,
+      error: null,
+    } as any);
+
+    renderScreen();
+
+    expect(
+      screen.getByText(/Your result was better than 75% of players! You also got a placement in leaderboard #3\./),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the did-not-make-it message when the session is not in the preview', () => {
+    vi.mocked(useLeaderboardPercentile).mockReturnValue({ data: { percentile: 25, rank: 12 } } as any);
+    vi.mocked(useLeaderboard).mockReturnValue({
+      data: {
+        entries: [
+          {
+            id: 'someone-else',
+            isSessionSameAsCurrentUser: false,
+            topic: 'english-words',
+            score: 200,
+            totalAttempts: 5,
+            accuracy: 95,
+            timestamp: 0,
+            rank: 1,
+          },
+        ],
+        total: 12,
+      },
+      isFetching: false,
+      error: null,
+    } as any);
+
+    renderScreen();
+
+    expect(
+      screen.getByText(/Your result was better than 25% of players\. Unfortunately, you didn't make it to the leaderboard\./),
+    ).toBeInTheDocument();
   });
 });

@@ -247,6 +247,7 @@ export interface paths {
           limit?: number;
           mode?: components['schemas']['SessionMode'];
           topic?: components['schemas']['SessionTopic'];
+          period?: components['schemas']['LeaderboardPeriod'];
         };
         header?: never;
         path?: never;
@@ -303,6 +304,7 @@ export interface paths {
         query?: {
           mode?: components['schemas']['SessionMode'];
           topic?: components['schemas']['SessionTopic'];
+          period?: components['schemas']['LeaderboardPeriod'];
         };
         header?: never;
         path?: never;
@@ -429,6 +431,12 @@ export interface components {
     };
     GetLeaderboardPercentileResponse: {
       percentile: number;
+      /**
+       * Format: int32
+       * @description 1-indexed position of the current session within the leaderboard. 1 is the best score.
+       * @example 3
+       */
+      rank: number;
     };
     LeaderboardEntry: {
       /** Format: uuid */
@@ -466,6 +474,8 @@ export interface components {
     SessionMode: 'vanilla' | 'blind';
     /** @enum {string} */
     SessionTopic: 'english-words' | 'indonesian-politician-quotes';
+    /** @enum {string} */
+    LeaderboardPeriod: 'alltime' | 'monthly';
   };
   responses: never;
   parameters: never;
@@ -483,5 +493,6 @@ export type GetLeaderboardPercentileResponse = components['schemas']['GetLeaderb
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
 export type SessionMode = components['schemas']['SessionMode'];
 export type SessionTopic = components['schemas']['SessionTopic'];
+export type LeaderboardPeriod = components['schemas']['LeaderboardPeriod'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

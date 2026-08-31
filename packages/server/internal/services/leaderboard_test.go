@@ -75,7 +75,7 @@ func TestLeaderboardService_GetLeaderboard(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 3)
 
@@ -125,7 +125,7 @@ func TestLeaderboardService_GetLeaderboard_SameScore(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 2)
 
@@ -174,7 +174,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	}
 
 	// Get leaderboard
-	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 
@@ -182,7 +182,7 @@ func TestLeaderboardService_GetLeaderboard_DifferentModes(t *testing.T) {
 	assert.Equal(t, float32(90), entries[0].Accuracy)
 
 	// Get leaderboard, blind mode
-	entries, err = service.GetLeaderboard("blind", "english-words", 10, 0)
+	entries, err = service.GetLeaderboard("blind", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 
@@ -212,15 +212,15 @@ func TestLeaderboardService_Pagination(t *testing.T) {
 	}
 
 	// Get first page (limit 10)
-	entries, _ := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, _ := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.Len(t, entries, 10)
 
 	// Get second page
-	entries, _ = service.GetLeaderboard("vanilla", "english-words", 10, 10)
+	entries, _ = service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 10)
 	assert.Len(t, entries, 10)
 
 	// Get third page (should have 5)
-	entries, _ = service.GetLeaderboard("vanilla", "english-words", 10, 20)
+	entries, _ = service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 20)
 	assert.Len(t, entries, 5)
 }
 
@@ -228,7 +228,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 	db := testutils.SetupTestDB(t)
 	service := NewLeaderboardService(db)
 
-	total, _ := service.GetTotalEntries("vanilla", "english-words")
+	total, _ := service.GetTotalEntries("vanilla", "english-words", LeaderboardPeriodAlltime)
 	assert.Equal(t, int64(0), total)
 
 	// Add 5 results
@@ -248,7 +248,7 @@ func TestLeaderboardService_GetTotalEntries(t *testing.T) {
 		db.Create(&result)
 	}
 
-	total, _ = service.GetTotalEntries("vanilla", "english-words")
+	total, _ = service.GetTotalEntries("vanilla", "english-words", LeaderboardPeriodAlltime)
 	assert.Equal(t, int64(5), total)
 }
 
@@ -284,12 +284,12 @@ func TestLeaderboardService_GetLeaderboard_DifferentTopics(t *testing.T) {
 	db.Create(&englishSession)
 	db.Create(&indonesianSession)
 
-	entries, err := service.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 	assert.Equal(t, "s01", entries[0].ID)
 
-	entries, err = service.GetLeaderboard("vanilla", "indonesian-politician-quotes", 10, 0)
+	entries, err = service.GetLeaderboard("vanilla", "indonesian-politician-quotes", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, entries, 1)
 	assert.Equal(t, "s02", entries[0].ID)
@@ -312,11 +312,11 @@ func TestLeaderboardService_CrossTopic_GetTotalEntries(t *testing.T) {
 		Phase:                    core.SessionPhaseFinished,
 	})
 
-	total, err := service.GetTotalEntries("vanilla", "indonesian-politician-quotes")
+	total, err := service.GetTotalEntries("vanilla", "indonesian-politician-quotes", LeaderboardPeriodAlltime)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), total)
 
-	total, err = service.GetTotalEntries("vanilla", "english-words")
+	total, err = service.GetTotalEntries("vanilla", "english-words", LeaderboardPeriodAlltime)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 }
@@ -379,9 +379,10 @@ func TestLeaderboardService_CrossTopic_Percentile(t *testing.T) {
 	db.Create(&englishLow)
 	db.Create(&indonesianSession)
 
-	percentile, err := service.GetPercentile(englishMid.ID, "vanilla", "english-words", englishMid.Score)
+	percentile, rank, err := service.GetPercentile(englishMid.ID, "vanilla", "english-words", LeaderboardPeriodAlltime, englishMid.Score)
 	assert.NoError(t, err)
 	assert.Equal(t, float32(50), percentile)
+	assert.Equal(t, int32(2), rank)
 }
 
 func TestLeaderboardService_GetPercentile(t *testing.T) {
@@ -428,14 +429,16 @@ func TestLeaderboardService_GetPercentile(t *testing.T) {
 		totalEligible := float32(8)
 		totalBelowCurrentScore := float32(i) - 1
 		expectedPercentile := (totalBelowCurrentScore / totalEligible) * 100
+		expectedRank := int32(totalEligible-totalBelowCurrentScore) + 1
 
-		percentile, err := service.GetPercentile(id, "vanilla", "english-words", score)
+		percentile, rank, err := service.GetPercentile(id, "vanilla", "english-words", LeaderboardPeriodAlltime, score)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPercentile, percentile, map[string]any{"score": score, "totalBelowCurrentScore": totalBelowCurrentScore, "totalEligible": totalEligible})
+		assert.Equal(t, expectedRank, rank)
 	}
 
 	// A blind session should only be compared against other blind sessions.
-	percentile, err := service.GetPercentile(blindSession.ID, "blind", "english-words", blindSession.Score)
+	percentile, _, err := service.GetPercentile(blindSession.ID, "blind", "english-words", LeaderboardPeriodAlltime, blindSession.Score)
 	assert.NoError(t, err)
 	assert.Equal(t, float32(0), percentile)
 }
@@ -470,10 +473,10 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	assert.NoError(t, sessionService.Update(playerSession))
 
 	// Fetch leaderboard
-	entries, err := leaderboardService.GetLeaderboard("vanilla", "english-words", 10, 0)
+	entries, err := leaderboardService.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
 	assert.NoError(t, err)
 
-	total, err := leaderboardService.GetTotalEntries("vanilla", "english-words")
+	total, err := leaderboardService.GetTotalEntries("vanilla", "english-words", LeaderboardPeriodAlltime)
 	assert.NoError(t, err)
 
 	// Correct: 4 entries
@@ -481,6 +484,161 @@ func TestLeaderboardService_IncludesFinishedSession(t *testing.T) {
 	assert.Equal(t, int64(4), total)
 	// Player's entry should be last (worst score)
 	assert.Equal(t, int32(5), entries[3].Score)
+}
+
+func TestLeaderboardService_GetLeaderboard_Monthly(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+	service.Now = func() time.Time {
+		return time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
+	}
+
+	withinMonth := models.SessionEntity{
+		ID:                       "this-month",
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    100,
+		TotalAttempts:            10,
+		Accuracy:                 90,
+		EndsAt:                   time.Date(2026, 8, 10, 0, 0, 0, 0, time.UTC),
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	beforeMonth := models.SessionEntity{
+		ID:                       "last-month",
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    200,
+		TotalAttempts:            10,
+		Accuracy:                 95,
+		EndsAt:                   time.Date(2026, 7, 31, 23, 59, 59, 0, time.UTC),
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	dayBeforeMonthStart := models.SessionEntity{
+		ID:                       "month-start-edge",
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    50,
+		TotalAttempts:            10,
+		Accuracy:                 80,
+		EndsAt:                   time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC),
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+
+	db.Create(&withinMonth)
+	db.Create(&beforeMonth)
+	db.Create(&dayBeforeMonthStart)
+
+	entries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodMonthly, 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, entries, 2)
+	// Highest score first
+	assert.Equal(t, "this-month", entries[0].ID)
+	assert.Equal(t, "month-start-edge", entries[1].ID)
+
+	total, err := service.GetTotalEntries("vanilla", "english-words", LeaderboardPeriodMonthly)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), total)
+
+	// All-time still sees all 3.
+	allEntries, err := service.GetLeaderboard("vanilla", "english-words", LeaderboardPeriodAlltime, 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, allEntries, 3)
+}
+
+func TestLeaderboardService_GetPercentile_Monthly(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+	service.Now = func() time.Time {
+		return time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
+	}
+
+	recent := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    50,
+		TotalAttempts:            10,
+		Accuracy:                 90,
+		EndsAt:                   time.Date(2026, 8, 5, 0, 0, 0, 0, time.UTC),
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+	oldHigh := models.SessionEntity{
+		ID:                       utils.GenerateUUID(),
+		Mode:                     "vanilla",
+		Topic:                    "english-words",
+		Score:                    500,
+		TotalAttempts:            10,
+		Accuracy:                 100,
+		EndsAt:                   time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC),
+		CorrectAttemptTimestamps: models.JSON{},
+		UsedWords:                pq.StringArray{},
+		UsedItemIDs:              pq.StringArray{},
+		Phase:                    core.SessionPhaseFinished,
+	}
+
+	db.Create(&recent)
+	db.Create(&oldHigh)
+
+	// All-time: the historical high score outranks recent; percentile is 0.
+	allPercentile, allRank, err := service.GetPercentile(recent.ID, "vanilla", "english-words", LeaderboardPeriodAlltime, recent.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, float32(0), allPercentile)
+	assert.Equal(t, int32(2), allRank)
+
+	// Monthly: the old high score is excluded, recent becomes the only eligible
+	// session -> no comparable peers -> percentile 0, rank 1.
+	monthlyPercentile, monthlyRank, err := service.GetPercentile(recent.ID, "vanilla", "english-words", LeaderboardPeriodMonthly, recent.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, float32(0), monthlyPercentile)
+	assert.Equal(t, int32(1), monthlyRank)
+}
+
+func TestLeaderboardService_GetPercentile_Rank(t *testing.T) {
+	db := testutils.SetupTestDB(t)
+	service := NewLeaderboardService(db)
+
+	// Three sessions ordered by score (descending).
+	makeSession := func(id string, score int32) *models.SessionEntity {
+		return &models.SessionEntity{
+			ID:                       id,
+			Mode:                     "vanilla",
+			Topic:                    "english-words",
+			Score:                    score,
+			TotalAttempts:            10,
+			Accuracy:                 90,
+			CorrectAttemptTimestamps: models.JSON{},
+			UsedWords:                pq.StringArray{},
+			UsedItemIDs:              pq.StringArray{},
+			Phase:                    core.SessionPhaseFinished,
+		}
+	}
+	db.Create(makeSession("low", 10))
+	db.Create(makeSession("high", 100))
+	db.Create(makeSession("mid", 50))
+
+	_, rank, err := service.GetPercentile("high", "vanilla", "english-words", LeaderboardPeriodAlltime, 100)
+	assert.NoError(t, err)
+	assert.Equal(t, int32(1), rank)
+
+	_, rank, err = service.GetPercentile("mid", "vanilla", "english-words", LeaderboardPeriodAlltime, 50)
+	assert.NoError(t, err)
+	assert.Equal(t, int32(2), rank)
+
+	_, rank, err = service.GetPercentile("low", "vanilla", "english-words", LeaderboardPeriodAlltime, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, int32(3), rank)
 }
 
 func BenchmarkLeaderboardService(b *testing.B) {
@@ -512,7 +670,7 @@ func BenchmarkLeaderboardService(b *testing.B) {
 	for b.Loop() {
 		start := time.Now()
 
-		_, err := service.GetPercentile(firstID, "vanilla", "english-words", firstScore)
+		_, _, err := service.GetPercentile(firstID, "vanilla", "english-words", LeaderboardPeriodAlltime, firstScore)
 		if err != nil {
 			b.Fatal(err)
 		}

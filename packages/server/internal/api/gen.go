@@ -12,6 +12,24 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for LeaderboardPeriod.
+const (
+	Alltime LeaderboardPeriod = "alltime"
+	Monthly LeaderboardPeriod = "monthly"
+)
+
+// Valid indicates whether the value is a known member of the LeaderboardPeriod enum.
+func (e LeaderboardPeriod) Valid() bool {
+	switch e {
+	case Alltime:
+		return true
+	case Monthly:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SessionMode.
 const (
 	Blind   SessionMode = "blind"
@@ -56,6 +74,9 @@ type ErrorResponse struct {
 // GetLeaderboardPercentileResponse defines model for GetLeaderboardPercentileResponse.
 type GetLeaderboardPercentileResponse struct {
 	Percentile float32 `json:"percentile"`
+
+	// Rank 1-indexed position of the current session within the leaderboard. 1 is the best score.
+	Rank int32 `json:"rank"`
 }
 
 // GetLeaderboardResponse defines model for GetLeaderboardResponse.
@@ -75,6 +96,9 @@ type LeaderboardEntry struct {
 	Topic                      SessionTopic `json:"topic"`
 	TotalAttempts              int32        `json:"totalAttempts"`
 }
+
+// LeaderboardPeriod defines model for LeaderboardPeriod.
+type LeaderboardPeriod string
 
 // SessionMode defines model for SessionMode.
 type SessionMode string
@@ -123,16 +147,18 @@ type SubmitAnswerResponse struct {
 
 // GetApiV1LeaderboardParams defines parameters for GetApiV1Leaderboard.
 type GetApiV1LeaderboardParams struct {
-	Page  *int          `form:"page,omitempty" json:"page,omitempty"`
-	Limit *int          `form:"limit,omitempty" json:"limit,omitempty"`
-	Mode  *SessionMode  `form:"mode,omitempty" json:"mode,omitempty"`
-	Topic *SessionTopic `form:"topic,omitempty" json:"topic,omitempty"`
+	Page   *int               `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *int               `form:"limit,omitempty" json:"limit,omitempty"`
+	Mode   *SessionMode       `form:"mode,omitempty" json:"mode,omitempty"`
+	Topic  *SessionTopic      `form:"topic,omitempty" json:"topic,omitempty"`
+	Period *LeaderboardPeriod `form:"period,omitempty" json:"period,omitempty"`
 }
 
 // GetApiV1LeaderboardPercentileParams defines parameters for GetApiV1LeaderboardPercentile.
 type GetApiV1LeaderboardPercentileParams struct {
-	Mode  *SessionMode  `form:"mode,omitempty" json:"mode,omitempty"`
-	Topic *SessionTopic `form:"topic,omitempty" json:"topic,omitempty"`
+	Mode   *SessionMode       `form:"mode,omitempty" json:"mode,omitempty"`
+	Topic  *SessionTopic      `form:"topic,omitempty" json:"topic,omitempty"`
+	Period *LeaderboardPeriod `form:"period,omitempty" json:"period,omitempty"`
 }
 
 // PostApiV1GameStartJSONRequestBody defines body for PostApiV1GameStart for application/json ContentType.
@@ -265,6 +291,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1Leaderboard(c *gin.Context) {
 		return
 	}
 
+	// ------------- Optional query parameter "period" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "period", c.Request.URL.Query(), &params.Period, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter period: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -297,6 +331,14 @@ func (siw *ServerInterfaceWrapper) GetApiV1LeaderboardPercentile(c *gin.Context)
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "topic", c.Request.URL.Query(), &params.Topic, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter topic: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "period" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "period", c.Request.URL.Query(), &params.Period, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter period: %w", err), http.StatusBadRequest)
 		return
 	}
 

@@ -1,6 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
 
-import { useLeaderboardPercentile } from '~/api/hooks';
 import type { LatestSchema } from '~/lib/settings';
 
 import { type GameState } from '../lib/game';
@@ -29,8 +28,6 @@ export function ResultsScreen({
   settings,
   onUpdateSettings,
 }: ResultsScreenProps) {
-  const { data } = useLeaderboardPercentile(settings);
-
   const accuracy = totalAttempts > 0 ? Math.trunc((score / totalAttempts) * 10000) / 100 : 0;
   const longestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
 
@@ -42,19 +39,17 @@ export function ResultsScreen({
         {lastWordAnswer &&
           (isIndonesianQuotes && lastWordDefinition ? (
             <p>
-              Last quote: <span className="italic text-dark-text-tertiary">{highlightAnswer(lastWordDefinition, lastWordAnswer)}</span>
+              Game over! Last quote:{' '}
+              <span className="italic text-dark-text-tertiary">{highlightAnswer(lastWordDefinition, lastWordAnswer)}</span>
             </p>
           ) : (
             <p>
-              Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
+              Game over! Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
             </p>
           ))}
       </div>
 
       <div className="flex flex-col gap-2 mb-6 w-full text-center">
-        <div className="border-dark-bg-tertiary text-dark-text-primary rounded-lg col-span-5 text-sm mb-2">
-          Game over: your result was better than <Percentile value={data?.percentile} />% other players!
-        </div>
         <StatsBar
           stats={[
             { label: 'Score', value: `${score} / ${totalAttempts}` },
@@ -97,24 +92,6 @@ export function ResultsScreen({
       </div>
     </>
   );
-}
-
-function Percentile({ value }: { value: number | undefined }) {
-  if (value === undefined) {
-    return <span className="animate-pulse">--</span>;
-  }
-
-  const formatted = value === Math.trunc(value) ? value : value.toFixed(2);
-  return <span className={`font-bold tabular-nums ${parseColor(value)}`}>{formatted}</span>;
-}
-
-function parseColor(percentile: number) {
-  if (percentile >= 99) return 'text-amber-400';
-  if (percentile >= 95) return 'text-fuchsia-400';
-  if (percentile >= 75) return 'text-purple-400';
-  if (percentile >= 50) return 'text-blue-400';
-  if (percentile >= 25) return 'text-emerald-400';
-  return 'text-slate-400';
 }
 
 function highlightAnswer(definition: string, answer: string): ReactNode {

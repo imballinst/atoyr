@@ -141,6 +141,10 @@ paths:
           name: topic
           schema:
             $ref: "#/components/schemas/SessionTopic"
+        - in: query
+          name: period
+          schema:
+            $ref: "#/components/schemas/LeaderboardPeriod"
       responses:
         '200':
           description: Leaderboard data retrieved successfully
@@ -171,6 +175,10 @@ paths:
           name: topic
           schema:
             $ref: "#/components/schemas/SessionTopic"
+        - in: query
+          name: period
+          schema:
+            $ref: "#/components/schemas/LeaderboardPeriod"
       tags:
         - leaderboard
       responses:
@@ -341,9 +349,15 @@ components:
       type: object
       required:
         - percentile
+        - rank
       properties:
         percentile:
           type: number
+        rank:
+          type: integer
+          format: int32
+          description: 1-indexed position of the current session within the leaderboard. 1 is the best score.
+          example: 3
     LeaderboardEntry:
       type: object
       required:
@@ -394,3 +408,8 @@ components:
       enum:
         - english-words
         - indonesian-politician-quotes
+    LeaderboardPeriod:
+      type: string
+      enum:
+        - alltime
+        - monthly

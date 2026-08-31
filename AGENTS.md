@@ -194,3 +194,17 @@ The navbar shows a combined version chip (client + server semver added component
 - **Navbar hover**: All navbar links (`Play`, `Leaderboard`, `About`) have `hover:text-dark-interactive-primary transition duration-200` for consistent hover feedback.
 
 Key files: `packages/client/app/components/VersionHoverCard.tsx`, `packages/client/app/lib/version.ts`, `packages/client/app/lib/changelog.ts`, `packages/client/app/routes/changelog.tsx`, `packages/client/app/components/PageLayout.tsx`, `CHANGELOG.md`.
+
+### Monthly Leaderboard & Percentile Placement
+
+The leaderboard supports an optional `period` axis (`alltime` or `monthly`) on both endpoints, and the percentile endpoint also returns the player's rank within the leaderboard:
+
+- **Period filter** (`internal/services/leaderboard.service.go`): `periodFilter` returns a SQL fragment + args. For `alltime` it returns nothing; for `monthly` it filters by `ends_at >= start of current month` using the service's `Now()` clock for testability. All three service methods (`GetLeaderboard`, `GetTotalEntries`, `GetPercentile`) accept the period.
+- **Rank field** (`GetLeaderboardPercentileResponse.rank`): 1-indexed position in the leaderboard (1 = best score). Computed as `(totalEligible - totalBelowCurrentScore) + 1` so it matches the existing tiebreaker ordering (`score DESC, accuracy DESC, ends_at ASC`).
+- **String-typed period in service**: The service layer uses string constants (`LeaderboardPeriodAlltime`, `LeaderboardPeriodMonthly`) instead of importing the generated `api.LeaderboardPeriod` type — that would create an import cycle (the `api` package imports `services`).
+- **Placement wording** (`packages/client/app/components/Leaderboard.tsx`): Built from percentile + rank + `isSessionSameAsCurrentUser`. "Made it" is decided by the session being in the visible preview window (`findIndex` on entries), not by rank alone — consistent with the previous Leaderboard component logic.
+- **Period selector UI**: A two-button radio group (`All-time` / `This month`) sits to the right of the Leaderboard heading, with the active option highlighted via `bg-dark-interactive-primary text-white`. Period is component-local state and drives both the leaderboard query and the percentile query.
+- **Visible filter labels**: The Mode / Topic selects on the standalone leaderboard page now render visible labels (previously `sr-only`) for accessibility.
+- **ResultsScreen cleanup**: The previous "Game over: your result was better than X%..." line is gone — "Game over!" is now prefixed to the existing "Last word" / "Last quote" line. The percentile query moved out of `ResultsScreen` into the `Leaderboard` component.
+
+Key files: `packages/server/api.yaml`, `packages/server/internal/api/leaderboard_routes.go`, `packages/server/internal/services/leaderboard.service.go`, `packages/client/app/api/hooks.ts`, `packages/client/app/components/Leaderboard.tsx`, `packages/client/app/components/ResultsScreen.tsx`.

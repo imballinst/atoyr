@@ -1,5 +1,12 @@
 # August 2026
 
+## Week 5
+
+- New feature: Added a "This month" leaderboard view alongside the existing "All-time" view; the All-time / This month selector is available in the results screen and on the standalone leaderboard page.
+- New feature: The results screen now shows your percentile and leaderboard placement in the Leaderboard section (e.g. "Your result was better than 75% of players! You also got a placement in leaderboard #3.").
+- Adjusted the results screen so "Game over!" and the last word/quote appear on the same line.
+- Adjusted the leaderboard filter labels (Mode, Topic, Period) so they are visible instead of screen-reader-only.
+
 ## Week 1
 
 - New feature: Added "Share settings" in the Settings modal; the share URL is shown in a copyable field with a Copy button; visiting the link applies those settings automatically (unless a game is in progress).
