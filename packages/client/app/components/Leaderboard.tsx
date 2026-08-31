@@ -85,16 +85,19 @@ export function Leaderboard({
         {pretext} Order priority: more correct answers → more accuracy → earlier record time.
       </p>
 
-      <div className="flex gap-3 items-center flex-wrap">
+      <div className="flex gap-3 items-start flex-wrap">
         {!settings?.mode && (
-          <div className="flex items-center gap-1 text-dark-text-secondary">
+          <div className="flex flex-col gap-1 text-dark-text-secondary">
             <label htmlFor={modeId} className="text-xs">
               Mode
             </label>
 
             <select
               id={modeId}
-              className={'text-xs' + (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')}
+              className={
+                'text-xs border border-dark-border-primary rounded px-2 py-1 bg-transparent' +
+                (isIndonesianTopic ? ' cursor-not-allowed text-dark-text-muted' : '')
+              }
               onChange={(e) => {
                 setMode(e.target.value as SessionMode);
               }}
@@ -108,14 +111,14 @@ export function Leaderboard({
         )}
 
         {!settings?.topic && (
-          <div className="flex items-center gap-1 text-dark-text-secondary">
+          <div className="flex flex-col gap-1 text-dark-text-secondary">
             <label htmlFor={topicId} className="text-xs">
               Topic
             </label>
 
             <select
               id={topicId}
-              className="text-xs"
+              className="text-xs border border-dark-border-primary rounded px-2 py-1 bg-transparent"
               onChange={(e) => {
                 const newTopic = e.target.value as SessionTopic;
 
