@@ -2,7 +2,7 @@
 
 ## Week 5
 
-- New feature: leaderboard filter by "All time" and "this month"..
+- New feature: leaderboard filter by "All time" and "this month".
 - Adjusted the results screen so "Game over!" and the last word/quote appear on the same line, including some styling updates.
 - Added labels to the leaderboard filters.
 - Added date/time in every row of the leaderboard entry.
