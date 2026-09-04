@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
   --color-dark-bg-primary: #0f172a;
@@ -27,7 +27,7 @@ body,
 }
 
 body {
-  font-family: 'Merriweather', serif;
+  font-family: "Merriweather", serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: rgba(0, 0, 0, 0.85);
@@ -85,4 +85,8 @@ a.navigation {
     overflow: hidden;
     visibility: hidden;
   }
+}
+
+button {
+  @apply cursor-pointer;
 }

@@ -244,17 +244,18 @@ func (g *GameService) getSessionWithNextWord(sessionID string) (*domainmodels.Se
 }
 
 func (g *GameService) assignNextWord(session *domainmodels.SessionDomain) error {
-	word, definition, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
+	wordDef, err := g.wordService.GetRandomWord(session.UsedWords, session.Topic)
 	if err != nil {
 		return g.FinishGame(session.ID)
 	}
 
-	token := g.generateToken(word)
+	token := g.generateToken(wordDef.Word)
 
-	session.UsedWords = append(session.UsedWords, word)
+	session.UsedWords = append(session.UsedWords, wordDef.Word)
 	session.CurrentWordToken = token
-	session.CurrentWordDefinition = definition
-	session.CurrentWord = word
+	session.CurrentWordDefinition = wordDef.Definition
+	session.CurrentWord = wordDef.Word
+	session.CurrentWordOtherInfo = utils.CreateWordOtherInfo(utils.OtherInfo{References: wordDef.References})
 
 	return nil
 }

@@ -72,5 +72,6 @@ type SessionEntity struct {
 	CurrentScrambledWord     string
 	CurrentWordDefinition    string
 	CurrentWordToken         string
+	CurrentWordOtherInfo     string
 	UsedItemIDs              pq.StringArray `gorm:"type:text"`
 }

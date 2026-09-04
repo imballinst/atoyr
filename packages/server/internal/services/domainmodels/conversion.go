@@ -25,6 +25,7 @@ type SessionDomain struct {
 	CurrentScrambledWord     string
 	CurrentWordDefinition    string
 	CurrentWordToken         string
+	CurrentWordOtherInfo     map[string]any
 	UsedItemIDs              []string
 }
 
@@ -36,6 +37,11 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 	correctAttemptTimestamps, err := utils.ConvertDbJsonToNestedStringArray(session.CorrectAttemptTimestamps)
 	if err != nil {
 		return nil, err
+	}
+
+	otherInfo, err := utils.ConvertDbJsonStringToMap(session.CurrentWordOtherInfo)
+	if err != nil {
+		// No-op, it's already empty map anyway.
 	}
 
 	return &SessionDomain{
@@ -58,6 +64,7 @@ func ConvertSessionDBToDomain(session *models.SessionEntity) (*SessionDomain, er
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordToken:         session.CurrentWordToken,
+		CurrentWordOtherInfo:     otherInfo,
 	}, nil
 }
 
@@ -69,6 +76,11 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 	correctAttemptTimestamps, err := utils.ConvertNestedStringArrayToDbJson(session.CorrectAttemptTimestamps)
 	if err != nil {
 		return nil, err
+	}
+
+	otherInfo, err := utils.ConvertMapToDbJson(session.CurrentWordOtherInfo)
+	if err != nil {
+		// No-op, it's already empty string anyway.
 	}
 
 	return &models.SessionEntity{
@@ -91,5 +103,6 @@ func ConvertSessionDomainToDB(session *SessionDomain) (*models.SessionEntity, er
 		CurrentScrambledWord:     session.CurrentScrambledWord,
 		CurrentWordDefinition:    session.CurrentWordDefinition,
 		CurrentWordToken:         session.CurrentWordToken,
+		CurrentWordOtherInfo:     otherInfo,
 	}, nil
 }

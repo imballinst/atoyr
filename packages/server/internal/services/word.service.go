@@ -22,8 +22,9 @@ type TopicFile struct {
 }
 
 type WordDefinition struct {
-	Word       string `json:"word"`
-	Definition string `json:"definition"`
+	Word       string   `json:"word"`
+	Definition string   `json:"definition"`
+	References []string `json:"references"`
 }
 
 func NewWordService() (*WordService, error) {
@@ -83,14 +84,14 @@ func (w *WordService) loadWords() error {
 	return nil
 }
 
-func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string, string, error) {
+func (w *WordService) GetRandomWord(excludeWords []string, topic string) (*WordDefinition, error) {
 	topicWords, ok := w.words[topic]
 	if !ok {
-		return "", "", fmt.Errorf("unknown topic: %s", topic)
+		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
 
 	if len(topicWords) == 0 {
-		return "", "", fmt.Errorf("no words available for topic: %s", topic)
+		return nil, fmt.Errorf("no words available for topic: %s", topic)
 	}
 
 	excluded := make(map[string]bool)
@@ -98,21 +99,20 @@ func (w *WordService) GetRandomWord(excludeWords []string, topic string) (string
 		excluded[strings.ToLower(word)] = true
 	}
 
-	available := []string{}
-	availableDefinitions := []string{}
+	available := []WordDefinition{}
 	for _, wd := range topicWords {
 		if !excluded[strings.ToLower(wd.Word)] {
-			available = append(available, strings.ToLower(wd.Word))
-			availableDefinitions = append(availableDefinitions, wd.Definition)
+			wd.Word = strings.ToLower(wd.Word)
+			available = append(available, wd)
 		}
 	}
 
 	if len(available) == 0 {
-		return "", "", fmt.Errorf("all words have been used")
+		return nil, fmt.Errorf("all words have been used")
 	}
 
 	idx := rand.Intn(len(available))
-	return available[idx], availableDefinitions[idx], nil
+	return &available[idx], nil
 }
 
 func (w *WordService) GetTopicLang(topic string) string {
@@ -123,12 +123,13 @@ func (w *WordService) GetTopics() []string {
 	return w.topics
 }
 
-func (w *WordService) SetWords(words []WordDefinition) {
-	w.words = map[string][]WordDefinition{
-		"english-words": words,
+func (w *WordService) SetWords(words map[string][]WordDefinition) {
+	w.words = words
+	w.topicLangs = map[string]string{}
+	w.topics = []string{}
+
+	for key := range words {
+		w.topicLangs[key] = "en-US"
+		w.topics = append(w.topics, key)
 	}
-	w.topicLangs = map[string]string{
-		"english-words": "en-US",
-	}
-	w.topics = []string{"english-words"}
 }

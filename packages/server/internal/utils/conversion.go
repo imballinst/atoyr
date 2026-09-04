@@ -24,6 +24,23 @@ func ConvertNestedStringArrayToDbJson(arr [][]string) (models.JSON, error) {
 	return models.JSON(data), nil
 }
 
+func ConvertDbJsonStringToMap(j string) (map[string]any, error) {
+	var result map[string]any
+	err := json.Unmarshal([]byte(j), &result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func ConvertMapToDbJson(arr map[string]any) (string, error) {
+	data, err := json.Marshal(arr)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
 // Number is any numeric type this function accepts.
 type Number interface {
 	int32 | float32

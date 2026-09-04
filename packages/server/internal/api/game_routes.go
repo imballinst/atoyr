@@ -223,7 +223,10 @@ func (gr *Server) GetApiV1GameSse(c *gin.Context) {
 
 			if session.Topic == string(IndonesianPoliticianQuotes) {
 				finishEvent["lastWordDefinition"] = resolveDefinition(session.CurrentWordDefinition, session.CurrentWord)
+				finishEvent["lastWordReferences"] = session.CurrentWordOtherInfo["references"]
 			}
+
+			fmt.Println("finish event", session.Topic, finishEvent, session.CurrentWordOtherInfo)
 
 			c.SSEvent("finish", finishEvent)
 		}

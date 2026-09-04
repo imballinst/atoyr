@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,14 +19,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
 func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
-	return setupTestRouterWithWordDefinition(t, nil)
+	return setupTestRouterWithWordDefinition(t, EnglishWords, nil)
 }
 
-func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []services.WordDefinition) (*gin.Engine, *services.SessionService) {
+func setupTestRouterWithWordDefinition(t *testing.T, topic SessionTopic, wordDefinitionsParam []services.WordDefinition) (*gin.Engine, *services.SessionService) {
 	// Set Gin to release mode for tests
 	gin.SetMode(gin.TestMode)
 
@@ -50,7 +52,7 @@ func setupTestRouterWithWordDefinition(t *testing.T, wordDefinitionsParam []serv
 		wordDefinitions = wordDefinitionsParam
 	}
 
-	wordService.SetWords(wordDefinitions)
+	wordService.SetWords(map[string][]services.WordDefinition{string(topic): wordDefinitions})
 
 	sessionService := services.NewSessionService(db)
 	leaderboardService := services.NewLeaderboardService(db)
@@ -73,17 +75,19 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 	db := testutils.SetupTestDB(t)
 
 	wordService := &services.WordService{}
-	wordService.SetWords([]services.WordDefinition{
-		{Word: "hello", Definition: "test"},
-		{Word: "world", Definition: "test"},
-		{Word: "apple", Definition: "test"},
-		{Word: "banana", Definition: "test"},
-		{Word: "cherry", Definition: "test"},
-		{Word: "dragon", Definition: "test"},
-		{Word: "elephant", Definition: "test"},
-		{Word: "forest", Definition: "test"},
-		{Word: "guitar", Definition: "test"},
-		{Word: "horizon", Definition: "test"},
+	wordService.SetWords(map[string][]services.WordDefinition{
+		string(EnglishWords): {
+			{Word: "hello", Definition: "test"},
+			{Word: "world", Definition: "test"},
+			{Word: "apple", Definition: "test"},
+			{Word: "banana", Definition: "test"},
+			{Word: "cherry", Definition: "test"},
+			{Word: "dragon", Definition: "test"},
+			{Word: "elephant", Definition: "test"},
+			{Word: "forest", Definition: "test"},
+			{Word: "guitar", Definition: "test"},
+			{Word: "horizon", Definition: "test"},
+		},
 	})
 
 	sessionService := services.NewSessionService(db)
@@ -273,62 +277,100 @@ func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 }
 
 func TestGameRoutes_FinishGame(t *testing.T) {
-	router, sessionService := setupTestRouterWithWordDefinition(t, []services.WordDefinition{
+	testCases := []struct {
+		name        string
+		topic       SessionTopic
+		definitions []services.WordDefinition
+	}{
 		{
-			Word:       "apple",
-			Definition: "A fruit with red color",
+			name:  "Normal finish game",
+			topic: EnglishWords,
+			definitions: []services.WordDefinition{{
+				Word:       "apple",
+				Definition: "A fruit with red color",
+			}},
 		},
-	})
+		{
+			name:  "Finish game with references",
+			topic: IndonesianPoliticianQuotes,
+			definitions: []services.WordDefinition{{
+				Word:       "apple",
+				Definition: "A fruit with red color",
+				References: []string{"https://hello.world"},
+			}},
+		},
+	}
 
-	autoVoice := true
-	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
-	body, _ := json.Marshal(payload)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			router, sessionService := setupTestRouterWithWordDefinition(t, tc.topic, tc.definitions)
 
-	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
+			autoVoice := true
+			payload := StartGameRequest{Topic: tc.topic, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+			body, _ := json.Marshal(payload)
 
-	recorder := testutils.CreateTestResponseRecorder()
-	router.ServeHTTP(recorder, req)
+			req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
 
-	assert.Equal(t, http.StatusCreated, recorder.Code)
+			recorder := testutils.CreateTestResponseRecorder()
+			router.ServeHTTP(recorder, req)
 
-	var response StartGameResponse
-	json.Unmarshal(recorder.Body.Bytes(), &response)
+			assert.Equal(t, http.StatusCreated, recorder.Code)
 
-	assert.NotEqual(t, "", response.SessionId)
-	assert.NotEqual(t, "", response.ScrambledWord)
-	assert.NotEqual(t, "", response.ScrambledWordDefinition)
-	assert.NotEqual(t, "", response.Token)
-	assert.NotEqual(t, int32(0), response.RemainingSeconds)
+			var response StartGameResponse
+			json.Unmarshal(recorder.Body.Bytes(), &response)
 
-	cookie, err := http.ParseSetCookie(recorder.Header().Get("set-cookie"))
-	assert.NoError(t, err)
-	assert.NotEmpty(t, cookie)
+			require.NotEqual(t, "", response.SessionId)
+			require.NotEqual(t, "", response.ScrambledWord)
+			require.NotEqual(t, "", response.ScrambledWordDefinition)
+			require.NotEqual(t, "", response.Token)
+			require.NotEqual(t, int32(0), response.RemainingSeconds)
 
-	// Get SSE, it should return no error.
-	sseReq, _ := http.NewRequest("GET", "/api/v1/game/sse", nil)
-	sseReq.Header.Set("Content-Type", "application/json")
-	sseReq.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: response.SessionId})
+			cookie, err := http.ParseSetCookie(recorder.Header().Get("set-cookie"))
+			assert.NoError(t, err)
+			assert.NotEmpty(t, cookie)
 
-	sseRecorder := testutils.CreateTestResponseRecorder()
-	router.ServeHTTP(sseRecorder, sseReq)
+			// Get SSE, it should return no error.
+			sseReq, _ := http.NewRequest("GET", "/api/v1/game/sse", nil)
+			sseReq.Header.Set("Content-Type", "application/json")
+			sseReq.AddCookie(&http.Cookie{Name: sessionIdCookie, Value: response.SessionId})
 
-	assert.Equal(t, http.StatusOK, sseRecorder.Code)
+			sseRecorder := testutils.CreateTestResponseRecorder()
+			router.ServeHTTP(sseRecorder, sseReq)
 
-	// End the session so we can get the finished stream event.
-	session, err := sessionService.FindByID(response.SessionId)
-	assert.NoError(t, err)
+			assert.Equal(t, http.StatusOK, sseRecorder.Code)
 
-	session.Phase = core.SessionPhaseFinished
+			// End the session so we can get the finished stream event.
+			session, err := sessionService.FindByID(response.SessionId)
+			assert.NoError(t, err)
 
-	err = sessionService.Update(session)
-	assert.NoError(t, err)
+			session.Phase = core.SessionPhaseFinished
 
-	// Sleep, then check the event message sent.
-	time.Sleep(1500 * time.Millisecond)
+			err = sessionService.Update(session)
+			assert.NoError(t, err)
 
-	var lastTick map[string]any
-	json.Unmarshal(sseRecorder.Body.Bytes(), &lastTick)
+			// Sleep, then check the event message sent.
+			time.Sleep(1500 * time.Millisecond)
+
+			var lastTick map[string]any
+
+			events := strings.Split(strings.TrimSpace(sseRecorder.Body.String()), "\n")
+			lastTickDataString := strings.TrimPrefix(events[len(events)-1], "data:")
+
+			json.Unmarshal([]byte(lastTickDataString), &lastTick)
+			fmt.Println("lastTickDataString", lastTickDataString)
+
+			require.Equal(t, "apple", lastTick["lastWordAnswer"])
+
+			if tc.topic == IndonesianPoliticianQuotes {
+				assert.Equal(t, "A fruit with red color", lastTick["lastWordDefinition"])
+				assert.Contains(t, lastTick["lastWordReferences"], "https://hello.world")
+			} else {
+				assert.Nil(t, lastTick["lastWordReferences"])
+				assert.Nil(t, lastTick["lastWordDefinition"])
+			}
+		})
+	}
 }
 
 func TestGameRoutes_SubmitAnswer(t *testing.T) {

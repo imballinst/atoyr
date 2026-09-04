@@ -9,7 +9,14 @@ import { StatsBar } from './StatsBar';
 
 interface ResultsScreenProps extends Pick<
   GameState,
-  'score' | 'totalAttempts' | 'correctAttemptTimestamps' | 'currentWord' | 'lastWordAnswer' | 'lastWordDefinition' | 'settings'
+  | 'score'
+  | 'totalAttempts'
+  | 'correctAttemptTimestamps'
+  | 'currentWord'
+  | 'lastWordAnswer'
+  | 'lastWordDefinition'
+  | 'settings'
+  | 'lastWordReferences'
 > {
   onPlayAgain: () => void;
   onBackToHome: () => void;
@@ -25,6 +32,7 @@ export function ResultsScreen({
   currentWord,
   lastWordAnswer,
   lastWordDefinition,
+  lastWordReferences,
   settings,
   onUpdateSettings,
 }: ResultsScreenProps) {
@@ -38,10 +46,26 @@ export function ResultsScreen({
       <div className="text-dark-text-primary border p-2 rounded border-dark-bg-tertiary text-sm mb-4">
         {lastWordAnswer &&
           (isIndonesianQuotes && lastWordDefinition ? (
-            <p>
-              Game over! Last quote:{' '}
-              <span className="italic text-dark-text-tertiary">{highlightAnswer(lastWordDefinition, lastWordAnswer)}</span>
-            </p>
+            <>
+              <p>
+                Game over! Last quote:{' '}
+                <span className="italic text-dark-text-tertiary">{highlightAnswer(lastWordDefinition, lastWordAnswer)}</span>
+              </p>
+
+              {lastWordReferences && (
+                <div className="inline-flex gap-2 mt-2">
+                  Sumber:
+                  {lastWordReferences.map((ref, idx) => (
+                    <span>
+                      <a href={ref} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">
+                        {new URL(ref).host}
+                      </a>
+                      {idx + 1 < lastWordReferences.length ? ',' : null}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <p>
               Game over! Last word: {currentWord?.scrambled} → <span className="font-bold">{lastWordAnswer}</span>
@@ -71,7 +95,7 @@ export function ResultsScreen({
         <div className="col-span-6 flex">
           <SettingsModal
             triggerText={'⚙️'}
-            triggerClassnames="border-r-0 rounded-r-none"
+            triggerClassnames="border-r-0 rounded-r-none py-1"
             settings={settings}
             updateSettings={onUpdateSettings}
           />

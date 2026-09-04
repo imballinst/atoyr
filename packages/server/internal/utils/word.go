@@ -13,3 +13,13 @@ func ScrambleWord(word string) string {
 
 	return string(runes)
 }
+
+type OtherInfo struct {
+	References []string
+}
+
+func CreateWordOtherInfo(otherInfo OtherInfo) map[string]any {
+	return map[string]any{
+		"references": otherInfo.References,
+	}
+}

@@ -22,6 +22,7 @@ interface RenderOverrides {
   currentWord?: { scrambled: string; definition: string } | null;
   lastWordAnswer?: string | null;
   lastWordDefinition?: string | null;
+  lastWordReferences?: string[] | null;
   correctAttemptTimestamps?: string[][];
 }
 
@@ -38,6 +39,7 @@ function renderScreen(overrides: RenderOverrides = {}) {
         currentWord={overrides.currentWord ?? { scrambled: 'plepa', definition: 'A thin, flat cake.' }}
         lastWordAnswer={overrides.lastWordAnswer ?? 'apple'}
         lastWordDefinition={overrides.lastWordDefinition ?? null}
+        lastWordReferences={overrides.lastWordReferences ?? null}
         correctAttemptTimestamps={overrides.correctAttemptTimestamps ?? []}
         onPlayAgain={overrides.onPlayAgain ?? vi.fn()}
         onBackToHome={overrides.onBackToHome ?? vi.fn()}
@@ -146,7 +148,7 @@ describe('ResultsScreen', () => {
     expect(useLeaderboardPercentile).toHaveBeenCalledWith(expect.any(Object), 'monthly');
   });
 
-  it('shows the placement message when percentile + rank are returned', () => {
+  it('shows percentile above the leaderboard', () => {
     vi.mocked(useLeaderboardPercentile).mockReturnValue({ data: { percentile: 75, rank: 3 } } as any);
     vi.mocked(useLeaderboard).mockReturnValue({
       data: {
@@ -171,36 +173,9 @@ describe('ResultsScreen', () => {
     renderScreen();
 
     expect(
-      screen.getByText(/Your result was better than 75% of players! You also got a placement in leaderboard #3\./),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the did-not-make-it message when the session is not in the preview', () => {
-    vi.mocked(useLeaderboardPercentile).mockReturnValue({ data: { percentile: 25, rank: 12 } } as any);
-    vi.mocked(useLeaderboard).mockReturnValue({
-      data: {
-        entries: [
-          {
-            id: 'someone-else',
-            isSessionSameAsCurrentUser: false,
-            topic: 'english-words',
-            score: 200,
-            totalAttempts: 5,
-            accuracy: 95,
-            timestamp: 0,
-            rank: 1,
-          },
-        ],
-        total: 12,
-      },
-      isFetching: false,
-      error: null,
-    } as any);
-
-    renderScreen();
-
-    expect(
-      screen.getByText(/Your result was better than 25% of players\. Unfortunately, you didn't make it to the leaderboard\./),
+      screen.getByText(
+        (_, element) => element?.tagName === 'P' && element?.textContent.includes('Your result was better than 75% of players!'),
+      ),
     ).toBeInTheDocument();
   });
 });

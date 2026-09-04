@@ -4,8 +4,11 @@
 
 - New feature: Added a "This month" leaderboard view alongside the existing "All-time" view; the All-time / This month selector is available in the results screen and on the standalone leaderboard page.
 - New feature: The results screen now shows your percentile and leaderboard placement in the Leaderboard section (e.g. "Your result was better than 75% of players! You also got a placement in leaderboard #3.").
-- Adjusted the results screen so "Game over!" and the last word/quote appear on the same line.
+- Adjusted the results screen so "Game over!" and the last word/quote appear on the same line, including some styling updates.
 - Adjusted the leaderboard filter labels (Mode, Topic, Period) so they are visible instead of screen-reader-only.
+- Added date/time in every row of the leaderboard entry.
+- Added more quotes for Indonesian Politican Quotes topic.
+- Added references for Indonnesian Politician Quotes topic.
 
 ## Week 1
 

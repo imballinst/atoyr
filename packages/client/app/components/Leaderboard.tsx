@@ -1,3 +1,4 @@
+import { formatDate } from 'date-fns';
 import { Loader2Icon } from 'lucide-react';
 import { useId, useState, type JSX } from 'react';
 
@@ -68,10 +69,7 @@ export function Leaderboard({
   const percentile = percentileQuery.data?.percentile;
   const rank = percentileQuery.data?.rank;
 
-  const userEntryIndex = leaderboardEntries?.findIndex((entry) => entry.isSessionSameAsCurrentUser) ?? -1;
-  const userInPreview = userEntryIndex > -1;
-
-  const pretext = buildPretext({ percentile, rank, userInPreview });
+  const pretext = buildPretext({ percentile, rank });
   const isIndonesianTopic = topic === 'indonesian-politician-quotes';
 
   return (
@@ -149,8 +147,12 @@ export function Leaderboard({
               {leaderboardEntries.map((result, i) => (
                 <div key={result.id} className="flex gap-2 p-3 text-xs tabular-nums">
                   <div className="font-semibold text-dark-text-primary min-w-6">#{i + 1}</div>
-                  <div className="font-semibold text-dark-text-primary font-mono">
-                    {result.id} {result.isSessionSameAsCurrentUser ? '(you, last game)' : ''}
+                  <div className="font-semibold text-dark-text-primary font-mono flex gap-2 items-end">
+                    {result.id}
+
+                    <span className="text-[10px] text-gray-400">
+                      {result.isSessionSameAsCurrentUser ? '(you, last game)' : formatDate(result.timestamp, 'yyyy/MM/dd HH:mm')}
+                    </span>
                   </div>
                   <div className="flex flex-1 gap-x-3 font-mono">
                     <div className="flex-1 text-right font-semibold text-dark-text-primary">
@@ -168,12 +170,26 @@ export function Leaderboard({
   );
 }
 
-function buildPretext({ percentile, rank, userInPreview }: { percentile?: number; rank?: number; userInPreview: boolean }): string {
+function buildPretext({ percentile, rank }: { percentile?: number; rank?: number }) {
   if (percentile === undefined || rank === undefined) return '';
 
-  const formatted = percentile === Math.trunc(percentile) ? percentile.toString() : percentile.toFixed(2);
-  if (userInPreview) {
-    return `Your result was better than ${formatted}% of players! You also got a placement in leaderboard #${rank}.`;
-  }
-  return `Your result was better than ${formatted}% of players. Unfortunately, you didn't make it to the leaderboard.`;
+  return (
+    <span>
+      Your result was better than <Percentile value={percentile} />% of players!
+    </span>
+  );
+}
+
+function Percentile({ value }: { value: number }) {
+  const formatted = value === Math.trunc(value) ? value : value.toFixed(2);
+  return <span className={`font-bold tabular-nums ${parseColor(value)}`}>{formatted}</span>;
+}
+
+function parseColor(percentile: number) {
+  if (percentile >= 99) return 'text-amber-400';
+  if (percentile >= 95) return 'text-fuchsia-400';
+  if (percentile >= 75) return 'text-purple-400';
+  if (percentile >= 50) return 'text-blue-400';
+  if (percentile >= 25) return 'text-emerald-400';
+  return 'text-slate-400';
 }

@@ -69,6 +69,7 @@ export default function Home() {
           currentWord={state.currentWord}
           lastWordAnswer={state.lastWordAnswer}
           lastWordDefinition={state.lastWordDefinition}
+          lastWordReferences={state.lastWordReferences}
           onPlayAgain={playAgain}
           onBackToHome={resetGame}
           correctAttemptTimestamps={state.correctAttemptTimestamps}
