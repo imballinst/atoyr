@@ -31,7 +31,7 @@ renderer.list = function ({ ordered, items }) {
   const itemsHtml = items
     .map((item) => {
       const text = item.tokens.map((t) => renderer.parser.parseInline([t])).join('');
-      return `<li class="text-sm mb-1">${text}</li>`;
+      return `<li class="text-sm mb-3">${text}</li>`;
     })
     .join('');
   const tag = ordered ? 'ol' : 'ul';

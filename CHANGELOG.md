@@ -2,10 +2,9 @@
 
 ## Week 5
 
-- New feature: Added a "This month" leaderboard view alongside the existing "All-time" view; the All-time / This month selector is available in the results screen and on the standalone leaderboard page.
-- New feature: The results screen now shows your percentile and leaderboard placement in the Leaderboard section (e.g. "Your result was better than 75% of players! You also got a placement in leaderboard #3.").
+- New feature: leaderboard filter by "All time" and "this month"..
 - Adjusted the results screen so "Game over!" and the last word/quote appear on the same line, including some styling updates.
-- Adjusted the leaderboard filter labels (Mode, Topic, Period) so they are visible instead of screen-reader-only.
+- Added labels to the leaderboard filters.
 - Added date/time in every row of the leaderboard entry.
 - Added more quotes for Indonesian Politican Quotes topic.
 - Added references for Indonnesian Politician Quotes topic.
@@ -13,9 +12,9 @@
 ## Week 1
 
 - New feature: Added "Share settings" in the Settings modal; the share URL is shown in a copyable field with a Copy button; visiting the link applies those settings automatically (unless a game is in progress).
-- New feature: Added topics; two topic categories to choose from — English words (classic 5-letter scramble) and Indonesian politician quotes (fill-in-the-blank quotes). The topic selector lives in the Settings modal alongside the mode selector. Quote-topic entries get a "Quotes" badge on the leaderboard; leaderboards are partitioned per-topic so scores from different topics are never compared.
-- Bug fix: Auto voice now hides the word definition during gameplay so the timer bonus is correctly applied when the voice reads the definition aloud.
-- Bug fix: Fixed layout issues on smaller screens; the results screen header is now more compact and the in-game and results stats share a single stats bar.
+- New feature: Added topics; two topic categories to choose from: English words (classic 5-letter scramble) and Indonesian politician quotes (fill-in-the-blank quotes). The topic selector lives in the Settings modal alongside the mode selector.
+- Bug fix: Text-to-speech now always hides the word definition during gameplay.
+- Bug fix: Fixed layout issues on smaller screens.
 - Adjusted the results screen stat cards (score, accuracy, best streak) into a single-row panel.
 
 # July 2026
