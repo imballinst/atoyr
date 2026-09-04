@@ -145,20 +145,20 @@ export function Leaderboard({
           ) : (
             <div className="bg-dark-bg-tertiary rounded">
               {leaderboardEntries.map((result, i) => (
-                <div key={result.id} className="flex gap-2 p-3 text-xs tabular-nums">
+                <div key={result.id} className="flex gap-2 p-2 md:p-3 text-xs tabular-nums">
                   <div className="font-semibold text-dark-text-primary min-w-6">#{i + 1}</div>
                   <div className="font-semibold text-dark-text-primary font-mono flex gap-2 items-end">
                     {result.id}
 
                     <span className="text-[10px] text-gray-400">
-                      {result.isSessionSameAsCurrentUser ? '(you, last game)' : formatDate(result.timestamp, 'yyyy/MM/dd HH:mm')}
+                      {result.isSessionSameAsCurrentUser ? '(you)' : formatDate(result.timestamp, 'yyyy/MM/dd HH:mm')}
                     </span>
                   </div>
                   <div className="flex flex-1 gap-x-3 font-mono">
                     <div className="flex-1 text-right font-semibold text-dark-text-primary">
                       {getFinalScore(result.score, result.totalAttempts)}
                     </div>
-                    <div className="font-semibold text-dark-interactive-success text-right min-w-11">{result.accuracy}%</div>
+                    <div className="font-semibold text-dark-interactive-success text-right min-w-7">{Math.round(result.accuracy)}%</div>
                   </div>
                 </div>
               ))}
