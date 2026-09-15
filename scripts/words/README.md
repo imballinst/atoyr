@@ -1,6 +1,7 @@
-Source: 
+Source: WordNet 3.1 (Princeton) — `wordnet/` dir. Download: https://wordnet.princeton.edu/download.
 
-- https://raw.githubusercontent.com/david47k/top-english-wordlists/refs/heads/master/top_english_words_lower_10000.txt
-- https://github.com/david47k/top-english-wordlists
+`english-words.json` in `packages/server/topics/` is regenerated from the WordNet drop via `build-wordnet-json.mjs`:
 
-TODO: we can maybe use WordNet's database in the future for richer vocabularies: https://wordnet.princeton.edu/download.
+- Candidate pool: 5-letter lowercase lemmas from `index.{noun,verb,adj,adv}`
+- Definitions: first gloss from `data.{noun,verb,adj,adv}`, joined on synset offset, cut at first `;`, parentheticals/examples stripped
+- Sense selection: WordNet sense order (tagsense-weighted), preferring noun > adj > verb > adv, excluding `noun.person` senses

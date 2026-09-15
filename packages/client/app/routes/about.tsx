@@ -19,18 +19,26 @@ function getAboutPageMarkdown() {
 
 This game was inspired by [Wordle](https://www.nytimes.com/games/wordle/index.html). However, instead of once-per-day, this has a time trial theme.
 
-The more words you answered correctly, the better your accuracy is, and the earlier you get that score, you will place higher than others in the leaderboard.
+The more words you answer correctly, the better your accuracy is, and the earlier you reach that score, the higher you will place on the leaderboard.
 
-Additionally, this game also tells you the "short meaning" of the scrambled word. Hopefully, it can be useful for you to learn new vocabularies.
+This game also tells you the "short meaning" of the scrambled word; hopefully it can be useful for learning new vocabulary.
 
-## Dictionary
+## Words per topic
 
-The collection of words in this game was sourced from https://github.com/david47k/top-english-wordlists, particularly the [top 10k words](https://github.com/david47k/top-english-wordlists/blob/master/top_english_words_lower_10000.txt).
+### English words
 
-It was then filtered to only include words with exactly 5 characters. After that, I used LLM to generate the definitions (because I'm not going to lie, manually working on 1000+ definitions is painful).
+The collection of words in this game was sourced from [WordNet 3.1](https://wordnet.princeton.edu/download), a large lexical database of English from Princeton University.
+
+From there, the words were filtered to 5-letter lowercase lemmas across noun, verb, adjective, and adverb. Definitions come straight from WordNet's glosses; per word, the most general sense is preferred (noun > adjective > verb > adverb), and proper-name senses (the noun.person lexical file) are excluded so no real people end up as answers.
+
+Reference: "About WordNet." WordNet, Princeton University, 2010, [wordnet.princeton.edu](https://wordnet.princeton.edu/)
+
+### Indonesian Politician Quotes
+
+The quotes were extracted from online publications (mostly news, with credible sources being preferred). When the game ends, you will be able to see the source of the quote and validate it yourself.
 
 ## Author and source
 
-The repository is closed-source. I will appreciate it if you want to provide feedback, which you can drop to [my Twitter](https://twitter.com/imballinst).
+The repository is closed-source. If you would like to provide feedback, you can drop it to [my Twitter](https://twitter.com/imballinst).
 `.trim();
 }

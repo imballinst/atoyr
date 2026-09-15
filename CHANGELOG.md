@@ -1,3 +1,9 @@
+# September 2026
+
+## Week 3
+
+- New feature: Switched the English words source from a hand-curated wordlist with LLM-generated definitions to [WordNet 3.1](https://wordnet.princeton.edu/download); definitions are now real dictionary glosses.
+
 # August 2026
 
 ## Week 5

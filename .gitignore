@@ -16,3 +16,4 @@ packages/server/bin/
 .env.local
 .env.production
 tmp
+.DS_Store
