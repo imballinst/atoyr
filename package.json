@@ -9,6 +9,7 @@
     "setup": "yarn install && go install github.com/air-verse/air@latest",
     "dev": "concurrently \"yarn workspace client dev\" \"yarn --cwd packages/server dev\"",
     "build": "yarn workspace client build && yarn workspace server build",
+    "wc": "yarn workspace client",
     "test": "yarn workspace client test && yarn workspace server test",
     "bench": "yarn workspace server bench",
     "codegen": "yarn workspace client codegen && yarn workspace server codegen",

@@ -42,6 +42,7 @@ const baseState: GameState = {
     mode: 'vanilla',
     topic: 'english-words',
   },
+  lastWordReferences: [],
 };
 
 function mockSpeechSynthesis() {
@@ -366,7 +367,7 @@ describe('GameScreen', () => {
   it('replaces <template> with underscores in the visual definition', () => {
     renderScreen({ definition: '<template> yang gelap!', scrambled: 'kau' });
 
-    const definitionDiv = screen.getByText((_, node) => node?.textContent === '___ yang gelap!');
+    const definitionDiv = screen.getByText((_, node) => node?.childElementCount === 0 && node?.textContent === '___ yang gelap!');
     expect(definitionDiv).toBeInTheDocument();
   });
 
