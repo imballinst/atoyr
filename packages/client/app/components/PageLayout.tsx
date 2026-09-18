@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { VersionPopover } from '~/components/VersionPopover';
 
@@ -34,13 +34,13 @@ function PathAwareLink({ href, children }: { href: string; children: string }) {
   const additionalClass = pathname === href ? 'font-bold!' : '';
 
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       className={'navigation hover:text-dark-interactive-primary transition duration-200 ' + additionalClass}
       data-ga-value={children}
       data-ga-label="ga-navbar-link"
     >
       {children}
-    </a>
+    </Link>
   );
 }
