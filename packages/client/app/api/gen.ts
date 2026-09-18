@@ -246,7 +246,7 @@ export interface paths {
           page?: number;
           limit?: number;
           mode?: components['schemas']['SessionMode'];
-          topic?: components['schemas']['SessionTopic'];
+          topic?: components['schemas']['SessionTopicLeaderboard'];
           period?: components['schemas']['LeaderboardPeriod'];
         };
         header?: never;
@@ -475,6 +475,8 @@ export interface components {
     /** @enum {string} */
     SessionTopic: 'english-words' | 'indonesian-politician-quotes';
     /** @enum {string} */
+    SessionTopicLeaderboard: 'english-words' | 'indonesian-politician-quotes' | 'english-words-july-2026';
+    /** @enum {string} */
     LeaderboardPeriod: 'alltime' | 'monthly';
   };
   responses: never;
@@ -493,6 +495,7 @@ export type GetLeaderboardPercentileResponse = components['schemas']['GetLeaderb
 export type LeaderboardEntry = components['schemas']['LeaderboardEntry'];
 export type SessionMode = components['schemas']['SessionMode'];
 export type SessionTopic = components['schemas']['SessionTopic'];
+export type SessionTopicLeaderboard = components['schemas']['SessionTopicLeaderboard'];
 export type LeaderboardPeriod = components['schemas']['LeaderboardPeriod'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

@@ -14,6 +14,10 @@ import (
 )
 
 func SetupTestDB(t testing.TB) *gorm.DB {
+	return SetupTestDBWithVersion(t, 0)
+}
+
+func SetupTestDBWithVersion(t testing.TB, version uint) *gorm.DB {
 	gormConfig := gorm.Config{}
 
 	if os.Getenv("GORM_DEBUG") == "true" {
@@ -32,15 +36,20 @@ func SetupTestDB(t testing.TB) *gorm.DB {
 	}
 	sqlDb.SetMaxOpenConns(1)
 
+	// Use migration runner for tests as well
+	if err := RunMigrations(t, db, version); err != nil {
+		t.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	return db
+}
+
+func RunMigrations(t testing.TB, db *gorm.DB, version uint) error {
 	// Find the migrations directory relative to this file
 	_, currentFile, _, _ := runtime.Caller(0)
 	serverDir := filepath.Join(filepath.Dir(currentFile), "..", "..")
 	migrationsDir := filepath.Join(serverDir, "migrations")
 
 	// Use migration runner for tests as well
-	if err := database.RunMigrationsWithPath(db, migrationsDir); err != nil {
-		t.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	return db
+	return database.RunMigrationsWithPath(db, migrationsDir, version)
 }

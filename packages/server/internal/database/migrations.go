@@ -23,19 +23,19 @@ func RunMigrations(db *gorm.DB) error {
 		migrationsDir = "migrations"
 	}
 
-	return RunMigrationsWithPath(db, migrationsDir)
+	return RunMigrationsWithPath(db, migrationsDir, 0)
 }
 
-func RunMigrationsWithPath(db *gorm.DB, migrationsDir string) error {
+func RunMigrationsWithPath(db *gorm.DB, migrationsDir string, version uint) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database: %w", err)
 	}
 
-	return runMigrationsWithSQLDB(sqlDB, migrationsDir)
+	return runMigrationsWithSQLDB(sqlDB, migrationsDir, version)
 }
 
-func runMigrationsWithSQLDB(sqlDB *sql.DB, migrationsDir string) error {
+func runMigrationsWithSQLDB(sqlDB *sql.DB, migrationsDir string, version uint) error {
 	// Convert to absolute path
 	absPath, err := filepath.Abs(migrationsDir)
 	if err != nil {
@@ -64,8 +64,14 @@ func runMigrationsWithSQLDB(sqlDB *sql.DB, migrationsDir string) error {
 	}
 
 	// Run migrations
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	if version == 0 {
+		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			return fmt.Errorf("failed to run migrations: %w", err)
+		}
+	} else {
+		if err := m.Migrate(version); err != nil && err != migrate.ErrNoChange {
+			return fmt.Errorf("failed to run migrations: %w", err)
+		}
 	}
 
 	return nil

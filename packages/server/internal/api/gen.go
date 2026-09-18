@@ -50,16 +50,37 @@ func (e SessionMode) Valid() bool {
 
 // Defines values for SessionTopic.
 const (
-	EnglishWords               SessionTopic = "english-words"
-	IndonesianPoliticianQuotes SessionTopic = "indonesian-politician-quotes"
+	SessionTopicEnglishWords               SessionTopic = "english-words"
+	SessionTopicIndonesianPoliticianQuotes SessionTopic = "indonesian-politician-quotes"
 )
 
 // Valid indicates whether the value is a known member of the SessionTopic enum.
 func (e SessionTopic) Valid() bool {
 	switch e {
-	case EnglishWords:
+	case SessionTopicEnglishWords:
 		return true
-	case IndonesianPoliticianQuotes:
+	case SessionTopicIndonesianPoliticianQuotes:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SessionTopicLeaderboard.
+const (
+	SessionTopicLeaderboardEnglishWords               SessionTopicLeaderboard = "english-words"
+	SessionTopicLeaderboardEnglishWordsJuly2026       SessionTopicLeaderboard = "english-words-july-2026"
+	SessionTopicLeaderboardIndonesianPoliticianQuotes SessionTopicLeaderboard = "indonesian-politician-quotes"
+)
+
+// Valid indicates whether the value is a known member of the SessionTopicLeaderboard enum.
+func (e SessionTopicLeaderboard) Valid() bool {
+	switch e {
+	case SessionTopicLeaderboardEnglishWords:
+		return true
+	case SessionTopicLeaderboardEnglishWordsJuly2026:
+		return true
+	case SessionTopicLeaderboardIndonesianPoliticianQuotes:
 		return true
 	default:
 		return false
@@ -106,6 +127,9 @@ type SessionMode string
 // SessionTopic defines model for SessionTopic.
 type SessionTopic string
 
+// SessionTopicLeaderboard defines model for SessionTopicLeaderboard.
+type SessionTopicLeaderboard string
+
 // StartGameRequest defines model for StartGameRequest.
 type StartGameRequest struct {
 	AutoVoice *bool        `json:"autoVoice,omitempty"`
@@ -147,11 +171,11 @@ type SubmitAnswerResponse struct {
 
 // GetApiV1LeaderboardParams defines parameters for GetApiV1Leaderboard.
 type GetApiV1LeaderboardParams struct {
-	Page   *int               `form:"page,omitempty" json:"page,omitempty"`
-	Limit  *int               `form:"limit,omitempty" json:"limit,omitempty"`
-	Mode   *SessionMode       `form:"mode,omitempty" json:"mode,omitempty"`
-	Topic  *SessionTopic      `form:"topic,omitempty" json:"topic,omitempty"`
-	Period *LeaderboardPeriod `form:"period,omitempty" json:"period,omitempty"`
+	Page   *int                     `form:"page,omitempty" json:"page,omitempty"`
+	Limit  *int                     `form:"limit,omitempty" json:"limit,omitempty"`
+	Mode   *SessionMode             `form:"mode,omitempty" json:"mode,omitempty"`
+	Topic  *SessionTopicLeaderboard `form:"topic,omitempty" json:"topic,omitempty"`
+	Period *LeaderboardPeriod       `form:"period,omitempty" json:"period,omitempty"`
 }
 
 // GetApiV1LeaderboardPercentileParams defines parameters for GetApiV1LeaderboardPercentile.

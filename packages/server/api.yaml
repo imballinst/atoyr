@@ -140,7 +140,7 @@ paths:
         - in: query
           name: topic
           schema:
-            $ref: "#/components/schemas/SessionTopic"
+            $ref: "#/components/schemas/SessionTopicLeaderboard"
         - in: query
           name: period
           schema:
@@ -408,6 +408,12 @@ components:
       enum:
         - english-words
         - indonesian-politician-quotes
+    SessionTopicLeaderboard:
+      type: string
+      enum:
+        - english-words
+        - indonesian-politician-quotes
+        - english-words-july-2026
     LeaderboardPeriod:
       type: string
       enum:

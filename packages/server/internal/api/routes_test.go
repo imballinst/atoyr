@@ -24,7 +24,7 @@ import (
 )
 
 func setupTestRouter(t *testing.T) (*gin.Engine, *services.SessionService) {
-	return setupTestRouterWithWordDefinition(t, EnglishWords, nil)
+	return setupTestRouterWithWordDefinition(t, SessionTopicEnglishWords, nil)
 }
 
 func setupTestRouterWithWordDefinition(t *testing.T, topic SessionTopic, wordDefinitionsParam []services.WordDefinition) (*gin.Engine, *services.SessionService) {
@@ -76,7 +76,7 @@ func setupAdminTestRouter(t *testing.T) (*gin.Engine, *gorm.DB, *services.Sessio
 
 	wordService := &services.WordService{}
 	wordService.SetWords(map[string][]services.WordDefinition{
-		string(EnglishWords): {
+		string(SessionTopicEnglishWords): {
 			{Word: "hello", Definition: "test"},
 			{Word: "world", Definition: "test"},
 			{Word: "apple", Definition: "test"},
@@ -113,7 +113,7 @@ func TestGameRoutes_StartGame(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := false
-	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: SessionTopicEnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -152,7 +152,7 @@ func TestGameRoutes_StartGame_WithAutoVoice(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: SessionTopicEnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -191,7 +191,7 @@ func TestGameRoutes_StartGame_WithInvalidMode(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Topic: EnglishWords, Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: SessionTopicEnglishWords, Mode: "randommode", AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -226,7 +226,7 @@ func TestGameRoutes_StartGame_BlindModeWithIndonesianTopic(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := false
-	payload := StartGameRequest{Topic: IndonesianPoliticianQuotes, Mode: Blind, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: SessionTopicIndonesianPoliticianQuotes, Mode: Blind, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -242,7 +242,7 @@ func TestGameRoutes_StartGame_GetInvalidSSESession(t *testing.T) {
 	router, _ := setupTestRouter(t)
 
 	autoVoice := true
-	payload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
+	payload := StartGameRequest{Topic: SessionTopicEnglishWords, Mode: Vanilla, AutoVoice: &autoVoice, ItemsUsed: []string{}}
 	body, _ := json.Marshal(payload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(body))
@@ -284,7 +284,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 	}{
 		{
 			name:  "Normal finish game",
-			topic: EnglishWords,
+			topic: SessionTopicEnglishWords,
 			definitions: []services.WordDefinition{{
 				Word:       "apple",
 				Definition: "A fruit with red color",
@@ -292,7 +292,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 		},
 		{
 			name:  "Finish game with references",
-			topic: IndonesianPoliticianQuotes,
+			topic: SessionTopicIndonesianPoliticianQuotes,
 			definitions: []services.WordDefinition{{
 				Word:       "apple",
 				Definition: "A fruit with red color",
@@ -362,7 +362,7 @@ func TestGameRoutes_FinishGame(t *testing.T) {
 
 			require.Equal(t, "apple", lastTick["lastWordAnswer"])
 
-			if tc.topic == IndonesianPoliticianQuotes {
+			if tc.topic == SessionTopicIndonesianPoliticianQuotes {
 				assert.Equal(t, "A fruit with red color", lastTick["lastWordDefinition"])
 				assert.Contains(t, lastTick["lastWordReferences"], "https://hello.world")
 			} else {
@@ -378,7 +378,7 @@ func TestGameRoutes_SubmitAnswer(t *testing.T) {
 
 	// Start a game first
 	autoVoice := false
-	startPayload := StartGameRequest{Topic: EnglishWords, Mode: Vanilla, AutoVoice: &autoVoice}
+	startPayload := StartGameRequest{Topic: SessionTopicEnglishWords, Mode: Vanilla, AutoVoice: &autoVoice}
 	startBody, _ := json.Marshal(startPayload)
 
 	req, _ := http.NewRequest("POST", "/api/v1/game/start", bytes.NewBuffer(startBody))

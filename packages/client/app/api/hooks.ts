@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import type { LeaderboardPeriod } from '~/api/gen';
+import type { LeaderboardPeriod, SessionTopicLeaderboard } from '~/api/gen';
 import { readStoredSettings, writeStoredSettings, type LatestSchema } from '~/lib/settings';
 
 import { GAME_DURATION_SECONDS, setGameEndsAt, type GameState } from '../lib/game';
@@ -232,7 +232,7 @@ export function useGame(shouldContinueGame: boolean, defaultSettings: LatestSche
   };
 }
 
-export type LeaderboardSettings = Partial<Pick<LatestSchema, 'mode' | 'topic'>>;
+export type LeaderboardSettings = Partial<Pick<LatestSchema, 'mode'>> & { topic?: SessionTopicLeaderboard };
 
 export function useLeaderboard(settings?: LeaderboardSettings, period: LeaderboardPeriod = 'alltime', page = 1, limit = 10) {
   return apiQuery.useQuery(
@@ -254,6 +254,8 @@ export function useLeaderboard(settings?: LeaderboardSettings, period: Leaderboa
 }
 
 export function useLeaderboardPercentile(settings?: LeaderboardSettings, period: LeaderboardPeriod = 'alltime') {
+  const effectiveTopic = settings?.topic === 'english-words-july-2026' ? undefined : settings?.topic;
+
   return apiQuery.useQuery(
     'get',
     '/api/v1/leaderboard/percentile',
@@ -261,7 +263,7 @@ export function useLeaderboardPercentile(settings?: LeaderboardSettings, period:
       params: {
         query: {
           mode: settings?.mode,
-          topic: settings?.topic,
+          topic: effectiveTopic,
           period,
         },
       },

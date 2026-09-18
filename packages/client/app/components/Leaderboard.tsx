@@ -2,7 +2,7 @@ import { formatDate } from 'date-fns';
 import { Loader2Icon } from 'lucide-react';
 import { useId, useState, type JSX } from 'react';
 
-import type { LeaderboardPeriod, SessionMode, SessionTopic } from '~/api/gen';
+import type { LeaderboardPeriod, SessionMode, SessionTopicLeaderboard } from '~/api/gen';
 import { getFinalScore } from '~/lib/game';
 
 import { useLeaderboard, useLeaderboardPercentile, type LeaderboardSettings } from '../api/hooks';
@@ -11,6 +11,12 @@ interface PeriodButtonGroupProps {
   period: LeaderboardPeriod;
   onChange: (period: LeaderboardPeriod) => void;
 }
+
+const LEADERBOARD_OPTIONS: Array<{ label: string; value: SessionTopicLeaderboard }> = [
+  { value: 'english-words', label: 'English Words' },
+  { value: 'indonesian-politician-quotes', label: 'Indonesian Politician Quotes' },
+  { value: 'english-words-july-2026', label: 'English Words, July 2026' },
+];
 
 const PERIOD_OPTIONS: { value: LeaderboardPeriod; label: string }[] = [
   { value: 'alltime', label: 'All-time' },
@@ -118,7 +124,7 @@ export function Leaderboard({
               id={topicId}
               className="text-xs border border-dark-border-primary rounded px-2 py-1 bg-transparent"
               onChange={(e) => {
-                const newTopic = e.target.value as SessionTopic;
+                const newTopic = e.target.value as SessionTopicLeaderboard;
 
                 setTopic(newTopic);
                 if (newTopic === 'indonesian-politician-quotes') {
@@ -127,8 +133,9 @@ export function Leaderboard({
               }}
               value={topic}
             >
-              <option value="english-words">English Words</option>
-              <option value="indonesian-politician-quotes">Indonesian Quotes</option>
+              {LEADERBOARD_OPTIONS.map((opt) => (
+                <option value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
         )}
@@ -151,7 +158,7 @@ export function Leaderboard({
                     {result.id}
 
                     <span className="text-[10px] text-gray-400">
-                      {result.isSessionSameAsCurrentUser ? '(you)' : formatDate(result.timestamp, 'yyyy/MM/dd HH:mm')}
+                      {result.isSessionSameAsCurrentUser ? '(you, just now)' : formatDate(result.timestamp, 'yyyy/MM/dd HH:mm')}
                     </span>
                   </div>
                   <div className="flex flex-1 gap-x-3 font-mono">
