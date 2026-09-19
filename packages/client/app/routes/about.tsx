@@ -37,8 +37,8 @@ Reference: "About WordNet." WordNet, Princeton University, 2010, [wordnet.prince
 
 The quotes were extracted from online publications (mostly news, with credible sources being preferred). When the game ends, you will be able to see the source of the quote and validate it yourself.
 
-## Author and source
+## Source
 
-The repository is closed-source. If you would like to provide feedback, you can drop it to [my Twitter](https://twitter.com/imballinst).
+You can view the source code of this game at https://github.com/imballinst/atoyr. If you have feedback or ideas, please open an issue first.
 `.trim();
 }
