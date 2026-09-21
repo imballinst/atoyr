@@ -115,7 +115,7 @@ export function GameScreen({
         ]}
       />
 
-      <div className="h-[114px]">
+      <div className="h-[114px] w-full">
         <div
           className="h-full border border-dark-bg-tertiary p-4 rounded-lg text-center justify-center items-center flex text-sm italic text-dark-text-secondary w-full overflow-hidden"
           hidden={settings.mode === 'blind' || settings.autoVoice}
