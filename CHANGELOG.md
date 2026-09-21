@@ -3,6 +3,7 @@
 ## Week 3
 
 - New feature: Switched the English words source from a hand-curated wordlist with LLM-generated definitions to [WordNet 3.1](https://wordnet.princeton.edu/download); definitions are now real dictionary glosses. As part of this, the old "English words" leaderboard will be _immortalized_ as "English words, July 2026" topic. This topic is only available for selection in the leaderboard and won't be playable anymore.
+- Added more quotes to Indonesian Politician Quotes.
 
 # August 2026
 
