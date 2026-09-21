@@ -100,7 +100,6 @@ export function GameScreen({
   const accuracy = totalAttempts > 0 ? ((score / totalAttempts) * 100).toFixed(1) : '0.0';
   const bestStreak = Math.max(...correctAttemptTimestamps.map((attempts) => attempts.length), 0);
   const definitionContent = renderDefinitionVisual(definition, scrambled.length);
-  const isIndonesianTopic = settings.topic === 'indonesian-politician-quotes';
 
   return (
     <div className="w-full h-full flex flex-col gap-4 justify-end items-center">
@@ -116,15 +115,12 @@ export function GameScreen({
         ]}
       />
 
-      <div className="min-h-[114px] flex items-end">
+      <div className="h-[114px]">
         <div
-          className={
-            'border border-dark-bg-tertiary p-4 rounded-lg text-center justify-center items-center flex text-sm italic text-dark-text-secondary w-full' +
-            (isIndonesianTopic ? ' overflow-hidden line-clamp-4' : '')
-          }
+          className="h-full border border-dark-bg-tertiary p-4 rounded-lg text-center justify-center items-center flex text-sm italic text-dark-text-secondary w-full overflow-hidden"
           hidden={settings.mode === 'blind' || settings.autoVoice}
         >
-          {definitionContent}
+          <div className="line-clamp-4">{definitionContent}</div>
         </div>
       </div>
 

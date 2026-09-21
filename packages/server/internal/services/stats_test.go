@@ -323,10 +323,10 @@ func TestStatsService_GetTimeSeries_AutoGranularity(t *testing.T) {
 	service.Now = testutils.NowMockFn
 
 	cases := []struct {
-		period        string
-		expected      string
-		dataCountMin  int
-		dataCountMax  int
+		period       string
+		expected     string
+		dataCountMin int
+		dataCountMax int
 	}{
 		{"1h", "1m", 60, 60},
 		{"24h", "1h", 24, 24},

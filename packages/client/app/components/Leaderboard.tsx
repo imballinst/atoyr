@@ -134,7 +134,9 @@ export function Leaderboard({
               value={topic}
             >
               {LEADERBOARD_OPTIONS.map((opt) => (
-                <option value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>

@@ -319,7 +319,7 @@ describe('GameScreen', () => {
   it('hides the definition in blind mode', () => {
     renderScreen({ settings: { autoVoice: false, mode: 'blind', topic: 'english-words' }, definition: DEFAULT_DEFINITION });
 
-    expect(screen.getByText(DEFAULT_DEFINITION)).toHaveAttribute('hidden');
+    expect(screen.getByText(DEFAULT_DEFINITION)).not.toBeVisible();
   });
 
   it('speaks only letters when the definition is empty', async () => {
