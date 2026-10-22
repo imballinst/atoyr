@@ -20,7 +20,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.25
+          go-version: 1.27.3
 
       - name: Setup deps
         working-directory: packages/server
@@ -29,9 +29,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.x
+          node-version: 26.12.1
       
-      - run: corepack enable
+      - run: npm install -g corepack@0.36.0 && corepack enable
 
       - name: Install dependencies
         run: yarn

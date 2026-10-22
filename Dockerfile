@@ -1,5 +1,5 @@
 # ---- Client build ----
-FROM node:24-alpine AS client-build
+FROM node:26.12.1-alpine AS client-build
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY CHANGELOG.md package.json yarn.lock tsconfig.json .yarnrc.yml ./
 COPY packages/client/package.json packages/client/package.json
 COPY packages/server/package.json packages/server/package.json
 
-RUN corepack enable
+RUN npm install -g corepack@0.36.0 && corepack enable
 RUN yarn workspaces focus client
 
 COPY packages/client/ packages/client/
@@ -15,7 +15,7 @@ COPY packages/client/ packages/client/
 RUN yarn workspace client build
 
 # ---- Server build ----
-FROM golang:1.25-alpine AS server-build
+FROM golang:1.27.3-alpine AS server-build
 
 WORKDIR /app
 
